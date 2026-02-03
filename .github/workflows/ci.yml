@@ -45,6 +45,18 @@ jobs:
       - name: Run contract tests
         run: pnpm run contract:validate:json
 
+      - name: Run contract sync check
+        run: pnpm run contract:sync:check
+
+      - name: Generate capability registry
+        run: pnpm run capability:registry -- --format=json > capability-registry.json
+
+      - name: Upload capability registry artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: capability-registry
+          path: capability-registry.json
+
       - name: Type check
         run: pnpm run typecheck
 
