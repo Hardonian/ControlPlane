@@ -45,18 +45,84 @@ export interface ContractTest {
   expectedValid: boolean;
 }
 
+// Simple LRU cache for validation results to avoid re-validating identical data
+class ValidationCache {
+  private cache = new Map<string, ValidationResult>();
+  private maxSize = 100;
+
+  getKey(schema: ZodSchema, data: unknown): string {
+    // Create a deterministic key based on schema shape and data
+    const schemaKey = (schema as { _id?: string })._id || String(schema._type);
+    const dataKey =
+      typeof data === 'object' && data !== null
+        ? JSON.stringify(data).slice(0, 500) // Limit key size
+        : String(data);
+    return `${schemaKey}:${dataKey}`;
+  }
+
+  get(key: string): ValidationResult | undefined {
+    return this.cache.get(key);
+  }
+
+  set(key: string, result: ValidationResult): void {
+    if (this.cache.size >= this.maxSize) {
+      // Remove oldest entry
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+    this.cache.set(key, result);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const globalValidationCache = new ValidationCache();
+
 export class ContractValidator {
   private results: Map<string, ValidationResult> = new Map();
+  private useCache: boolean;
+  private cache: ValidationCache;
+
+  constructor(useGlobalCache = true) {
+    this.useCache = useGlobalCache;
+    this.cache = useGlobalCache ? globalValidationCache : new ValidationCache();
+  }
 
   validate<T>(schema: ZodSchema<T>, data: unknown, context?: string): ValidationResult {
+    // Check cache first if enabled
+    if (this.useCache) {
+      const cacheKey = this.cache.getKey(schema, data);
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        if (context) {
+          this.results.set(context, cached);
+        }
+        return cached;
+      }
+    }
+
     const result = schema.safeParse(data);
 
     if (result.success) {
-      return {
+      const validationResult: ValidationResult = {
         valid: true,
         errors: [],
         warnings: [],
       };
+
+      if (this.useCache) {
+        this.cache.set(this.cache.getKey(schema, data), validationResult);
+      }
+
+      if (context) {
+        this.results.set(context, validationResult);
+      }
+
+      return validationResult;
     }
 
     const errors: ValidationError[] = result.error.issues.map((issue: ZodIssue) => ({
@@ -72,6 +138,10 @@ export class ContractValidator {
       warnings: [],
     };
 
+    if (this.useCache) {
+      this.cache.set(this.cache.getKey(schema, data), validationResult);
+    }
+
     if (context) {
       this.results.set(context, validationResult);
     }
@@ -80,6 +150,18 @@ export class ContractValidator {
   }
 
   validatePartial(schema: z.ZodTypeAny, data: unknown, context?: string): ValidationResult {
+    // Check cache first if enabled (using partial schema)
+    if (this.useCache) {
+      const cacheKey = `partial:${this.cache.getKey(schema, data)}`;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        if (context) {
+          this.results.set(context, cached);
+        }
+        return cached;
+      }
+    }
+
     // Check if schema is a ZodObject that supports partial()
     if (!(schema instanceof ZodObject)) {
       return this.validate(schema, data, context);
@@ -88,11 +170,21 @@ export class ContractValidator {
     const result = schema.partial().safeParse(data);
 
     if (result.success) {
-      return {
+      const validationResult: ValidationResult = {
         valid: true,
         errors: [],
         warnings: [],
       };
+
+      if (this.useCache) {
+        this.cache.set(`partial:${this.cache.getKey(schema, data)}`, validationResult);
+      }
+
+      if (context) {
+        this.results.set(context, validationResult);
+      }
+
+      return validationResult;
     }
 
     const errors: ValidationError[] = result.error.issues.map((issue: ZodIssue) => ({
@@ -106,6 +198,10 @@ export class ContractValidator {
       errors,
       warnings: [],
     };
+
+    if (this.useCache) {
+      this.cache.set(`partial:${this.cache.getKey(schema, data)}`, validationResult);
+    }
 
     if (context) {
       this.results.set(context, validationResult);
@@ -302,6 +398,10 @@ export const PredefinedTestSuites: ContractTestSuite[] = [
 
 export function createStandardValidator(): ContractValidator {
   return new ContractValidator();
+}
+
+export function createCachedValidator(): ContractValidator {
+  return new ContractValidator(true);
 }
 
 export function runAllContractTests(): { passed: number; failed: number; details: string[] } {

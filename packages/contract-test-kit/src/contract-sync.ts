@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFile, writeFile, access } from 'fs/promises';
 import { join, resolve } from 'path';
 import { glob } from 'glob';
 import chalk from 'chalk';
@@ -48,13 +48,22 @@ function parseArgs(): SyncOptions {
   };
 }
 
-function findWorkspaceRoot(): string {
+async function existsAsync(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function findWorkspaceRoot(): Promise<string> {
   let current = process.cwd();
 
   while (current !== '/') {
     const packageJsonPath = join(current, 'package.json');
-    if (existsSync(packageJsonPath)) {
-      const content = readFileSync(packageJsonPath, 'utf-8');
+    if (await existsAsync(packageJsonPath)) {
+      const content = await readFile(packageJsonPath, 'utf-8');
       const pkg = JSON.parse(content);
       // Check if this is a workspace root
       if (pkg.workspaces || (pkg.name && pkg.name.includes('orchestrator'))) {
@@ -69,31 +78,30 @@ function findWorkspaceRoot(): string {
   return process.cwd();
 }
 
-function getCanonicalVersion(workspaceRoot: string): string {
+async function getCanonicalVersion(workspaceRoot: string): Promise<string> {
   const contractsPackagePath = join(workspaceRoot, 'packages', 'contracts', 'package.json');
 
-  if (!existsSync(contractsPackagePath)) {
+  if (!(await existsAsync(contractsPackagePath))) {
     throw new Error(`Cannot find contracts package at ${contractsPackagePath}`);
   }
 
-  const content = readFileSync(contractsPackagePath, 'utf-8');
+  const content = await readFile(contractsPackagePath, 'utf-8');
   const pkg = JSON.parse(content);
 
   return pkg.version;
 }
 
-function findWorkspacePackages(workspaceRoot: string): PackageInfo[] {
-  const packages: PackageInfo[] = [];
-
-  // Find all package.json files in packages directory
-  const packageJsonPaths = glob.sync('packages/*/package.json', {
+async function findWorkspacePackages(workspaceRoot: string): Promise<PackageInfo[]> {
+  // Find all package.json files in packages directory - async glob
+  const packageJsonPaths = await glob('packages/*/package.json', {
     cwd: workspaceRoot,
     absolute: true,
   });
 
-  for (const pkgPath of packageJsonPaths) {
+  // Process all packages in parallel with Promise.all
+  const packagePromises = packageJsonPaths.map(async (pkgPath) => {
     try {
-      const content = readFileSync(pkgPath, 'utf-8');
+      const content = await readFile(pkgPath, 'utf-8');
       const pkg = JSON.parse(content);
 
       const deps = pkg.dependencies || {};
@@ -102,20 +110,22 @@ function findWorkspacePackages(workspaceRoot: string): PackageInfo[] {
       // Only include packages that depend on @controlplane/contracts
       const contractsVersion = deps[CONTRACTS_PACKAGE] || devDeps[CONTRACTS_PACKAGE];
 
-      packages.push({
+      return {
         name: pkg.name,
         path: pkgPath,
         version: pkg.version,
         contractsVersion,
         dependencies: deps,
         devDependencies: devDeps,
-      });
+      };
     } catch (error) {
       console.warn(chalk.yellow(`Warning: Could not parse ${pkgPath}`));
+      return null;
     }
-  }
+  });
 
-  return packages;
+  const results = await Promise.all(packagePromises);
+  return results.filter((p): p is NonNullable<typeof p> => p !== null);
 }
 
 function checkVersionSync(
@@ -154,13 +164,14 @@ function checkVersionSync(
   return { mismatches, synced };
 }
 
-function fixMismatches(mismatches: Mismatch[], options: SyncOptions): void {
-  for (const mismatch of mismatches) {
+async function fixMismatches(mismatches: Mismatch[], options: SyncOptions): Promise<void> {
+  // Process all fixes in parallel
+  const fixPromises = mismatches.map(async (mismatch) => {
     if (options.verbose) {
       console.log(chalk.blue(`Fixing ${mismatch.package}...`));
     }
 
-    const content = readFileSync(mismatch.path, 'utf-8');
+    const content = await readFile(mismatch.path, 'utf-8');
     const pkg = JSON.parse(content);
 
     // Update dependencies
@@ -174,10 +185,12 @@ function fixMismatches(mismatches: Mismatch[], options: SyncOptions): void {
     }
 
     // Write back with proper formatting
-    writeFileSync(mismatch.path, JSON.stringify(pkg, null, 2) + '\n');
+    await writeFile(mismatch.path, JSON.stringify(pkg, null, 2) + '\n');
 
     console.log(chalk.green(`  ✓ Fixed ${mismatch.package}`));
-  }
+  });
+
+  await Promise.all(fixPromises);
 }
 
 function formatOutput(result: SyncResult, options: SyncOptions): string {
@@ -253,24 +266,24 @@ async function main() {
   const jsonOutput = args.includes('--json');
 
   try {
-    const workspaceRoot = findWorkspaceRoot();
+    const workspaceRoot = await findWorkspaceRoot();
 
     if (options.verbose && !jsonOutput) {
       console.error(chalk.gray(`Workspace root: ${workspaceRoot}`));
     }
 
     // Get canonical version from contracts package
-    const canonicalVersion = getCanonicalVersion(workspaceRoot);
+    const canonicalVersion = await getCanonicalVersion(workspaceRoot);
 
-    // Find all workspace packages
-    const packages = findWorkspacePackages(workspaceRoot);
+    // Find all workspace packages (parallelized internally)
+    const packages = await findWorkspacePackages(workspaceRoot);
 
     // Check for mismatches
     const { mismatches, synced } = checkVersionSync(packages, canonicalVersion);
 
-    // Fix mismatches if requested
+    // Fix mismatches if requested (parallelized internally)
     if (options.fix && mismatches.length > 0) {
-      fixMismatches(mismatches, options);
+      await fixMismatches(mismatches, options);
     }
 
     const result: SyncResult = {
