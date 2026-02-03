@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.env.*.local
+coverage/
+playwright-report/
+test-results/
+smoke-report.json
+.DS_Store
+*.tgz
