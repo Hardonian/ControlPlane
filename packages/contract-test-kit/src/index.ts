@@ -3,14 +3,9 @@ import type { ZodSchema, ZodIssue } from 'zod';
 import {
   JobRequest,
   JobResponse,
-  RunnerMetadata,
   RunnerRegistrationRequest,
   TruthCoreRequest,
   TruthCoreResponse,
-  ErrorEnvelope,
-  HealthCheck,
-  ApiRequest,
-  ApiResponse,
 } from '@controlplane/contracts';
 
 export interface ValidationResult {

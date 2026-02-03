@@ -279,7 +279,7 @@ async function main() {
     const packages = await findWorkspacePackages(workspaceRoot);
 
     // Check for mismatches
-    const { mismatches, synced } = checkVersionSync(packages, canonicalVersion);
+    const { mismatches, synced: _synced } = checkVersionSync(packages, canonicalVersion);
 
     // Fix mismatches if requested (parallelized internally)
     if (options.fix && mismatches.length > 0) {

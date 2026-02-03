@@ -5,10 +5,8 @@ import {
   RunnerCategory,
   RunnerCategoryDescriptions,
   createEmptyRegistry,
-  calculateRegistryChecksum,
   PredefinedConnectors,
   TruthCoreCompatibility,
-  ContractVersion,
   CONTRACT_VERSION_CURRENT,
 } from '@controlplane/contracts';
 import { glob } from 'glob';
