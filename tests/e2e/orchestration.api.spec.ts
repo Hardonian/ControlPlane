@@ -1,15 +1,31 @@
 import { test, expect } from '@playwright/test';
 import { z } from 'zod';
-import {
-  JobRequest,
-  JobResponse,
-  ErrorEnvelope,
-  ErrorCategory,
-} from '@controlplane/contracts';
+import { JobRequest, JobResponse, ErrorEnvelope, ErrorCategory } from '@controlplane/contracts';
 
 const TRUTHCORE_URL = process.env.TRUTHCORE_URL || 'http://localhost:3001';
 const JOBFORGE_URL = process.env.JOBFORGE_URL || 'http://localhost:3002';
 const RUNNER_URL = process.env.RUNNER_URL || 'http://localhost:3003';
+
+// Polling configuration with exponential backoff
+const POLLING_CONFIG = {
+  initialIntervalMs: 500, // Start with 500ms (tighter than 1000ms)
+  maxIntervalMs: 3000, // Max 3 seconds between polls
+  backoffMultiplier: 1.5, // 1.5x exponential growth
+  maxAttempts: 25, // Max ~30 seconds total with backoff
+};
+
+/**
+ * Calculate polling interval with exponential backoff
+ */
+function getPollingInterval(attempt: number): number {
+  const interval = Math.min(
+    POLLING_CONFIG.initialIntervalMs * Math.pow(POLLING_CONFIG.backoffMultiplier, attempt),
+    POLLING_CONFIG.maxIntervalMs
+  );
+  // Add small jitter (±50ms) to avoid thundering herd in CI
+  const jitter = (Math.random() - 0.5) * 100;
+  return Math.max(100, Math.floor(interval + jitter));
+}
 
 test.describe('Happy Path: Full Job Lifecycle', () => {
   test('complete job flow: JobForge -> Runner -> TruthCore -> Response', async ({ request }) => {
@@ -46,34 +62,38 @@ test.describe('Happy Path: Full Job Lifecycle', () => {
 
     expect(submitResponse.status()).toBe(202);
     const submitResult = await submitResponse.json();
-    
+
     // Validate response schema
     const parsedSubmit = JobResponse.safeParse(submitResult);
-    expect(parsedSubmit.success, `JobResponse validation failed: ${parsedSubmit.success ? '' : JSON.stringify(parsedSubmit.error.issues)}`).toBe(true);
+    expect(
+      parsedSubmit.success,
+      `JobResponse validation failed: ${parsedSubmit.success ? '' : JSON.stringify(parsedSubmit.error.issues)}`
+    ).toBe(true);
     expect(submitResult.status).toBe('queued');
 
     const jobId = submitResult.id;
 
-    // 2. Poll for job completion (with timeout)
+    // 2. Poll for job completion with exponential backoff
     let completed = false;
     let attempts = 0;
-    const maxAttempts = 30;
     let finalResult: unknown;
 
-    while (!completed && attempts < maxAttempts) {
+    while (!completed && attempts < POLLING_CONFIG.maxAttempts) {
       const statusResponse = await request.get(`${JOBFORGE_URL}/jobs/${jobId}`);
       expect(statusResponse.status()).toBe(200);
-      
+
       finalResult = await statusResponse.json();
       const parsedStatus = JobResponse.safeParse(finalResult);
       expect(parsedStatus.success).toBe(true);
 
-      if ((finalResult as { status: string }).status === 'completed' || 
-          (finalResult as { status: string }).status === 'failed') {
+      const status = (finalResult as { status: string }).status;
+      if (status === 'completed' || status === 'failed') {
         completed = true;
       } else {
         attempts++;
-        await new Promise(r => setTimeout(r, 1000));
+        // Use exponential backoff with jitter
+        const waitMs = getPollingInterval(attempts);
+        await new Promise((r) => setTimeout(r, waitMs));
       }
     }
 
@@ -116,7 +136,7 @@ test.describe('Happy Path: Full Job Lifecycle', () => {
 
     expect(queryResponse.ok()).toBeTruthy();
     const queryResult = await queryResponse.json();
-    
+
     expect(queryResult.assertions).toBeDefined();
     expect(queryResult.assertions.length).toBeGreaterThan(0);
     expect(queryResult.assertions.some((a: { id: string }) => a.id === assertion.id)).toBe(true);
@@ -158,14 +178,14 @@ test.describe('Degraded Path: Runner Unavailable', () => {
 
     // Should not hard-fail
     expect(response.status()).toBeLessThan(500);
-    
+
     const result = await response.json();
-    
+
     // Validate error envelope if present
     if (result.error) {
       const parsedError = ErrorEnvelope.safeParse(result.error);
       expect(parsedError.success).toBe(true);
-      
+
       // Error should be retryable (SERVICE_UNAVAILABLE or RUNTIME_ERROR)
       expect(['SERVICE_UNAVAILABLE', 'RUNTIME_ERROR']).toContain(result.error.category);
       expect(result.error.retryable).toBe(true);
@@ -208,9 +228,9 @@ test.describe('Degraded Path: TruthCore Unavailable', () => {
 
     // Should not hard-500
     expect(response.status()).toBeLessThan(500);
-    
+
     const result = await response.json();
-    
+
     // Should have error info
     if (result.error || result.status === 'failed') {
       expect(result.error || result.result?.error).toBeDefined();
@@ -238,9 +258,9 @@ test.describe('Bad Input Path: Schema Validation', () => {
 
     // Should return 400, not 500
     expect(response.status()).toBe(400);
-    
+
     const result = await response.json();
-    
+
     // Should have structured error
     expect(result.error).toBeDefined();
     const parsedError = ErrorEnvelope.safeParse(result.error);
@@ -260,7 +280,7 @@ test.describe('Bad Input Path: Schema Validation', () => {
     });
 
     expect(response.status()).toBe(400);
-    
+
     const result = await response.json();
     expect(result.error).toBeDefined();
     expect(result.error.category).toBe('VALIDATION_ERROR');
@@ -284,17 +304,20 @@ test.describe('Health Checks', () => {
       { name: 'Runner', url: RUNNER_URL },
     ];
 
-    for (const service of services) {
+    // Check all services in parallel for faster execution
+    const healthChecks = services.map(async (service) => {
       const response = await request.get(`${service.url}/health`);
       expect(response.ok(), `${service.name} health check failed`).toBeTruthy();
-      
+
       const result = await response.json();
       expect(result.status).toBe('healthy');
-      
+
       // Validate health check schema
       expect(result.service || result.name).toBeDefined();
       expect(result.version).toBeDefined();
       expect(result.timestamp).toBeDefined();
-    }
+    });
+
+    await Promise.all(healthChecks);
   });
 });
