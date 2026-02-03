@@ -4,10 +4,11 @@
  * Smoke Test Script
  * 
  * Verifies all services in the ControlPlane stack are healthy.
+ * Uses parallel health checks for faster execution.
  * Outputs a JSON smoke report suitable for CI/CD pipelines.
  */
 
-import { writeFileSync } from 'fs';
+import { writeFile } from 'fs/promises';
 import { join } from 'path';
 
 interface ServiceCheck {
@@ -36,6 +37,9 @@ const SERVICES = [
   { name: 'Redis', url: 'http://localhost:6379', skip: true }, // Redis doesn't have HTTP health endpoint
 ];
 
+// Tighter timeout - 5 seconds instead of 10
+const HEALTH_CHECK_TIMEOUT = 5000;
+
 async function checkService(service: { name: string; url: string; skip?: boolean }): Promise<ServiceCheck> {
   const start = Date.now();
   
@@ -49,11 +53,15 @@ async function checkService(service: { name: string; url: string; skip?: boolean
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
+    
     const response = await fetch(`${service.url}/health`, {
       method: 'GET',
-      signal: AbortSignal.timeout(10000),
+      signal: controller.signal,
     });
-
+    
+    clearTimeout(timeoutId);
     const responseTime = Date.now() - start;
 
     if (!response.ok) {
@@ -92,19 +100,19 @@ async function main() {
   
   console.log('🔍 Running ControlPlane smoke tests...\n');
 
-  const results: ServiceCheck[] = [];
+  // Run all health checks in parallel for faster execution
+  console.log('Checking services in parallel...\n');
+  const checkPromises = SERVICES.map(service => checkService(service));
+  const results = await Promise.all(checkPromises);
   
-  for (const service of SERVICES) {
-    process.stdout.write(`Checking ${service.name}... `);
-    const result = await checkService(service);
-    results.push(result);
-    
+  // Print results
+  for (const result of results) {
     if (result.status === 'passed') {
-      console.log(`✅ (${result.responseTime}ms)`);
+      console.log(`✅ ${result.name}: ${result.responseTime}ms`);
     } else if (result.status === 'skipped') {
-      console.log(`⏭️  (skipped)`);
+      console.log(`⏭️  ${result.name}: skipped`);
     } else {
-      console.log(`❌ ${result.error}`);
+      console.log(`❌ ${result.name}: ${result.error}`);
     }
   }
 
@@ -123,9 +131,9 @@ async function main() {
     services: results,
   };
 
-  // Write report to file
+  // Write report to file asynchronously
   const reportPath = join(process.cwd(), 'smoke-report.json');
-  writeFileSync(reportPath, JSON.stringify(report, null, 2));
+  await writeFile(reportPath, JSON.stringify(report, null, 2));
 
   // Summary
   console.log('\n' + '='.repeat(50));
