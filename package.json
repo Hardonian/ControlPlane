@@ -29,6 +29,9 @@
     "ci": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run test:e2e",
     "contract:validate": "pnpm --filter @controlplane/contract-test-kit exec contract-test",
     "contract:validate:json": "pnpm --filter @controlplane/contract-test-kit exec contract-test --json",
+    "contract:sync": "pnpm --filter @controlplane/contract-test-kit exec contract-sync",
+    "contract:sync:check": "pnpm --filter @controlplane/contract-test-kit exec contract-sync",
+    "contract:sync:fix": "pnpm --filter @controlplane/contract-test-kit exec contract-sync --fix",
     "release": "semantic-release",
     "clean": "turbo run clean && rm -rf node_modules",
     "prepare": "husky install"
