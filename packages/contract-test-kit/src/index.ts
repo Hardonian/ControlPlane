@@ -50,7 +50,7 @@ export class ContractValidator {
 
   validate<T>(schema: ZodSchema<T>, data: unknown, context?: string): ValidationResult {
     const result = schema.safeParse(data);
-    
+
     if (result.success) {
       return {
         valid: true,
@@ -84,9 +84,9 @@ export class ContractValidator {
     if (!(schema instanceof ZodObject)) {
       return this.validate(schema, data, context);
     }
-    
+
     const result = schema.partial().safeParse(data);
-    
+
     if (result.success) {
       return {
         valid: true,
@@ -114,13 +114,17 @@ export class ContractValidator {
     return validationResult;
   }
 
-  runTestSuite(suite: ContractTestSuite): { passed: number; failed: number; results: Map<string, ValidationResult> } {
+  runTestSuite(suite: ContractTestSuite): {
+    passed: number;
+    failed: number;
+    results: Map<string, ValidationResult>;
+  } {
     let passed = 0;
     let failed = 0;
 
     for (const test of suite.tests) {
       const result = this.validate(test.schema, test.testData, `${suite.name}.${test.name}`);
-      
+
       if (result.valid === test.expectedValid) {
         passed++;
       } else {
@@ -315,3 +319,6 @@ export function runAllContractTests(): { passed: number; failed: number; details
 
   return { passed: totalPassed, failed: totalFailed, details };
 }
+
+// Export discovery utilities
+export * from './discovery.js';
