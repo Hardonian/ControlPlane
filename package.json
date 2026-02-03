@@ -32,6 +32,9 @@
     "contract:sync": "pnpm --filter @controlplane/contract-test-kit exec contract-sync",
     "contract:sync:check": "pnpm --filter @controlplane/contract-test-kit exec contract-sync",
     "contract:sync:fix": "pnpm --filter @controlplane/contract-test-kit exec contract-sync --fix",
+    "capability:registry": "pnpm --filter @controlplane/contract-test-kit exec capability-registry",
+    "capability:registry:json": "pnpm --filter @controlplane/contract-test-kit exec capability-registry --format=json",
+    "contract:test": "pnpm run contract:validate",
     "release": "semantic-release",
     "clean": "turbo run clean && rm -rf node_modules",
     "prepare": "husky install"
