@@ -129,7 +129,7 @@ function generateZodDefinition(schema: any, depth = 0): string {
     const typeName = schema._def.typeName;
 
     switch (typeName) {
-      case 'ZodString':
+      case 'ZodString': {
         let str = 'z.string()';
         if (schema._def.checks) {
           for (const check of schema._def.checks) {
@@ -156,8 +156,9 @@ function generateZodDefinition(schema: any, depth = 0): string {
           }
         }
         return str;
+      }
 
-      case 'ZodNumber':
+      case 'ZodNumber': {
         let num = 'z.number()';
         if (schema._def.checks) {
           for (const check of schema._def.checks) {
@@ -175,6 +176,7 @@ function generateZodDefinition(schema: any, depth = 0): string {
           }
         }
         return num;
+      }
 
       case 'ZodBoolean':
         return 'z.boolean()';
@@ -185,34 +187,38 @@ function generateZodDefinition(schema: any, depth = 0): string {
       case 'ZodOptional':
         return `${generateZodDefinition(schema._def.innerType, depth)}.optional()`;
 
-      case 'ZodDefault':
+      case 'ZodDefault': {
         const inner = generateZodDefinition(schema._def.innerType, depth);
         const defaultValue = JSON.stringify(schema._def.defaultValue());
         return `${inner}.default(${defaultValue})`;
+      }
 
       case 'ZodArray':
         return `z.array(${generateZodDefinition(schema._def.type, depth)})`;
 
-      case 'ZodObject':
+      case 'ZodObject': {
         const shape = schema._def.shape();
         const entries = Object.entries(shape)
           .map(([key, val]) => `  ${key}: ${generateZodDefinition(val, depth + 1)}`)
           .join(',\n');
         return `z.object({\n${entries}\n})`;
+      }
 
       case 'ZodRecord':
         return `z.record(${generateZodDefinition(schema._def.valueType, depth)})`;
 
-      case 'ZodEnum':
+      case 'ZodEnum': {
         const values = schema._def.values.map((v: string) => `'${v}'`).join(', ');
         return `z.enum([${values}])`;
+      }
 
       case 'ZodUnion':
-      case 'ZodDiscriminatedUnion':
+      case 'ZodDiscriminatedUnion': {
         const options = schema._def.options
           .map((opt: any) => generateZodDefinition(opt, depth))
           .join(', ');
         return `z.union([${options}])`;
+      }
 
       case 'ZodEffects':
         return generateZodDefinition(schema._def.schema, depth);
@@ -358,7 +364,7 @@ export class ControlPlaneClient {
 `;
 }
 
-function generateIndexFile(schemas: SchemaDefinition[]): string {
+function generateIndexFile(_schemas: SchemaDefinition[]): string {
   const lines: string[] = [];
   lines.push('// Auto-generated ControlPlane SDK');
   lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
@@ -381,7 +387,7 @@ function generateIndexFile(schemas: SchemaDefinition[]): string {
   return lines.join('\n');
 }
 
-function generateValidationFile(schemas: SchemaDefinition[]): string {
+function generateValidationFile(_schemas: SchemaDefinition[]): string {
   const lines: string[] = [];
   lines.push('// Auto-generated validation utilities');
   lines.push('// DO NOT EDIT MANUALLY - regenerate from source');

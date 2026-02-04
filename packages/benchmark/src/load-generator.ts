@@ -1,4 +1,4 @@
-import type { LoadTestConfig, LoadTestResult } from '../contracts/index.js';
+import type { LoadTestConfig, LoadTestResult } from './contracts/index.js';
 
 interface RequestMetrics {
   startTime: number;

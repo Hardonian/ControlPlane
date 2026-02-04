@@ -14,6 +14,7 @@ import {
   HealthCheckPerformanceRunner,
   type BenchmarkContext,
 } from './runners/index.js';
+import os from 'os';
 
 export class BenchmarkEngine {
   private context: BenchmarkContext;
@@ -64,8 +65,8 @@ export class BenchmarkEngine {
         nodeVersion: process.version,
         platform: process.platform,
         arch: process.arch,
-        cpus: require('os').cpus().length,
-        totalMemoryMb: Math.floor(require('os').totalmem() / 1024 / 1024),
+        cpus: os.cpus().length,
+        totalMemoryMb: Math.floor(os.totalmem() / 1024 / 1024),
       },
       suite,
       results,

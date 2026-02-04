@@ -283,8 +283,6 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
     httpLimiter: ConcurrencyLimiter,
     httpBatchSize: number
   ): Promise<void> {
-    let counter = 0;
-
     while (Date.now() < testEnd) {
       const isWarmup = Date.now() < warmupEnd;
 
@@ -296,8 +294,6 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
           )
         );
       }
-
-      counter++;
 
       await new Promise((resolve) => setTimeout(resolve, 50));
     }

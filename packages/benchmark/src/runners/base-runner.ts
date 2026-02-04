@@ -1,4 +1,4 @@
-import type { BenchmarkConfig, BenchmarkResult, LoadTestConfig } from '../contracts/index.js';
+import type { BenchmarkConfig, BenchmarkResult } from '../contracts/index.js';
 import { LoadGenerator } from '../load-generator.js';
 
 export interface BenchmarkContext {

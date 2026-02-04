@@ -5,6 +5,7 @@ import {
   buildMarketplaceIndex,
   queryMarketplace,
   formatMarketplaceOutput,
+  createDeterministicTrustSignal,
   type TrustSignalSource,
 } from './marketplace.js';
 import type { MarketplaceQuery, RunnerCategory, ConnectorType } from '@controlplane/contracts';
@@ -270,25 +271,21 @@ async function handleBuild(options: CLIOptions): Promise<void> {
     }
   }
 
+  const buildTimestamp = new Date().toISOString();
+
   // Mock trust signals for now (in real implementation, these would come from a database or scan results)
   const trustSources = new Map<string, TrustSignalSource>();
 
   // Add mock trust signals for runners (would be populated from actual test results)
   for (const runner of registry.runners) {
-    trustSources.set(runner.metadata.id, {
-      runnerId: runner.metadata.id,
-      contractTestStatus: 'passing',
-      lastContractTestAt: new Date().toISOString(),
-      lastVerifiedVersion: runner.metadata.version,
-      verificationMethod: 'automated_ci',
-      securityScanStatus: 'passed',
-      lastSecurityScanAt: new Date().toISOString(),
-      codeQualityScore: 85,
-      maintainerReputation: 'verified',
-      downloadCount: Math.floor(Math.random() * 1000),
-      averageRating: 4.5,
-      ratingCount: 10,
-    });
+    trustSources.set(
+      runner.metadata.id,
+      createDeterministicTrustSignal(
+        runner.metadata.id,
+        runner.metadata.version,
+        buildTimestamp
+      )
+    );
   }
 
   if (options.verbose) {

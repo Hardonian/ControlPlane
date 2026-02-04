@@ -9,15 +9,7 @@
 import { program } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import {
-  mkdirSync,
-  copyFileSync,
-  readFileSync,
-  writeFileSync,
-  existsSync,
-  readdirSync,
-  statSync,
-} from 'fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -37,18 +29,52 @@ program
   .option('-i, --interactive', 'Interactive mode', false)
   .option('--skip-install', 'Skip dependency installation', false)
   .option('--skip-git', 'Skip git initialization', false)
-  .action(async (name, options) => {
+  .action(async (name: string, options: RunnerOptions) => {
     try {
       await createRunner(name, options);
     } catch (error) {
-      console.error(chalk.red('Error:'), error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('Error:'), message);
       process.exit(1);
     }
   });
 
 program.parse();
 
-async function createRunner(name, options) {
+interface RunnerConfig {
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  contractVersion: string;
+  capabilities: string[];
+}
+
+interface RunnerOptions {
+  template: string;
+  directory: string;
+  interactive: boolean;
+  skipInstall: boolean;
+  skipGit: boolean;
+}
+
+interface RunnerPromptAnswers {
+  template: string;
+  description: string;
+  author: string;
+  capabilities: string[];
+}
+
+interface TemplateContext {
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  contractVersion: string;
+  capabilities: string[];
+}
+
+async function createRunner(name: string, options: RunnerOptions) {
   console.log(chalk.bold.blue('\n🚀 ControlPlane Create Runner\n'));
 
   // Validate name
@@ -57,8 +83,8 @@ async function createRunner(name, options) {
   }
 
   let template = options.template;
-  let targetDir = resolve(options.directory, name);
-  let runnerConfig = {
+  const targetDir = resolve(options.directory, name);
+  let runnerConfig: RunnerConfig = {
     name,
     description: `${name} - A ControlPlane runner`,
     version: '1.0.0',
@@ -69,7 +95,7 @@ async function createRunner(name, options) {
 
   // Interactive mode
   if (options.interactive) {
-    const answers = await inquirer.prompt([
+    const answers = await inquirer.prompt<RunnerPromptAnswers>([
       {
         type: 'list',
         name: 'template',
@@ -171,7 +197,7 @@ async function createRunner(name, options) {
   console.log('');
 }
 
-function copyTemplate(src, dest, config) {
+function copyTemplate(src: string, dest: string, config: TemplateContext) {
   const entries = readdirSync(src, { withFileTypes: true });
 
   for (const entry of entries) {
@@ -202,7 +228,7 @@ function copyTemplate(src, dest, config) {
   }
 }
 
-function generateCapabilityMetadata(targetDir, config) {
+function generateCapabilityMetadata(targetDir: string, config: RunnerConfig) {
   const metadata = {
     name: config.name,
     version: config.version,
@@ -273,7 +299,7 @@ function generateCapabilityMetadata(targetDir, config) {
   );
 }
 
-function generateContractTests(targetDir, config) {
+function generateContractTests(targetDir: string, config: RunnerConfig) {
   const testsDir = join(targetDir, 'test');
   mkdirSync(testsDir, { recursive: true });
 
@@ -348,7 +374,7 @@ describe('${config.name} Contract Tests', () => {
   writeFileSync(join(testsDir, 'contract.test.ts'), testContent);
 }
 
-function generateCIWorkflow(targetDir, config) {
+function generateCIWorkflow(targetDir: string, _config: RunnerConfig) {
   const workflowsDir = join(targetDir, '.github', 'workflows');
   mkdirSync(workflowsDir, { recursive: true });
 
@@ -429,7 +455,7 @@ jobs:
   writeFileSync(join(workflowsDir, 'ci.yml'), workflow);
 }
 
-function generateDocs(targetDir, config) {
+function generateDocs(targetDir: string, config: RunnerConfig) {
   const docsDir = join(targetDir, 'docs');
   mkdirSync(docsDir, { recursive: true });
 
@@ -528,11 +554,11 @@ See [Deployment Guide](https://github.com/Hardonian/ControlPlane/blob/main/docs/
   writeFileSync(join(docsDir, 'RUNNER.md'), runnerDoc);
 }
 
-function getCapabilityDescription(capability) {
+function getCapabilityDescription(capability: string) {
   const descriptions = {
     execute: 'Can execute jobs from the queue',
     query: 'Can query TruthCore for data',
     stream: 'Can stream real-time results',
   };
-  return descriptions[capability] || capability;
+  return descriptions[capability as keyof typeof descriptions] || capability;
 }

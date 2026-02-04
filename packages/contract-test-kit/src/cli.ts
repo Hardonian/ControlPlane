@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
-import { runAllContractTests, createStandardValidator, PredefinedTestSuites } from './index.js';
+import {
+  runAllContractTestsDetailed,
+  PredefinedTestSuites,
+  type ContractTestResultDetail,
+} from './index.js';
 import chalk from 'chalk';
 
 interface CLIOptions {
@@ -19,32 +23,48 @@ function parseArgs(): CLIOptions {
   };
 }
 
-function formatPretty(result: { passed: number; failed: number; details: string[] }, verbose: boolean): string {
+function formatPretty(
+  result: {
+    passed: number;
+    failed: number;
+    details: string[];
+    results: ContractTestResultDetail[];
+  },
+  verbose: boolean
+): string {
   let output = '\n';
   output += chalk.bold.blue('╔══════════════════════════════════════════════════════════╗\n');
   output += chalk.bold.blue('║      ControlPlane Contract Test Results                 ║\n');
   output += chalk.bold.blue('╚══════════════════════════════════════════════════════════╝\n\n');
   
-  const validator = createStandardValidator();
-  
+  const resultsBySuite = new Map<string, Map<string, ContractTestResultDetail>>();
+  for (const detail of result.results) {
+    if (!resultsBySuite.has(detail.suiteName)) {
+      resultsBySuite.set(detail.suiteName, new Map());
+    }
+    resultsBySuite.get(detail.suiteName)?.set(detail.testName, detail);
+  }
+
   for (const suite of PredefinedTestSuites) {
     output += chalk.bold.white(`${suite.name}\n`);
     output += chalk.gray('─'.repeat(50)) + '\n';
     
     for (const test of suite.tests) {
-      const validation = validator.validate(test.schema, test.testData);
-      const success = validation.valid === test.expectedValid;
+      const detail = resultsBySuite.get(suite.name)?.get(test.name);
+      const actualValid = detail?.actualValid ?? false;
+      const errors = detail?.errors ?? [];
+      const success = actualValid === test.expectedValid;
       
       if (success) {
         output += chalk.green(`  ✓ ${test.name}\n`);
       } else {
         output += chalk.red(`  ✗ ${test.name}\n`);
         output += chalk.red(`    Expected: ${test.expectedValid ? 'valid' : 'invalid'}\n`);
-        output += chalk.red(`    Actual: ${validation.valid ? 'valid' : 'invalid'}\n`);
+        output += chalk.red(`    Actual: ${actualValid ? 'valid' : 'invalid'}\n`);
       }
       
-      if (verbose && !validation.valid && validation.errors.length > 0) {
-        for (const error of validation.errors) {
+      if (verbose && !success && errors.length > 0) {
+        for (const error of errors) {
           output += chalk.yellow(`    - ${error.path}: ${error.message}\n`);
         }
       }
@@ -98,7 +118,12 @@ async function main() {
   
   console.error(chalk.gray('Running ControlPlane contract tests...\n'));
   
-  const result = runAllContractTests();
+  const detailedResult = runAllContractTestsDetailed();
+  const result = {
+    passed: detailedResult.passed,
+    failed: detailedResult.failed,
+    details: detailedResult.details,
+  };
   
   let output: string;
   switch (options.format) {
@@ -110,7 +135,7 @@ async function main() {
       break;
     case 'pretty':
     default:
-      output = formatPretty(result, options.verbose);
+      output = formatPretty(detailedResult, options.verbose);
       break;
   }
   

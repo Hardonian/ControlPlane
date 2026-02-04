@@ -54,7 +54,6 @@ export class RunnerScalingRunner extends BenchmarkRunner {
 
     for (const [concurrency, levelResults] of concurrencyResults) {
       const successful = levelResults.filter((r) => r.status === 'completed');
-      const failed = levelResults.filter((r) => r.status !== 'completed');
       const successRate = levelResults.length > 0 ? successful.length / levelResults.length : 0;
 
       const latencies = successful
@@ -242,7 +241,10 @@ export class RunnerScalingRunner extends BenchmarkRunner {
         const response = await fetch(`${this.context.jobforgeUrl}/jobs/${jobId}`);
 
         if (response.ok) {
-          const result = await response.json();
+          const result = (await response.json()) as {
+            status?: string;
+            result?: { runnerId?: string; metadata?: { startedAt?: string } };
+          };
 
           if (result.status === 'completed') {
             return {
