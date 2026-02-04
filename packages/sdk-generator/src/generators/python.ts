@@ -6,30 +6,33 @@ export function generatePythonSDK(
 ): GeneratedSDK {
   const files = new Map<string, string>();
 
-  const typesContent = generatePythonTypesFile(schemas);
-  files.set('controlplane_sdk/types.py', typesContent);
+  const modelsContent = generatePydanticModelsFile(schemas);
+  files.set('controlplane_sdk/models.py', modelsContent);
 
   const clientContent = generatePythonClientFile(config);
   files.set('controlplane_sdk/client.py', clientContent);
 
-  const initContent = generatePythonInitFile();
-  files.set('controlplane_sdk/__init__.py', initContent);
+  const indexContent = generatePythonInitFile();
+  files.set('controlplane_sdk/__init__.py', indexContent);
 
-  const modelsInitContent = generatePythonModelsInitFile(schemas);
-  files.set('controlplane_sdk/models/__init__.py', modelsInitContent);
-
-  const validationContent = generatePythonValidationFile(schemas);
+  const validationContent = generatePythonValidationFile();
   files.set('controlplane_sdk/validation.py', validationContent);
+
+  const schemasContent = generatePythonSchemasFile(schemas);
+  files.set('controlplane_sdk/schemas.py', schemasContent);
 
   const readmeContent = generateReadme('Python', config);
   files.set('README.md', readmeContent);
+
+  const pyprojectContent = generatePyprojectToml(config);
+  files.set('pyproject.toml', pyprojectContent);
 
   const packageConfig = {
     name: 'controlplane-sdk',
     version: config.sdkVersion,
     description: 'ControlPlane SDK for Python - generated from canonical contracts',
     python_requires: '>=3.8',
-    packages: ['controlplane_sdk', 'controlplane_sdk.models'],
+    packages: ['controlplane_sdk'],
     install_requires: ['pydantic>=2.0.0', 'httpx>=0.24.0', 'typing-extensions>=4.5.0'],
     extras_require: {
       dev: ['pytest>=7.0.0', 'mypy>=1.0.0', 'ruff>=0.1.0'],
@@ -55,15 +58,15 @@ export function generatePythonSDK(
   };
 }
 
-function generatePythonTypesFile(schemas: SchemaDefinition[]): string {
+function generatePydanticModelsFile(schemas: SchemaDefinition[]): string {
   const lines: string[] = [];
-  lines.push('# Auto-generated from ControlPlane contracts');
+  lines.push('# Auto-generated Pydantic models from ControlPlane contracts');
   lines.push('# DO NOT EDIT MANUALLY - regenerate from source');
   lines.push('');
   lines.push('from __future__ import annotations');
   lines.push('from datetime import datetime');
-  lines.push('from typing import Any, Dict, List, Optional, Union, Literal');
-  lines.push('from pydantic import BaseModel, Field');
+  lines.push('from typing import Any, Dict, List, Optional, Union, Literal, TypeVar, Generic');
+  lines.push('from pydantic import BaseModel, Field, ConfigDict');
   lines.push('');
 
   const groupedSchemas = schemas.reduce(
@@ -79,11 +82,11 @@ function generatePythonTypesFile(schemas: SchemaDefinition[]): string {
     string,
     SchemaDefinition[],
   ][]) {
-    lines.push(`# ${category.toUpperCase()} schemas`);
+    lines.push(`# ${category.toUpperCase()} models`);
     lines.push('');
 
     for (const schema of categorySchemas) {
-      lines.push(...generatePythonSchemaCode(schema));
+      lines.push(...generatePydanticModelCode(schema));
       lines.push('');
     }
   }
@@ -91,94 +94,132 @@ function generatePythonTypesFile(schemas: SchemaDefinition[]): string {
   return lines.join('\n');
 }
 
-function generatePythonSchemaCode(schema: SchemaDefinition): string[] {
+function generatePydanticModelCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const jsonSchema = schema.jsonSchema;
+  const zodDef = schema.schema._def;
 
-  if (jsonSchema.enum) {
-    // Generate Literal type for enums
-    const values = jsonSchema.enum.map((e: string) => `'${e}'`).join(', ');
-    lines.push(`${schema.name} = Literal[${values}]`);
-  } else if (jsonSchema.type === 'object' && jsonSchema.properties) {
-    // Generate Pydantic model for objects
-    lines.push(`class ${schema.name}(BaseModel):`);
+  lines.push(`class ${schema.name}(BaseModel):`);
+  lines.push(`    \"\"\"${schema.category} schema: ${schema.name}\"\"\"`);
 
-    const required = jsonSchema.required || [];
-    for (const [key, value] of Object.entries(jsonSchema.properties as Record<string, any>)) {
-      const isRequired = required.includes(key);
-      const pythonType = jsonSchemaTypeToPython(value, isRequired);
+  if (zodDef?.typeName === 'ZodObject') {
+    const shape = zodDef.shape();
+    const requiredFields: string[] = [];
 
-      if (value.description) {
-        lines.push(`    ${key}: ${pythonType} = Field(description="${value.description}")`);
-      } else {
-        lines.push(`    ${key}: ${pythonType}`);
+    // First pass: collect required fields
+    for (const [key, val] of Object.entries(shape)) {
+      const fieldDef = (val as any)._def;
+      if (fieldDef?.typeName !== 'ZodOptional' && fieldDef?.typeName !== 'ZodDefault') {
+        requiredFields.push(key);
       }
     }
-  } else if (jsonSchema.anyOf || jsonSchema.oneOf) {
-    const variants = jsonSchema.anyOf || jsonSchema.oneOf;
-    const unionType = variants.map((v: any) => jsonSchemaTypeToPython(v, true)).join(' | ');
-    lines.push(`${schema.name} = ${unionType}`);
+
+    // Generate model_config with json_schema_extra for required fields
+    if (requiredFields.length > 0) {
+      lines.push('    model_config = ConfigDict(');
+      lines.push(
+        '        json_schema_extra={"required": [' +
+          requiredFields.map((f) => `"${f}"`).join(', ') +
+          ']}'
+      );
+      lines.push('    )');
+      lines.push('');
+    }
+
+    // Generate fields
+    for (const [key, val] of Object.entries(shape)) {
+      const fieldType = zodToPythonType(val as any);
+      const fieldDef = (val as any)._def;
+      const isOptional =
+        fieldDef?.typeName === 'ZodOptional' || fieldDef?.typeName === 'ZodDefault';
+      const hasDefault = fieldDef?.typeName === 'ZodDefault';
+
+      let fieldLine = `    ${key}: ${fieldType}`;
+
+      if (hasDefault) {
+        const defaultValue = JSON.stringify(fieldDef.defaultValue());
+        fieldLine += ` = Field(default=${defaultValue})`;
+      } else if (isOptional) {
+        fieldLine += ' = None';
+      }
+
+      lines.push(fieldLine);
+    }
+  } else if (zodDef?.typeName === 'ZodEnum') {
+    // Handle enum as Literal type
+    const values = zodDef.values as string[];
+    lines.push(`    value: Literal[${values.map((v: string) => `'${v}'`).join(', ')}]`);
   } else {
-    lines.push(`${schema.name} = ${jsonSchemaTypeToPython(jsonSchema, true)}`);
+    lines.push(`    value: Any`);
   }
 
   return lines;
 }
 
-function jsonSchemaTypeToPython(schema: any, required: boolean): string {
-  if (!schema) return 'Any';
+function zodToPythonType(schema: any): string {
+  if (!schema || !schema._def) return 'Any';
 
-  if (schema.$ref) {
-    return schema.$ref.replace('#/definitions/', '');
-  }
+  const def = schema._def;
 
-  if (schema.enum) {
-    return `Literal[${schema.enum.map((e: string) => `'${e}'`).join(', ')}]`;
-  }
-
-  let baseType: string;
-
-  switch (schema.type) {
-    case 'string':
-      if (schema.format === 'date-time') baseType = 'datetime';
-      else if (schema.format === 'uuid') baseType = 'str';
-      else if (schema.format === 'uri') baseType = 'str';
-      else baseType = 'str';
-      break;
-    case 'number':
-    case 'integer':
-      baseType = 'float';
-      break;
-    case 'boolean':
-      baseType = 'bool';
-      break;
-    case 'array':
-      if (schema.items) {
-        baseType = `List[${jsonSchemaTypeToPython(schema.items, true)}]`;
-      } else {
-        baseType = 'List[Any]';
+  switch (def.typeName) {
+    case 'ZodString':
+      // Check for format validations
+      if (def.checks) {
+        for (const check of def.checks) {
+          if (check.kind === 'email' || check.kind === 'uuid' || check.kind === 'url') {
+            return 'str';
+          }
+          if (check.kind === 'datetime') {
+            return 'datetime';
+          }
+        }
       }
-      break;
-    case 'object':
-      if (schema.additionalProperties) {
-        baseType = `Dict[str, ${jsonSchemaTypeToPython(schema.additionalProperties, true)}]`;
-      } else if (schema.properties) {
-        const props = Object.entries(schema.properties as Record<string, any>)
-          .map(([key, value]) => {
-            const propRequired = schema.required?.includes(key);
-            return `${key}: ${jsonSchemaTypeToPython(value, propRequired)}`;
-          })
-          .join(', ');
-        baseType = `Dict[str, Any]`;
-      } else {
-        baseType = 'Dict[str, Any]';
+      return 'str';
+
+    case 'ZodNumber':
+      if (def.checks?.some((c: any) => c.kind === 'int')) {
+        return 'int';
       }
-      break;
+      return 'float';
+
+    case 'ZodBoolean':
+      return 'bool';
+
+    case 'ZodNull':
+      return 'None';
+
+    case 'ZodOptional':
+      const innerType = zodToPythonType(def.innerType);
+      return `Optional[${innerType}]`;
+
+    case 'ZodDefault':
+      return zodToPythonType(def.innerType);
+
+    case 'ZodArray':
+      const itemType = zodToPythonType(def.type);
+      return `List[${itemType}]`;
+
+    case 'ZodObject':
+      return 'Dict[str, Any]';
+
+    case 'ZodRecord':
+      const valueType = zodToPythonType(def.valueType);
+      return `Dict[str, ${valueType}]`;
+
+    case 'ZodEnum':
+      const values = def.values as string[];
+      return `Literal[${values.map((v: string) => `'${v}'`).join(', ')}]`;
+
+    case 'ZodUnion':
+      const types = def.options.map((opt: any) => zodToPythonType(opt));
+      return `Union[${types.join(', ')}]`;
+
+    case 'ZodUnknown':
+    case 'ZodAny':
+      return 'Any';
+
     default:
-      baseType = 'Any';
+      return 'Any';
   }
-
-  return required ? baseType : `Optional[${baseType}]`;
 }
 
 function generatePythonClientFile(config: SDKGeneratorConfig): string {
@@ -186,9 +227,13 @@ function generatePythonClientFile(config: SDKGeneratorConfig): string {
 # DO NOT EDIT MANUALLY - regenerate from source
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Type, TypeVar, Generic
 import httpx
-from .types import ContractVersion
+from pydantic import BaseModel, ValidationError
+
+from .models import ContractVersion
+
+T = TypeVar('T', bound=BaseModel)
 
 @dataclass
 class ClientConfig:
@@ -225,6 +270,18 @@ class ControlPlaneClient:
     def get_contract_version(self) -> ContractVersion:
         return self.contract_version
 
+    def validate(self, model_class: Type[T], data: Dict[str, Any]) -> T:
+        \"\"\"Validate data against a Pydantic model.\"\"\"
+        return model_class.model_validate(data)
+
+    def safe_validate(self, model_class: Type[T], data: Dict[str, Any]) -> Dict[str, Any]:
+        \"\"\"Safely validate data, returning result with success flag.\"\"\"
+        try:
+            validated = self.validate(model_class, data)
+            return {"success": True, "data": validated}
+        except ValidationError as e:
+            return {"success": False, "error": e}
+
     def request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
         response = self._client.request(method, path, **kwargs)
         response.raise_for_status()
@@ -242,54 +299,160 @@ class ControlPlaneClient:
 }
 
 function generatePythonInitFile(): string {
-  return `# Auto-generated ControlPlane SDK
+  return `# Auto-generated ControlPlane SDK for Python
 # DO NOT EDIT MANUALLY - regenerate from source
 
-from .types import *
+from .models import *
 from .client import ControlPlaneClient, ClientConfig
 from .validation import validate, safe_validate
+from .schemas import *
 
+__version__ = "1.0.0"
 __all__ = [
-    'ControlPlaneClient',
-    'ClientConfig',
-    'validate',
-    'safe_validate',
+    "ControlPlaneClient",
+    "ClientConfig",
+    "validate",
+    "safe_validate",
 ]
 `;
 }
 
-function generatePythonModelsInitFile(schemas: SchemaDefinition[]): string {
-  const lines: string[] = [];
-  lines.push('# Auto-generated models module');
-  lines.push('# DO NOT EDIT MANUALLY - regenerate from source');
-  lines.push('');
-
-  for (const schema of schemas) {
-    lines.push(`from ..types import ${schema.name}`);
-  }
-
-  return lines.join('\n');
-}
-
-function generatePythonValidationFile(schemas: SchemaDefinition[]): string {
+function generatePythonValidationFile(): string {
   return `# Auto-generated validation utilities
 # DO NOT EDIT MANUALLY - regenerate from source
 
-from typing import Type, TypeVar, Union
+from typing import Type, TypeVar, Dict, Any, Union
 from pydantic import BaseModel, ValidationError
 
 T = TypeVar('T', bound=BaseModel)
 
-def validate(model_class: Type[T], data: dict) -> T:
-    \"\"\"Validate and parse data into a Pydantic model.\"\"\"
+def validate(model_class: Type[T], data: Dict[str, Any]) -> T:
+    \"\"\"Validate and parse data into a Pydantic model.
+    
+    Args:
+        model_class: The Pydantic model class to validate against
+        data: Dictionary containing the data to validate
+        
+    Returns:
+        Validated model instance
+        
+    Raises:
+        ValidationError: If validation fails
+    \"\"\"
     return model_class.model_validate(data)
 
-def safe_validate(model_class: Type[T], data: dict) -> Union[T, ValidationError]:
-    \"\"\"Safely validate data, returning the error if validation fails.\"\"\"
+def safe_validate(model_class: Type[T], data: Dict[str, Any]) -> Dict[str, Any]:
+    \"\"\"Safely validate data without throwing exceptions.
+    
+    Args:
+        model_class: The Pydantic model class to validate against
+        data: Dictionary containing the data to validate
+        
+    Returns:
+        Dict with 'success' key. If successful, includes 'data' key.
+        If failed, includes 'error' key with ValidationError.
+    \"\"\"
     try:
-        return validate(model_class, data)
+        validated = validate(model_class, data)
+        return {"success": True, "data": validated}
     except ValidationError as e:
-        return e
+        return {"success": False, "error": e}
+
+def create_validator(model_class: Type[T]):
+    \"\"\"Create a reusable validator for a specific model.
+    
+    Returns an object with validate and safe_validate methods
+    pre-configured for the given model class.
+    \"\"\"
+    return {
+        "validate": lambda data: validate(model_class, data),
+        "safe_validate": lambda data: safe_validate(model_class, data),
+    }
+`;
+}
+
+function generatePythonSchemasFile(schemas: SchemaDefinition[]): string {
+  const lines: string[] = [];
+  lines.push('# Auto-generated schema registry');
+  lines.push('# DO NOT EDIT MANUALLY - regenerate from source');
+  lines.push('');
+  lines.push('from typing import Dict, Type');
+  lines.push('from pydantic import BaseModel');
+  lines.push('from . import models');
+  lines.push('');
+  lines.push('# Schema registry for runtime lookup');
+  lines.push('SCHEMA_REGISTRY: Dict[str, Type[BaseModel]] = {');
+
+  for (const schema of schemas) {
+    const zodDef = schema.schema._def;
+    if (zodDef?.typeName === 'ZodObject') {
+      lines.push(`    "${schema.name}": models.${schema.name},`);
+    }
+  }
+
+  lines.push('}');
+  lines.push('');
+  lines.push('def get_schema(name: str) -> Type[BaseModel]:');
+  lines.push('    \"\"\"Get a schema by name.\"\"\"');
+  lines.push('    if name not in SCHEMA_REGISTRY:');
+  lines.push('        raise KeyError(f"Unknown schema: {name}")');
+  lines.push('    return SCHEMA_REGISTRY[name]');
+  lines.push('');
+  lines.push('def list_schemas() -> list[str]:');
+  lines.push('    \"\"\"List all available schema names.\"\"\"');
+  lines.push('    return list(SCHEMA_REGISTRY.keys())');
+
+  return lines.join('\n');
+}
+
+function generatePyprojectToml(config: SDKGeneratorConfig): string {
+  return `[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "controlplane-sdk"
+version = "${config.sdkVersion}"
+description = "ControlPlane SDK for Python - generated from canonical contracts"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pydantic>=2.0.0",
+    "httpx>=0.24.0",
+    "typing-extensions>=4.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["controlplane_sdk"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
 `;
 }
 
@@ -306,18 +469,58 @@ pip install controlplane-sdk
 
 ## Usage
 
+### Pydantic Models
+
 \`\`\`python
-from controlplane_sdk import ControlPlaneClient, ClientConfig, JobRequest
+from controlplane_sdk import JobRequest, ErrorEnvelope
+
+# Models are fully typed Pydantic v2 models
+job = JobRequest(
+    id="550e8400-e29b-41d4-a716-446655440000",
+    type="process-data",
+    # ...
+)
+\`\`\`
+
+### Runtime Validation
+
+\`\`\`python
+from controlplane_sdk import validate, safe_validate, JobRequest
+
+# Runtime validation with automatic type coercion
+result = validate(JobRequest, incoming_data)
+
+# Or use safe validation to handle errors gracefully
+result = safe_validate(JobRequest, incoming_data)
+if result["success"]:
+    print(f"Valid job: {result['data']}")
+else:
+    print(f"Validation failed: {result['error']}")
+\`\`\`
+
+### Client Usage
+
+\`\`\`python
+from controlplane_sdk import ControlPlaneClient, ClientConfig
 
 client = ControlPlaneClient(
     ClientConfig(
-        base_url='https://api.controlplane.io',
-        api_key='your-api-key'
+        base_url="https://api.controlplane.io",
+        api_key="your-api-key"
     )
 )
 
-# Use the client...
+# Client includes validation methods
+with client:
+    validated = client.validate(JobRequest, response_data)
 \`\`\`
+
+## Features
+
+- ✅ **Pydantic v2 models** - Full type hints and validation
+- ✅ **Runtime validation** - Same schemas as the server
+- ✅ **Zero drift** - Auto-generated from canonical contracts
+- ✅ **IDE support** - Full IntelliSense in VS Code, PyCharm, etc.
 
 ## Versioning
 
@@ -329,5 +532,9 @@ This SDK follows semantic versioning and tracks the ControlPlane contract versio
 
 This SDK is auto-generated. Do not edit manually.
 To regenerate, run: \`sdk-gen --language python\`
+
+## License
+
+Apache-2.0
 `;
 }

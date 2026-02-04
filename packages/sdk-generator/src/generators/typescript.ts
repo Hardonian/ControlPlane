@@ -6,13 +6,16 @@ export function generateTypeScriptSDK(
 ): GeneratedSDK {
   const files = new Map<string, string>();
 
+  const zodSchemasContent = generateZodSchemasFile(schemas);
+  files.set('src/schemas.ts', zodSchemasContent);
+
   const typesContent = generateTypesFile(schemas);
   files.set('src/types.ts', typesContent);
 
   const clientContent = generateClientFile(config);
   files.set('src/client.ts', clientContent);
 
-  const indexContent = generateIndexFile();
+  const indexContent = generateIndexFile(schemas);
   files.set('src/index.ts', indexContent);
 
   const validationContent = generateValidationFile(schemas);
@@ -34,9 +37,14 @@ export function generateTypeScriptSDK(
         import: './dist/index.js',
         require: './dist/index.cjs',
       },
+      './schemas': {
+        types: './dist/schemas.d.ts',
+        import: './dist/schemas.js',
+        require: './dist/schemas.cjs',
+      },
     },
     scripts: {
-      build: 'tsup src/index.ts --format esm,cjs --dts',
+      build: 'tsup src/index.ts src/schemas.ts --format esm,cjs --dts',
       typecheck: 'tsc --noEmit',
       test: 'vitest run',
     },
@@ -62,9 +70,9 @@ export function generateTypeScriptSDK(
   };
 }
 
-function generateTypesFile(schemas: SchemaDefinition[]): string {
+function generateZodSchemasFile(schemas: SchemaDefinition[]): string {
   const lines: string[] = [];
-  lines.push('// Auto-generated from ControlPlane contracts');
+  lines.push('// Auto-generated Zod schemas from ControlPlane contracts');
   lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
   lines.push('');
   lines.push("import { z } from 'zod';");
@@ -87,7 +95,7 @@ function generateTypesFile(schemas: SchemaDefinition[]): string {
     lines.push('');
 
     for (const schema of categorySchemas) {
-      lines.push(...generateSchemaCode(schema));
+      lines.push(...generateZodSchemaCode(schema));
       lines.push('');
     }
   }
@@ -95,90 +103,180 @@ function generateTypesFile(schemas: SchemaDefinition[]): string {
   return lines.join('\n');
 }
 
-function generateSchemaCode(schema: SchemaDefinition): string[] {
+function generateZodSchemaCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const jsonSchema = schema.jsonSchema;
+  const zodDef = generateZodDefinition(schema.schema);
 
-  if (jsonSchema.enum) {
-    lines.push(
-      `export type ${schema.name} = ${jsonSchema.enum.map((e: string) => `'${e}'`).join(' | ')};`
-    );
-    lines.push('');
-    lines.push(`export const ${schema.name}Values = [`);
-    for (const e of jsonSchema.enum) {
-      lines.push(`  '${e}',`);
-    }
-    lines.push('] as const;');
-  } else if (jsonSchema.type === 'object' && jsonSchema.properties) {
-    lines.push(`export interface ${schema.name} {`);
-    for (const [key, value] of Object.entries(jsonSchema.properties as Record<string, any>)) {
-      const required = jsonSchema.required?.includes(key);
-      const type = jsonSchemaTypeToTypeScript(value);
-      lines.push(`  ${key}${required ? '' : '?'}: ${type};`);
-    }
-    lines.push('}');
-  } else if (jsonSchema.anyOf || jsonSchema.oneOf) {
-    const variants = jsonSchema.anyOf || jsonSchema.oneOf;
-    const unionType = variants.map((v: any) => jsonSchemaTypeToTypeScript(v)).join(' | ');
-    lines.push(`export type ${schema.name} = ${unionType};`);
-  } else {
-    lines.push(`export type ${schema.name} = ${jsonSchemaTypeToTypeScript(jsonSchema)};`);
-  }
+  lines.push(`/**`);
+  lines.push(` * Zod schema for ${schema.name}`);
+  lines.push(` * @category ${schema.category}`);
+  lines.push(` */`);
+  lines.push(`export const ${schema.name}Schema = ${zodDef};`);
+  lines.push('');
+  lines.push(`/**`);
+  lines.push(` * TypeScript type inferred from ${schema.name}Schema`);
+  lines.push(` */`);
+  lines.push(`export type ${schema.name} = z.infer<typeof ${schema.name}Schema>;`);
 
   return lines;
 }
 
-function jsonSchemaTypeToTypeScript(schema: any): string {
-  if (!schema) return 'unknown';
+function generateZodDefinition(schema: any, depth = 0): string {
+  if (!schema) return 'z.any()';
 
-  if (schema.$ref) {
-    return schema.$ref.replace('#/definitions/', '');
+  // Handle Zod types
+  if (schema._def) {
+    const typeName = schema._def.typeName;
+
+    switch (typeName) {
+      case 'ZodString':
+        let str = 'z.string()';
+        if (schema._def.checks) {
+          for (const check of schema._def.checks) {
+            switch (check.kind) {
+              case 'min':
+                str += `.min(${check.value})`;
+                break;
+              case 'max':
+                str += `.max(${check.value})`;
+                break;
+              case 'email':
+                str += '.email()';
+                break;
+              case 'uuid':
+                str += '.uuid()';
+                break;
+              case 'url':
+                str += '.url()';
+                break;
+              case 'datetime':
+                str += '.datetime()';
+                break;
+            }
+          }
+        }
+        return str;
+
+      case 'ZodNumber':
+        let num = 'z.number()';
+        if (schema._def.checks) {
+          for (const check of schema._def.checks) {
+            switch (check.kind) {
+              case 'min':
+                if (check.inclusive) num += `.min(${check.value})`;
+                break;
+              case 'max':
+                if (check.inclusive) num += `.max(${check.value})`;
+                break;
+              case 'int':
+                num += '.int()';
+                break;
+            }
+          }
+        }
+        return num;
+
+      case 'ZodBoolean':
+        return 'z.boolean()';
+
+      case 'ZodNull':
+        return 'z.null()';
+
+      case 'ZodOptional':
+        return `${generateZodDefinition(schema._def.innerType, depth)}.optional()`;
+
+      case 'ZodDefault':
+        const inner = generateZodDefinition(schema._def.innerType, depth);
+        const defaultValue = JSON.stringify(schema._def.defaultValue());
+        return `${inner}.default(${defaultValue})`;
+
+      case 'ZodArray':
+        return `z.array(${generateZodDefinition(schema._def.type, depth)})`;
+
+      case 'ZodObject':
+        const shape = schema._def.shape();
+        const entries = Object.entries(shape)
+          .map(([key, val]) => `  ${key}: ${generateZodDefinition(val, depth + 1)}`)
+          .join(',\n');
+        return `z.object({\n${entries}\n})`;
+
+      case 'ZodRecord':
+        return `z.record(${generateZodDefinition(schema._def.valueType, depth)})`;
+
+      case 'ZodEnum':
+        const values = schema._def.values.map((v: string) => `'${v}'`).join(', ');
+        return `z.enum([${values}])`;
+
+      case 'ZodUnion':
+      case 'ZodDiscriminatedUnion':
+        const options = schema._def.options
+          .map((opt: any) => generateZodDefinition(opt, depth))
+          .join(', ');
+        return `z.union([${options}])`;
+
+      case 'ZodEffects':
+        return generateZodDefinition(schema._def.schema, depth);
+
+      case 'ZodLazy':
+        return generateZodDefinition(schema._def.getter(), depth);
+
+      case 'ZodUnknown':
+        return 'z.unknown()';
+
+      case 'ZodAny':
+        return 'z.any()';
+
+      default:
+        return 'z.any()';
+    }
   }
 
-  if (schema.enum) {
-    return schema.enum.map((e: string) => `'${e}'`).join(' | ');
+  return 'z.any()';
+}
+
+function generateTypesFile(schemas: SchemaDefinition[]): string {
+  const lines: string[] = [];
+  lines.push('// Auto-generated TypeScript types from ControlPlane contracts');
+  lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
+  lines.push('');
+  lines.push("import { z } from 'zod';");
+  lines.push("import * as schemas from './schemas.js';");
+  lines.push('');
+
+  const groupedSchemas = schemas.reduce(
+    (acc, schema) => {
+      if (!acc[schema.category]) acc[schema.category] = [];
+      acc[schema.category].push(schema);
+      return acc;
+    },
+    {} as Record<string, SchemaDefinition[]>
+  );
+
+  for (const [category, categorySchemas] of Object.entries(groupedSchemas) as [
+    string,
+    SchemaDefinition[],
+  ][]) {
+    lines.push(`// ${category.toUpperCase()} types`);
+    lines.push('');
+
+    for (const schema of categorySchemas) {
+      lines.push(`/**`);
+      lines.push(` * @category ${schema.category}`);
+      lines.push(` */`);
+      lines.push(`export type ${schema.name} = z.infer<typeof schemas.${schema.name}Schema>;`);
+      lines.push('');
+    }
   }
 
-  switch (schema.type) {
-    case 'string':
-      if (schema.format === 'date-time') return 'string'; // Date string
-      if (schema.format === 'uuid') return 'string';
-      if (schema.format === 'uri') return 'string';
-      return 'string';
-    case 'number':
-    case 'integer':
-      return 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'array':
-      if (schema.items) {
-        return `${jsonSchemaTypeToTypeScript(schema.items)}[]`;
-      }
-      return 'unknown[]';
-    case 'object':
-      if (schema.additionalProperties) {
-        return `Record<string, ${jsonSchemaTypeToTypeScript(schema.additionalProperties)}>`;
-      }
-      if (schema.properties) {
-        const props = Object.entries(schema.properties as Record<string, any>)
-          .map(([key, value]) => {
-            const required = schema.required?.includes(key);
-            return `${key}${required ? '' : '?'}: ${jsonSchemaTypeToTypeScript(value)}`;
-          })
-          .join('; ');
-        return `{ ${props} }`;
-      }
-      return 'Record<string, unknown>';
-    default:
-      return 'unknown';
-  }
+  return lines.join('\n');
 }
 
 function generateClientFile(config: SDKGeneratorConfig): string {
   return `// Auto-generated ControlPlane SDK Client
 // DO NOT EDIT MANUALLY - regenerate from source
 
-import { ContractVersion } from './types.js';
+import { z } from 'zod';
+import { ContractVersionSchema, ContractVersion } from './schemas.js';
 
 export interface ClientConfig {
   baseUrl: string;
@@ -203,6 +301,24 @@ export class ControlPlaneClient {
 
   getContractVersion(): ContractVersion {
     return this.contractVersion;
+  }
+
+  /**
+   * Validates data against a Zod schema at runtime
+   */
+  validate<T>(schema: z.ZodType<T>, data: unknown): T {
+    return schema.parse(data);
+  }
+
+  /**
+   * Safely validates data, returning success/failure result
+   */
+  safeValidate<T>(schema: z.ZodType<T>, data: unknown): { success: true; data: T } | { success: false; error: z.ZodError } {
+    const result = schema.safeParse(data);
+    if (result.success) {
+      return { success: true, data: result.data };
+    }
+    return { success: false, error: result.error };
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -242,14 +358,27 @@ export class ControlPlaneClient {
 `;
 }
 
-function generateIndexFile(): string {
-  return `// Auto-generated ControlPlane SDK
-// DO NOT EDIT MANUALLY - regenerate from source
+function generateIndexFile(schemas: SchemaDefinition[]): string {
+  const lines: string[] = [];
+  lines.push('// Auto-generated ControlPlane SDK');
+  lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
+  lines.push('');
+  lines.push('// Export all Zod schemas for runtime validation');
+  lines.push("export * from './schemas.js';");
+  lines.push('');
+  lines.push('// Export all TypeScript types');
+  lines.push("export * from './types.js';");
+  lines.push('');
+  lines.push('// Export client');
+  lines.push("export { ControlPlaneClient, type ClientConfig } from './client.js';");
+  lines.push('');
+  lines.push('// Export validation utilities');
+  lines.push("export { validate, safeValidate } from './validation.js';");
+  lines.push('');
+  lines.push('// Re-export z for convenience');
+  lines.push("export { z } from 'zod';");
 
-export * from './types.js';
-export * from './client.js';
-export * from './validation.js';
-`;
+  return lines.join('\n');
 }
 
 function generateValidationFile(schemas: SchemaDefinition[]): string {
@@ -259,15 +388,21 @@ function generateValidationFile(schemas: SchemaDefinition[]): string {
   lines.push('');
   lines.push("import { z } from 'zod';");
   lines.push('');
-  lines.push('// Validation helpers for runtime type checking');
-  lines.push('');
+  lines.push('/**');
+  lines.push(' * Validates data against a Zod schema');
+  lines.push(' * @throws {z.ZodError} If validation fails');
+  lines.push(' */');
   lines.push('export function validate<T>(schema: z.ZodType<T>, data: unknown): T {');
   lines.push('  return schema.parse(data);');
   lines.push('}');
   lines.push('');
-  lines.push(
-    'export function safeValidate<T>(schema: z.ZodType<T>, data: unknown): { success: true; data: T } | { success: false; error: z.ZodError } {'
-  );
+  lines.push('/**');
+  lines.push(' * Safely validates data without throwing');
+  lines.push(' * @returns Object with success flag and either data or error');
+  lines.push(' */');
+  lines.push('export function safeValidate<T>(schema: z.ZodType<T>, data: unknown):');
+  lines.push('  | { success: true; data: T }');
+  lines.push('  | { success: false; error: z.ZodError } {');
   lines.push('  const result = schema.safeParse(data);');
   lines.push('  if (result.success) {');
   lines.push('    return { success: true, data: result.data };');
@@ -275,6 +410,19 @@ function generateValidationFile(schemas: SchemaDefinition[]): string {
   lines.push('  return { success: false, error: result.error };');
   lines.push('}');
   lines.push('');
+  lines.push('/**');
+  lines.push(' * Creates a validator function for a specific schema');
+  lines.push(' * Useful for form validation and API middleware');
+  lines.push(' */');
+  lines.push('export function createValidator<T>(schema: z.ZodType<T>) {');
+  lines.push('  return {');
+  lines.push('    parse: (data: unknown): T => schema.parse(data),');
+  lines.push('    safeParse: (data: unknown) => schema.safeParse(data),');
+  lines.push('    assert: (data: unknown): asserts data is T => {');
+  lines.push('      schema.parse(data);');
+  lines.push('    },');
+  lines.push('  };');
+  lines.push('}');
 
   return lines.join('\n');
 }
@@ -292,14 +440,56 @@ npm install ${config.packagePrefix}/sdk
 
 ## Usage
 
+### TypeScript Types
+
 \`\`\`typescript
-import { ControlPlaneClient, JobRequest } from '${config.packagePrefix}/sdk';
+import { JobRequest, ErrorEnvelope, ContractVersion } from '${config.packagePrefix}/sdk';
+
+// Types are fully typed and match the canonical contracts
+const job: JobRequest = {
+  id: '550e8400-e29b-41d4-a716-446655440000',
+  type: 'process-data',
+  // ...
+};
+\`\`\`
+
+### Runtime Validation with Zod
+
+\`\`\`typescript
+import { JobRequestSchema, validate, safeValidate } from '${config.packagePrefix}/sdk';
+
+// Runtime validation using the same schemas as the server
+const result = validate(JobRequestSchema, incomingData);
+
+// Or use safe validation to handle errors gracefully
+const { success, data, error } = safeValidate(JobRequestSchema, incomingData);
+if (success) {
+  console.log('Valid job:', data);
+} else {
+  console.error('Validation failed:', error.errors);
+}
+\`\`\`
+
+### Client Usage
+
+\`\`\`typescript
+import { ControlPlaneClient } from '${config.packagePrefix}/sdk';
 
 const client = new ControlPlaneClient({
   baseUrl: 'https://api.controlplane.io',
   apiKey: process.env.CONTROLPLANE_API_KEY,
 });
+
+// Client includes built-in validation methods
+const validated = client.validate(JobRequestSchema, responseData);
 \`\`\`
+
+## Features
+
+- ✅ **First-class TypeScript types** - Full IntelliSense support
+- ✅ **Runtime validation** - Same Zod schemas as the server
+- ✅ **Zero drift** - Auto-generated from canonical contracts
+- ✅ **Tree-shakeable** - Import only what you need
 
 ## Versioning
 
@@ -311,5 +501,9 @@ This SDK follows semantic versioning and tracks the ControlPlane contract versio
 
 This SDK is auto-generated. Do not edit manually.
 To regenerate, run: \`sdk-gen --language typescript\`
+
+## License
+
+Apache-2.0
 `;
 }
