@@ -26,6 +26,8 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "docs:verify": "node scripts/verify-docs.js",
+    "verify": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run docs:verify",
     "ci": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run test:e2e",
     "contract:validate": "pnpm --filter @controlplane/contract-test-kit exec contract-test",
     "contract:validate:json": "pnpm --filter @controlplane/contract-test-kit exec contract-test --json",

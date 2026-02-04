@@ -62,19 +62,7 @@ jobs:
 
       # Check 3: Secret scanning
       - name: Check for hardcoded secrets
-        run: |
-          echo "🔐 Checking for hardcoded secrets..."
-          # Check for common secret patterns
-          if grep -r "password.*=.*[^${}]" --include="*.ts" --include="*.js" --include="*.json" packages/ 2>/dev/null | grep -v "example\|test\|spec" | grep -v "password.*=.*\"\""; then
-            echo "⚠️  Potential hardcoded password found (review manually)"
-          fi
-          if grep -r "api[_-]?key.*=.*[a-zA-Z0-9]" --include="*.ts" --include="*.js" packages/ 2>/dev/null | grep -v "example\|test\|spec\|process.env"; then
-            echo "⚠️  Potential hardcoded API key found (review manually)"
-          fi
-          if grep -r "secret.*=.*[a-zA-Z0-9]" --include="*.ts" --include="*.js" packages/ 2>/dev/null | grep -v "example\|test\|spec\|process.env"; then
-            echo "⚠️  Potential hardcoded secret found (review manually)"
-          fi
-          echo "✅ No obvious hardcoded secrets found"
+        run: node scripts/secret-scan.js
 
       # Check 4: Verify SECURITY.md exists
       - name: Check SECURITY.md
@@ -121,15 +109,13 @@ jobs:
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Pinned GitHub Actions | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
           echo "| Dependency Audit | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scanning | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Documentation | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
           echo "| Threat Model | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Security Posture" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Authentication**: Not implemented (tracking in roadmap)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Authorization**: Not implemented (tracking in roadmap)" >> $GITHUB_STEP_SUMMARY
-          echo "- **mTLS**: Not implemented (tracking in roadmap)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Rate Limiting**: Not implemented (tracking in roadmap)" >> $GITHUB_STEP_SUMMARY
+          echo "- Contracts and tooling only (no runtime services in this repo)." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "See [SECURITY.md](./SECURITY.md) and [THREAT-MODEL.md](./docs/THREAT-MODEL.md) for details." >> $GITHUB_STEP_SUMMARY
 
@@ -155,36 +141,18 @@ jobs:
         with:
           category: "/language:javascript-typescript"
 
-  secret-scan:
-    name: Secret Scanning (TruffleHog)
-    runs-on: ubuntu-latest
-    needs: security-audit
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        with:
-          fetch-depth: 0
-
-      - name: Secret Detection
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-          extra_args: --debug --only-verified
-
   # New job: Security checklist summary for PRs
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [security-audit, codeql, secret-scan]
+    needs: [security-audit, codeql]
     if: github.event_name == 'pull_request'
     steps:
       - name: Comment on PR
         uses: actions/github-script@d790f6ac4d0a0020d5a85d6e9a1e9aef6a9e6a9 # v7.0.1
         with:
           script: |
-            const body = `## 🔒 Security Checklist Passed\n\nAll security gates have passed:\n\n- ✅ GitHub Actions pinned\n- ✅ Dependencies audited\n- ✅ SAST (CodeQL) passed\n- ✅ Secret scanning passed\n- ✅ Security documentation exists\n- ✅ Threat model documented\n\n**Note**: Current security posture is development-focused. Production hardening (mTLS, authentication, rate limiting) is documented in the roadmap.\n\nSee [SECURITY.md](./SECURITY.md) for details.`;
+            const body = `## 🔒 Security Checklist Passed\n\nAll security gates have passed:\n\n- ✅ GitHub Actions pinned\n- ✅ Dependencies audited\n- ✅ Secret scanning passed\n- ✅ SAST (CodeQL) passed\n- ✅ Security documentation exists\n- ✅ Threat model documented\n\n**Note**: This repository ships contracts and tooling only. Runtime security controls belong to the consuming services.\n\nSee [SECURITY.md](./SECURITY.md) for details.`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
