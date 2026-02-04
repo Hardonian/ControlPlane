@@ -114,6 +114,7 @@ See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for details.
 - [Architecture Overview](./docs/ARCHITECTURE.md)
 - [Adding a New Runner](./docs/RUNNER-GUIDE.md)
 - [Contract Versioning](./packages/contracts/VERSIONING.md)
+- [OSS vs Cloud Boundary](./docs/OSS-CLOUD-BOUNDARY.md)
 - [Troubleshooting](./docs/TROUBLESHOOTING.md)
 - [Compatibility Matrix](./docs/COMPATIBILITY.md)
 
