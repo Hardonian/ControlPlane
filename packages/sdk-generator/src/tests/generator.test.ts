@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { extractSchemas, validateSchemas, DEFAULT_CONFIG } from '../src/core';
-import { generateTypeScriptSDK } from '../src/generators/typescript';
-import { generatePythonSDK } from '../src/generators/python';
-import { generateGoSDK } from '../src/generators/go';
+import { extractSchemas, validateSchemas, DEFAULT_CONFIG } from '../core.js';
+import { generateTypeScriptSDK } from '../generators/typescript.js';
+import { generatePythonSDK } from '../generators/python.js';
+import { generateGoSDK } from '../generators/go.js';
 
 describe('SDK Generator', () => {
   describe('Core functionality', () => {

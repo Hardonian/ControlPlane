@@ -1,4 +1,4 @@
-import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core';
+import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
 
 export function generateGoSDK(
   schemas: SchemaDefinition[],
@@ -53,7 +53,10 @@ function generateGoTypesFile(schemas: SchemaDefinition[]): string {
     {} as Record<string, SchemaDefinition[]>
   );
 
-  for (const [category, categorySchemas] of Object.entries(groupedSchemas)) {
+  for (const [category, categorySchemas] of Object.entries(groupedSchemas) as [
+    string,
+    SchemaDefinition[],
+  ][]) {
     lines.push(`// ${category.toUpperCase()} schemas`);
     lines.push('');
 
