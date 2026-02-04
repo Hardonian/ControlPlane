@@ -1,113 +1,40 @@
 # Compatibility Matrix
 
-This document tracks version compatibility between ControlPlane ecosystem components.
+> **Generated**: 2026-02-04T02:54:41.666Z
+> **Contract Version**: 1.0.0
 
-## Current Versions
+## Current Component Versions
 
-| Component | Current Version | Contract Version | Status |
-|-----------|----------------|------------------|--------|
-| `@controlplane/contracts` | 1.0.0 | 1.0.0 | ✅ Active |
-| `@controlplane/contract-test-kit` | 1.0.0 | 1.0.0 | ✅ Active |
-| TruthCore | 1.0.0 | ^1.0.0 | ✅ Active |
-| JobForge | 1.0.0 | ^1.0.0 | ✅ Active |
-| Runner-Example | 1.0.0 | ^1.0.0 | ✅ Active |
+| Component | Version | Contract Range | Status | Location |
+|-------------|---------|----------------|--------|----------|
+| @controlplane/benchmark | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/benchmark |
+| @controlplane/contract-test-kit | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/contract-test-kit |
+| @controlplane/contracts | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/contracts |
+| @controlplane/create-runner | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/create-runner |
+| @controlplane/observability | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/observability |
+| @controlplane/sdk-generator | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/sdk-generator |
+| @controlplane/orchestrator | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | root |
 
 ## Contract Compatibility
 
-### Version Ranges
+| Component | Compatible Contract Versions |
+|-------------|------------------------------|
+| @controlplane/benchmark | 1.0.0 <= version < 2.0.0 |
+| @controlplane/contract-test-kit | 1.0.0 <= version < 2.0.0 |
+| @controlplane/contracts | 1.0.0 <= version < 2.0.0 |
+| @controlplane/create-runner | 1.0.0 <= version < 2.0.0 |
+| @controlplane/observability | 1.0.0 <= version < 2.0.0 |
+| @controlplane/sdk-generator | 1.0.0 <= version < 2.0.0 |
+| @controlplane/orchestrator | 1.0.0 <= version < 2.0.0 |
 
-| Component | Min Contract | Max Contract | Notes |
-|-----------|--------------|--------------|-------|
-| TruthCore | 1.0.0 | <2.0.0 | Compatible with all v1.x |
-| JobForge | 1.0.0 | <2.0.0 | Compatible with all v1.x |
-| Runners | 1.0.0 | <2.0.0 | Compatible with all v1.x |
+## Automated Checks
 
-### Breaking Changes
+This matrix is automatically generated on every release. CI gates will fail if:
 
-Breaking changes are reserved for **major version bumps** (e.g., 1.x.x → 2.0.0).
-
-When a breaking change occurs:
-1. New major version of contracts released
-2. Services update independently
-3. Migration guide provided
-4. Old version supported for 30+ days
-
-## Upgrade Paths
-
-### Safe Upgrade (patch/minor)
-
-```bash
-# Update to latest v1.x
-npm update @controlplane/contracts
-
-# Run contract tests
-npm run test:contracts
-
-# Deploy
-```
-
-### Breaking Change Upgrade (major)
-
-```bash
-# Update to v2.x
-npm install @controlplane/contracts@^2.0.0
-
-# Run migration script (if provided)
-npx @controlplane/contracts-migrate
-
-# Update code for breaking changes
-# - Handle new required fields
-# - Update error handling
-
-# Run full test suite
-npm run test
-cd orchestrator && pnpm run test:e2e
-
-# Deploy with canary rollout
-```
-
-## Service Dependencies
-
-```mermaid
-graph TD
-    A[Client] --> B[JobForge]
-    B --> C[Redis Queue]
-    B --> D[TruthCore]
-    E[Runner] --> B
-    E --> D
-    B -.->|Health Check| E
-    E -.->|Heartbeat| B
-```
-
-### Dependency Versions
-
-| Service | Depends On | Version Range |
-|---------|-----------|---------------|
-| JobForge | TruthCore | ^1.0.0 |
-| JobForge | Redis | 7.x |
-| Runner | JobForge | ^1.0.0 |
-| Runner | TruthCore | ^1.0.0 |
-
-## CI Compatibility Gates
-
-The following checks must pass for any release:
-
-1. ✅ Contract tests pass
-2. ✅ Schema validation succeeds
-3. ✅ E2E tests pass
-4. ✅ Smoke tests pass
-5. ✅ No breaking changes in minor/patch
-
-## Historical Versions
-
-### 1.0.0 (Initial Release)
-
-- Base contracts established
-- Job lifecycle schemas
-- Error envelope format
-- Runner capability metadata
-- Health check standards
+- Component versions drift beyond declared contract ranges
+- Breaking changes are introduced in non-major versions
+- Contract compatibility declarations are missing
 
 ---
 
-**Note**: This matrix is automatically updated by CI when versions change.
+**Note**: This matrix is auto-generated. Do not edit manually. Run `pnpm run compat:generate` to update.

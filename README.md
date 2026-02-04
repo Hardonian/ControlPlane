@@ -1,6 +1,47 @@
-# ControlPlane Orchestrator
+# ControlPlane Contracts & Tooling
 
-> An execution engine for agent-driven systems. Built for orchestration, governance, and reliable automation at scale.
+- **Contract-first ecosystem**: canonical Zod schemas and versioning rules for ControlPlane-compatible services and runners.
+- **Validation tooling**: CLI utilities to validate implementations against contracts and publish compatibility matrices.
+- **Scaffolding utilities**: a runner generator to bootstrap new integrations.
+- **Operational boundaries**: distribution configuration and policy docs that keep OSS vs. hosted features explicit.
+- **Who this is for**: platform engineers, SDK authors, and contributors building ControlPlane-compatible components.
+
+**Quickstart**: install dependencies and run the contract validation tools in minutes—see [Quick Start](#quick-start).
+
+## Why This Exists
+
+ControlPlane is designed as an ecosystem of services and runners that must agree on the same contracts. Without a single source of truth:
+
+- integrations drift (schemas diverge, error envelopes change, compatibility breaks)
+- downstream tooling becomes unreliable
+- contributors lack a safe way to validate changes
+
+This repository centralizes the contracts and tooling so every implementation can validate against the same source of truth before release.
+
+## What This Project Is
+
+- A **contracts package** (`@controlplane/contracts`) with Zod schemas, types, and error envelopes.
+- A **contract test kit** (`@controlplane/contract-test-kit`) with CLI validators and registries.
+- A **runner scaffolding tool** (`@controlplane/create-runner`) to generate compatible runners.
+- Supporting tooling for compatibility matrices, distribution configuration, and SDK generation.
+
+## What This Project Is NOT
+
+- It is **not** a running orchestration service.
+- It does **not** include implementations of TruthCore, JobForge, or production runners.
+- It is **not** a hosted ControlPlane service.
+
+## Where This Fits
+
+ControlPlane-compatible services and runners should depend on `@controlplane/contracts` and validate with `@controlplane/contract-test-kit` as part of CI. This repository provides the shared contract authority and tooling, while service implementations live elsewhere.
+
+## Core Capabilities
+
+- Canonical Zod schemas and type exports for ControlPlane APIs.
+- Contract validation CLI and registry generation.
+- Compatibility matrix generation for ecosystem components.
+- Runner scaffolding via `@controlplane/create-runner`.
+- Distribution configuration validation for OSS vs. hosted feature flags.
 
 ## Quick Start
 
@@ -8,112 +49,87 @@
 
 - Node.js 18+
 - pnpm 8+
-- Docker & Docker Compose
 
-### 1. Install Dependencies
+### Install + Validate Contracts
 
 ```bash
-# Install pnpm if needed
-npm install -g pnpm
-
-# Install all dependencies
 pnpm install
-
-# Build the contracts
 pnpm run build:contracts
-```
-
-### 2. Start the Full Stack
-
-```bash
-# Start all services with Docker Compose
-pnpm run dev:stack
-
-# Or with logs visible
-pnpm run dev:stack:logs
-
-# Verify all services are healthy
-pnpm run test:smoke
-```
-
-### 3. Run Tests
-
-```bash
-# Run contract validation
+pnpm run build:test-kit
 pnpm run contract:validate
-
-# Run unit tests
-pnpm run test
-
-# Run E2E tests (stack must be running)
-pnpm run test:e2e
 ```
 
-### 4. Stop the Stack
+### Generate Compatibility Matrix
 
 ```bash
-pnpm run dev:stack:down
+pnpm run compat:generate
 ```
 
-## Project Structure
+Success indicators:
+- `contract:validate` exits with code 0
+- `docs/COMPATIBILITY.md` is updated
+
+## Architecture Overview
 
 ```
-ControlPlane/
-├── packages/
-│   ├── contracts/           # Canonical Zod schemas and types
-│   └── contract-test-kit/   # Schema validation toolkit
-├── services/
-│   ├── truthcore/          # Source of truth service (placeholder)
-│   ├── jobforge/           # Job orchestration service (placeholder)
-│   └── runner-example/     # Example module runner (placeholder)
-├── scripts/
-│   ├── smoke-test.js       # Service health verification
-│   └── wait-for-healthy.js # Wait for services
-├── tests/
-│   └── e2e/                # Playwright E2E tests
-├── .github/workflows/      # CI/CD automation
-├── docker-compose.yml      # Local stack orchestration
-├── docs/                   # Documentation
-└── README.md              # This file
+packages/
+  contracts/          # Canonical schemas + error envelopes
+  contract-test-kit/  # CLI validation + registry tooling
+  create-runner/      # Runner scaffolding generator
+  observability/      # Observability contract helpers
+  sdk-generator/      # SDK generation utilities
+  benchmark/          # Benchmark harnesses for contracts
+scripts/              # Repo-wide validation + release utilities
+config/               # OSS/Cloud distribution flags
 ```
 
-## Commands Reference
+The contracts package is the root authority. Tooling in this repo reads those schemas to validate implementations, generate registries, and enforce version compatibility.
 
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install all dependencies |
-| `pnpm run build` | Build all packages |
-| `pnpm run dev:stack` | Start local stack (detached) |
-| `pnpm run dev:stack:logs` | Start local stack (with logs) |
-| `pnpm run dev:stack:down` | Stop local stack |
-| `pnpm run test` | Run unit tests |
-| `pnpm run test:e2e` | Run E2E tests |
-| `pnpm run test:smoke` | Run smoke tests |
-| `pnpm run contract:validate` | Validate contracts |
-| `pnpm run lint` | Run linter |
-| `pnpm run typecheck` | Run TypeScript checks |
-| `pnpm run ci` | Full CI pipeline locally |
+## Extending the Project
 
-## Architecture
+- **Add or update contracts** in `packages/contracts/src` and run `pnpm run contract:validate`.
+- **Extend validation tooling** in `packages/contract-test-kit/src` and cover changes with tests.
+- **Add scaffolding templates** in `packages/create-runner/templates`.
 
-ControlPlane consists of three core services:
+Invariants to respect:
+- Contract schemas must remain backwards compatible within a major version.
+- Error envelopes must stay parseable by existing clients.
+- Compatibility ranges must be updated when a breaking change ships.
 
-1. **TruthCore** - The source of truth for assertions and knowledge
-2. **JobForge** - Job queue and orchestration engine
-3. **Runners** - Pluggable execution modules for specific capabilities
+## Failure & Degradation Model
 
-See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for details.
+This repository is tooling-only. Failure modes are primarily validation-time:
 
-## Documentation
+- **Schema validation failures**: Zod errors with field-level diagnostics.
+- **Contract drift**: `compat:check` fails when package versions drift out of range.
+- **Distribution mismatches**: `distribution:verify` fails when OSS/cloud flags are inconsistent.
 
-- [5-Minute Quickstart](./docs/QUICKSTART.md)
-- [Architecture Overview](./docs/ARCHITECTURE.md)
-- [Adding a New Runner](./docs/RUNNER-GUIDE.md)
-- [Contract Versioning](./packages/contracts/VERSIONING.md)
-- [OSS vs Cloud Boundary](./docs/OSS-CLOUD-BOUNDARY.md)
-- [Troubleshooting](./docs/TROUBLESHOOTING.md)
+These failures are designed to stop releases before incompatible changes ship.
+
+## Security & Safety Considerations
+
+- No runtime services are shipped here; secrets are not expected.
+- Consuming services should treat the contracts as an untrusted boundary and validate inputs at runtime.
+- Security reporting lives in [SECURITY.md](./SECURITY.md).
+
+## Contributing
+
+Contributions that improve contracts, validation tooling, docs, or SDK generation are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, verification, and review expectations.
+
+## License & Governance
+
+- Licensed under the Apache-2.0 License. See [LICENSE](./LICENSE).
+- Governance and decision-making are documented in [GOVERNANCE.md](./GOVERNANCE.md).
+
+## Additional Documentation
+
+- [Quickstart](./docs/QUICKSTART.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Contracts Versioning](./packages/contracts/VERSIONING.md)
+- [Create Runner Quickstart](./docs/CREATE-RUNNER-QUICKSTART.md)
+- [Contract Upgrade Guide](./docs/CONTRACT-UPGRADE.md)
 - [Compatibility Matrix](./docs/COMPATIBILITY.md)
-
-## License
-
-Apache-2.0
+- [Observability Contract](./docs/OBSERVABILITY-CONTRACT.md)
+- [OSS vs Cloud Boundary](./docs/OSS-CLOUD-BOUNDARY.md)
+- [Release Policy](./docs/RELEASE-POLICY.md)
+- [Troubleshooting](./docs/TROUBLESHOOTING.md)

@@ -1,25 +1,40 @@
 # Contributing to ControlPlane
 
-Thank you for your interest in contributing!
+Thanks for contributing! This repository provides the contracts and tooling that power ControlPlane-compatible services and runners.
+
+## Who Should Contribute
+
+- Contract authors evolving schemas and error envelopes.
+- Tooling contributors improving validation, compatibility, or SDK generation.
+- Documentation contributors clarifying ecosystem expectations.
 
 ## Development Setup
 
-1. Fork and clone the repository
-2. Install dependencies: `pnpm install`
-3. Build contracts: `pnpm run build:contracts`
-4. Run tests: `pnpm run test`
+```bash
+pnpm install
+pnpm run build:contracts
+pnpm run build:test-kit
+```
+
+## Common Tasks
+
+```bash
+# Run the full verification suite (lint, typecheck, tests, build, docs)
+pnpm run verify
+
+# Validate contracts only
+pnpm run contract:validate
+
+# Regenerate the compatibility matrix
+pnpm run compat:generate
+```
 
 ## Development Workflow
 
-```bash
-# Start the full stack
-pnpm run dev:stack
-
-# In another terminal, run tests
-pnpm run test:watch
-
-# Make changes, tests run automatically
-```
+1. Create a branch from `main`.
+2. Keep changes small and focused.
+3. Run `pnpm run verify` before opening a PR.
+4. Update documentation when contracts change.
 
 ## Commit Convention
 
@@ -34,31 +49,34 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore:` Build process, dependencies
 
 Example:
+
 ```bash
-git commit -m "feat(runners): add heartbeat monitoring"
+git commit -m "feat(contracts): add runner heartbeat schema"
 ```
 
 ## Pull Request Process
 
-1. Create a feature branch
-2. Make your changes
-3. Run the full CI locally: `pnpm run ci`
-4. Push and open PR
-5. Ensure CI passes
-6. Request review
+1. Open a PR with a clear description and scope.
+2. Ensure `pnpm run verify` passes.
+3. Include contract compatibility notes when required.
 
 ## Code Standards
 
-- **No TODOs**: Complete all work before submitting
-- **No placeholders**: All code must be functional
-- **Small changes**: Prefer focused, atomic PRs
-- **Test coverage**: Every change needs tests
-- **Documentation**: Update docs for API changes
+- Keep schemas backwards compatible within a major version.
+- Avoid placeholder docs or TODOs.
+- Keep validation tooling deterministic and fast.
+- Update the compatibility matrix when versions change.
 
-## Adding a New Runner
+## Community & Support
 
-See [docs/RUNNER-GUIDE.md](./docs/RUNNER-GUIDE.md).
+- Use GitHub Discussions for questions and design proposals.
+- Use Issues for bugs and feature requests.
 
-## Questions?
+See [SUPPORT.md](./SUPPORT.md) for guidance.
 
-Open an issue or discussion on GitHub.
+### Discussion Categories
+
+- **Q&A**: troubleshooting and usage questions.
+- **Ideas**: proposals for new contracts or tooling.
+- **Show & Tell**: sharing integrations or adoption stories.
+- **Design / Architecture**: contract evolution and ecosystem design discussions.

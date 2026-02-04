@@ -1,0 +1,37 @@
+name: "Feature request"
+description: "Request a new contract or tooling capability."
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the problem first, then the proposal.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+      placeholder: "We need a schema for ... because ..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What change would address the problem?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What alternatives did you evaluate?
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Ecosystem impact
+      description: Which packages or consumers are affected?
+    validations:
+      required: true

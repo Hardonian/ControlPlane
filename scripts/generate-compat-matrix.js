@@ -76,7 +76,8 @@ function generateCompatibilityRanges(components) {
 
   for (const component of components) {
     const compat = component.contractCompatibility;
-    ranges[component.name] = `${compat.min} <= version < ${compat.max}`;
+    const max = compat.max.startsWith('<') ? compat.max.slice(1) : compat.max;
+    ranges[component.name] = `${compat.min} <= version < ${max}`;
   }
 
   return ranges;

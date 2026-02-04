@@ -1,0 +1,50 @@
+name: "Bug report"
+description: "Report a reproducible problem in contracts or tooling."
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve ControlPlane contracts and tooling.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened and what did you expect?
+      placeholder: "Contract validation fails when ..."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Provide exact commands and inputs.
+      placeholder: |
+        1. pnpm run contract:validate
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      description: Paste relevant logs or stack traces.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which package(s) are affected?
+      placeholder: "@controlplane/contracts@1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, pnpm version, OS.
+      placeholder: "Node 20.11, pnpm 8.12, macOS 14"
+    validations:
+      required: true

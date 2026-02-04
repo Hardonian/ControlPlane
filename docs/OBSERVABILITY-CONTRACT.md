@@ -1,6 +1,6 @@
 # Logging + Metrics Contract
 
-This document defines the observability contract for the ControlPlane ecosystem, providing common schemas for logging, metrics, and correlation ID propagation.
+This document defines the observability contract for the ControlPlane ecosystem. It applies to services and runners that consume the contracts in this repository; no runtime services are shipped here.
 
 ## Design Principles
 
@@ -140,11 +140,11 @@ Client Request (gen CID: abc-123)
     ↓
 API Gateway (passes CID: abc-123)
     ↓
-JobForge (passes CID: abc-123, gen SID: def-456)
+Service A (passes CID: abc-123, gen SID: def-456)
     ↓
-Runner (passes CID: abc-123, gen SID: ghi-789)
+Service B (passes CID: abc-123, gen SID: ghi-789)
     ↓
-TruthCore (passes CID: abc-123, gen SID: jkl-012)
+Service C (passes CID: abc-123, gen SID: jkl-012)
 ```
 
 ## Usage Examples
