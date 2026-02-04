@@ -121,10 +121,11 @@ export async function extractSchemas(): Promise<SchemaDefinition[]> {
     const schema = contracts[item.export as keyof typeof contracts];
     if (schema instanceof z.ZodType) {
       try {
-        const jsonSchema = zodToJsonSchema(schema, item.name);
+        // Cast to any to avoid deep type instantiation issues
+        const jsonSchema = zodToJsonSchema(schema as any, item.name);
         schemas.push({
           name: item.name,
-          schema,
+          schema: schema as z.ZodTypeAny,
           jsonSchema,
           category: item.category,
         });
