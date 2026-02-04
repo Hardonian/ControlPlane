@@ -172,7 +172,7 @@ export class EndToEndLatencyRunner extends BenchmarkRunner {
           continue;
         }
 
-        const submitResult = await response.json();
+        const submitResult = (await response.json()) as { status: string; error?: unknown };
 
         if (submitResult.status === 'failed' || submitResult.error) {
           if (!isWarmup) {
@@ -244,7 +244,7 @@ export class EndToEndLatencyRunner extends BenchmarkRunner {
         });
 
         if (response.ok) {
-          const result = await response.json();
+          const result = (await response.json()) as { status: string };
 
           if (result.status === 'completed') {
             return {
@@ -265,6 +265,27 @@ export class EndToEndLatencyRunner extends BenchmarkRunner {
               status: 'failed',
             };
           }
+        }
+        }
+        // Type assertion for the result object
+        const result = (await response.json()) as { status: string };
+        if (result.status === 'completed') {
+          return {
+            jobId,
+            submitTime,
+            completionTime: Date.now(),
+            totalLatency: Date.now() - submitTime,
+            status: 'completed',
+          };
+        }
+        if (result.status === 'failed') {
+          return {
+            jobId,
+            submitTime,
+            completionTime: Date.now(),
+            totalLatency: Date.now() - submitTime,
+            status: 'failed',
+          };
         }
 
         const waitMs = Math.min(500 + attempt * 50, 3000);
