@@ -1,5 +1,8 @@
-import type { BenchmarkConfig, BenchmarkResult, BenchmarkMetric } from '../contracts/index.js';
+import type { BenchmarkConfig, BenchmarkMetric, BenchmarkResult } from '../contracts/index.js';
 import { BenchmarkRunner } from './base-runner.js';
+import { ConcurrencyLimiter } from '../utils/concurrency.js';
+import { textByteLength } from '../utils/bytes.js';
+import { computeDistributionStats } from '../utils/percentiles.js';
 
 interface QueueMetrics {
   operation: 'enqueue' | 'dequeue' | 'peek' | 'depth';
@@ -7,6 +10,8 @@ interface QueueMetrics {
   durationMs: number;
   success: boolean;
   queueDepth?: number;
+  requestBytes?: number;
+  responseBytes?: number;
   error?: Error;
 }
 
@@ -33,16 +38,23 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
 
     const enqueueConcurrency = Math.max(1, Math.floor(config.concurrency * 0.6));
     const dequeueConcurrency = config.concurrency - enqueueConcurrency;
+    const httpConcurrencyLimit = config.http?.concurrencyLimit ?? config.concurrency;
+    const httpBatchSize = Math.max(1, config.http?.batchSize ?? 1);
+    const httpLimiter = new ConcurrencyLimiter(httpConcurrencyLimit);
 
     for (let i = 0; i < enqueueConcurrency; i++) {
-      enqueueWorkers.push(this.enqueueWorker(i, warmupEnd, testEnd, enqueueMetrics));
+      enqueueWorkers.push(
+        this.enqueueWorker(i, warmupEnd, testEnd, enqueueMetrics, httpLimiter, httpBatchSize)
+      );
     }
 
     for (let i = 0; i < dequeueConcurrency; i++) {
-      dequeueWorkers.push(this.dequeueWorker(i, warmupEnd, testEnd, dequeueMetrics));
+      dequeueWorkers.push(
+        this.dequeueWorker(i, warmupEnd, testEnd, dequeueMetrics, httpLimiter, httpBatchSize)
+      );
     }
 
-    monitorWorkers.push(this.monitorQueueDepth(warmupEnd, testEnd, depthMetrics));
+    monitorWorkers.push(this.monitorQueueDepth(warmupEnd, testEnd, depthMetrics, httpLimiter));
 
     await Promise.all([...enqueueWorkers, ...dequeueWorkers, ...monitorWorkers]);
 
@@ -53,10 +65,18 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     const successfulEnqueues = enqueueMetrics.filter((m) => m.success);
     const successfulDequeues = dequeueMetrics.filter((m) => m.success);
 
-    const enqueueMetrics_calculated = this.calculateOperationMetrics(enqueueMetrics, 'enqueue');
-    const dequeueMetrics_calculated = this.calculateOperationMetrics(dequeueMetrics, 'dequeue');
+    const enqueueMetrics_calculated = this.calculateOperationMetrics(
+      enqueueMetrics,
+      'enqueue',
+      config.percentiles
+    );
+    const dequeueMetrics_calculated = this.calculateOperationMetrics(
+      dequeueMetrics,
+      'dequeue',
+      config.percentiles
+    );
 
-    const queueDepthStats = this.calculateQueueDepthStats(depthMetrics);
+    const queueDepthStats = this.calculateQueueDepthStats(depthMetrics, config.percentiles);
 
     const totalMessages = successfulEnqueues.length;
     const processedMessages = successfulDequeues.length;
@@ -141,7 +161,9 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     workerId: number,
     warmupEnd: number,
     testEnd: number,
-    metrics: QueueMetrics[]
+    metrics: QueueMetrics[],
+    httpLimiter: ConcurrencyLimiter,
+    httpBatchSize: number
   ): Promise<void> {
     let counter = 0;
     const headers = { 'Content-Type': 'application/json' };
@@ -169,45 +191,24 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     };
 
     while (Date.now() < testEnd) {
-      const isWarmup = Date.now() < warmupEnd;
-      const timestamp = Date.now();
+      const batch: Promise<void>[] = [];
 
-      try {
-        basePayload.id = crypto.randomUUID();
-        basePayload.payload.data.counter = counter;
-        basePayload.payload.data.timestamp = timestamp;
-        basePayload.metadata.createdAt = new Date(timestamp).toISOString();
-
-        const response = await fetch(`${this.context.jobforgeUrl}/jobs`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(basePayload),
-        });
-
-        const durationMs = Date.now() - timestamp;
-
-        if (!isWarmup) {
-          metrics.push({
-            operation: 'enqueue',
-            timestamp,
-            durationMs,
-            success: response.ok,
-            error: response.ok ? undefined : new Error(`HTTP ${response.status}`),
-          });
-        }
-      } catch (error) {
-        if (!isWarmup) {
-          metrics.push({
-            operation: 'enqueue',
-            timestamp,
-            durationMs: Date.now() - timestamp,
-            success: false,
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
+      for (let i = 0; i < httpBatchSize && Date.now() < testEnd; i++) {
+        const currentCounter = counter;
+        counter += 1;
+        batch.push(
+          this.enqueueOnce(
+            currentCounter,
+            warmupEnd,
+            metrics,
+            headers,
+            basePayload,
+            httpLimiter
+          )
+        );
       }
 
-      counter++;
+      await Promise.all(batch);
     }
   }
 
@@ -215,7 +216,9 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     workerId: number,
     warmupEnd: number,
     testEnd: number,
-    metrics: QueueMetrics[]
+    metrics: QueueMetrics[],
+    httpLimiter: ConcurrencyLimiter,
+    httpBatchSize: number
   ): Promise<void> {
     const headers = { 'Content-Type': 'application/json' };
     const body = JSON.stringify({
@@ -224,48 +227,13 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     });
 
     while (Date.now() < testEnd) {
-      const isWarmup = Date.now() < warmupEnd;
-      const timestamp = Date.now();
+      const batch: Promise<void>[] = [];
 
-      try {
-        const response = await fetch(`${this.context.jobforgeUrl}/admin/queue/next`, {
-          method: 'POST',
-          headers,
-          body,
-        });
-
-        const durationMs = Date.now() - timestamp;
-
-        if (!isWarmup) {
-          if (response.ok) {
-            metrics.push({
-              operation: 'dequeue',
-              timestamp,
-              durationMs,
-              success: true,
-            });
-          } else if (response.status !== 204) {
-            metrics.push({
-              operation: 'dequeue',
-              timestamp,
-              durationMs,
-              success: false,
-              error: new Error(`HTTP ${response.status}`),
-            });
-          }
-        }
-      } catch (error) {
-        if (!isWarmup) {
-          metrics.push({
-            operation: 'dequeue',
-            timestamp,
-            durationMs: Date.now() - timestamp,
-            success: false,
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
+      for (let i = 0; i < httpBatchSize && Date.now() < testEnd; i++) {
+        batch.push(this.dequeueOnce(warmupEnd, metrics, headers, body, httpLimiter));
       }
 
+      await Promise.all(batch);
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
   }
@@ -273,17 +241,23 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
   private async monitorQueueDepth(
     warmupEnd: number,
     testEnd: number,
-    metrics: QueueMetrics[]
+    metrics: QueueMetrics[],
+    httpLimiter: ConcurrencyLimiter
   ): Promise<void> {
     while (Date.now() < testEnd) {
       const isWarmup = Date.now() < warmupEnd;
       const timestamp = Date.now();
 
       try {
-        const response = await fetch(`${this.context.jobforgeUrl}/admin/queue/stats`);
+        const { response, bodyText, responseBytes } = await httpLimiter.run(async () => {
+          const response = await fetch(`${this.context.jobforgeUrl}/admin/queue/stats`);
+          const bodyText = await response.text();
+          const responseBytes = textByteLength(bodyText);
+          return { response, bodyText, responseBytes };
+        });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = JSON.parse(bodyText) as { pending?: number; queued?: number };
           const queueDepth = data.pending || data.queued || 0;
 
           if (!isWarmup) {
@@ -293,6 +267,7 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
               durationMs: Date.now() - timestamp,
               success: true,
               queueDepth,
+              responseBytes,
             });
           }
         }
@@ -304,42 +279,51 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     }
   }
 
-  private calculateOperationMetrics(metrics: QueueMetrics[], operation: string): BenchmarkMetric[] {
+  private calculateOperationMetrics(
+    metrics: QueueMetrics[],
+    operation: string,
+    percentiles: BenchmarkConfig['percentiles']
+  ): BenchmarkMetric[] {
     const latencies: number[] = [];
+    const requestBytes: number[] = [];
+    const responseBytes: number[] = [];
 
     for (const metric of metrics) {
       if (metric.operation === operation && metric.success) {
         latencies.push(metric.durationMs);
+        if (metric.requestBytes !== undefined) {
+          requestBytes.push(metric.requestBytes);
+        }
+        if (metric.responseBytes !== undefined) {
+          responseBytes.push(metric.responseBytes);
+        }
       }
     }
 
     if (latencies.length === 0) return [];
 
-    latencies.sort((a, b) => a - b);
-
-    const min = latencies[0];
-    const max = latencies[latencies.length - 1];
-    const mean = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
-    const p95 = latencies[Math.floor(latencies.length * 0.95)] || max;
-    const p99 = latencies[Math.floor(latencies.length * 0.99)] || max;
+    const latencyStats = computeDistributionStats(latencies, [50, 95, 99], percentiles);
+    const p50 = latencyStats.percentiles[50] ?? 0;
+    const p95 = latencyStats.percentiles[95] ?? 0;
+    const p99 = latencyStats.percentiles[99] ?? 0;
+    const sizeStats = this.calculateSizeStats(requestBytes, responseBytes);
 
     return [
       {
         name: `${operation}_min_latency`,
-        value: min,
+        value: latencyStats.min,
         unit: 'ms',
         description: `Minimum ${operation} latency`,
       },
       {
         name: `${operation}_max_latency`,
-        value: max,
+        value: latencyStats.max,
         unit: 'ms',
         description: `Maximum ${operation} latency`,
       },
       {
         name: `${operation}_avg_latency`,
-        value: Number(mean.toFixed(2)),
+        value: Number(latencyStats.mean.toFixed(2)),
         unit: 'ms',
         description: `Average ${operation} latency`,
       },
@@ -361,44 +345,72 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
         unit: 'ms',
         description: `99th percentile ${operation} latency`,
       },
+      {
+        name: `${operation}_avg_request_bytes`,
+        value: Number(sizeStats.avgRequestBytes.toFixed(2)),
+        unit: 'bytes',
+        description: `Average request size for ${operation}`,
+      },
+      {
+        name: `${operation}_max_request_bytes`,
+        value: sizeStats.maxRequestBytes,
+        unit: 'bytes',
+        description: `Maximum request size for ${operation}`,
+      },
+      {
+        name: `${operation}_avg_response_bytes`,
+        value: Number(sizeStats.avgResponseBytes.toFixed(2)),
+        unit: 'bytes',
+        description: `Average response size for ${operation}`,
+      },
+      {
+        name: `${operation}_max_response_bytes`,
+        value: sizeStats.maxResponseBytes,
+        unit: 'bytes',
+        description: `Maximum response size for ${operation}`,
+      },
     ];
   }
 
-  private calculateQueueDepthStats(metrics: QueueMetrics[]): BenchmarkMetric[] {
+  private calculateQueueDepthStats(
+    metrics: QueueMetrics[],
+    percentiles: BenchmarkConfig['percentiles']
+  ): BenchmarkMetric[] {
     const depthReadings: number[] = [];
+    const responseBytes: number[] = [];
 
     for (const metric of metrics) {
       if (metric.operation === 'depth' && metric.queueDepth !== undefined) {
         depthReadings.push(metric.queueDepth);
+        if (metric.responseBytes !== undefined) {
+          responseBytes.push(metric.responseBytes);
+        }
       }
     }
 
     if (depthReadings.length === 0) return [];
 
-    depthReadings.sort((a, b) => a - b);
-
-    const min = depthReadings[0];
-    const max = depthReadings[depthReadings.length - 1];
-    const mean = depthReadings.reduce((a, b) => a + b, 0) / depthReadings.length;
-    const p50 = depthReadings[Math.floor(depthReadings.length * 0.5)] || 0;
-    const p95 = depthReadings[Math.floor(depthReadings.length * 0.95)] || max;
+    const depthStats = computeDistributionStats(depthReadings, [50, 95], percentiles);
+    const p50 = depthStats.percentiles[50] ?? 0;
+    const p95 = depthStats.percentiles[95] ?? 0;
+    const sizeStats = this.calculateSizeStats([], responseBytes);
 
     return [
       {
         name: 'queue_depth_min',
-        value: min,
+        value: depthStats.min,
         unit: 'count',
         description: 'Minimum queue depth observed',
       },
       {
         name: 'queue_depth_max',
-        value: max,
+        value: depthStats.max,
         unit: 'count',
         description: 'Maximum queue depth observed',
       },
       {
         name: 'queue_depth_avg',
-        value: Number(mean.toFixed(2)),
+        value: Number(depthStats.mean.toFixed(2)),
         unit: 'count',
         description: 'Average queue depth',
       },
@@ -414,6 +426,177 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
         unit: 'count',
         description: '95th percentile queue depth',
       },
+      {
+        name: 'queue_depth_avg_response_bytes',
+        value: Number(sizeStats.avgResponseBytes.toFixed(2)),
+        unit: 'bytes',
+        description: 'Average response size for queue depth checks',
+      },
+      {
+        name: 'queue_depth_max_response_bytes',
+        value: sizeStats.maxResponseBytes,
+        unit: 'bytes',
+        description: 'Maximum response size for queue depth checks',
+      },
     ];
+  }
+
+  private calculateSizeStats(requestBytes: number[], responseBytes: number[]): {
+    avgRequestBytes: number;
+    maxRequestBytes: number;
+    avgResponseBytes: number;
+    maxResponseBytes: number;
+  } {
+    const requestTotal = requestBytes.reduce((sum, value) => sum + value, 0);
+    const responseTotal = responseBytes.reduce((sum, value) => sum + value, 0);
+
+    return {
+      avgRequestBytes: requestBytes.length > 0 ? requestTotal / requestBytes.length : 0,
+      maxRequestBytes: requestBytes.length > 0 ? Math.max(...requestBytes) : 0,
+      avgResponseBytes: responseBytes.length > 0 ? responseTotal / responseBytes.length : 0,
+      maxResponseBytes: responseBytes.length > 0 ? Math.max(...responseBytes) : 0,
+    };
+  }
+
+  private async enqueueOnce(
+    counter: number,
+    warmupEnd: number,
+    metrics: QueueMetrics[],
+    headers: Record<string, string>,
+    basePayload: {
+      id: string;
+      type: string;
+      priority: number;
+      payload: {
+        type: string;
+        version: string;
+        data: {
+          workerId: number;
+          counter: number;
+          timestamp: number;
+        };
+        options: Record<string, unknown>;
+      };
+      metadata: {
+        source: string;
+        tags: string[];
+        createdAt: string;
+      };
+      timeoutMs: number;
+    },
+    httpLimiter: ConcurrencyLimiter
+  ): Promise<void> {
+    const isWarmup = Date.now() < warmupEnd;
+    const timestamp = Date.now();
+
+    const payload = structuredClone(basePayload);
+    payload.id = crypto.randomUUID();
+    payload.payload.data.counter = counter;
+    payload.payload.data.timestamp = timestamp;
+    payload.metadata.createdAt = new Date(timestamp).toISOString();
+
+    const body = JSON.stringify(payload);
+    const requestBytes = textByteLength(body);
+
+    try {
+      const { response, responseBytes } = await httpLimiter.run(async () => {
+        const response = await fetch(`${this.context.jobforgeUrl}/jobs`, {
+          method: 'POST',
+          headers,
+          body,
+        });
+        const responseText = await response.text();
+        const responseBytes = textByteLength(responseText);
+        return { response, responseBytes };
+      });
+
+      const durationMs = Date.now() - timestamp;
+
+      if (!isWarmup) {
+        metrics.push({
+          operation: 'enqueue',
+          timestamp,
+          durationMs,
+          success: response.ok,
+          requestBytes,
+          responseBytes,
+          error: response.ok ? undefined : new Error(`HTTP ${response.status}`),
+        });
+      }
+    } catch (error) {
+      if (!isWarmup) {
+        metrics.push({
+          operation: 'enqueue',
+          timestamp,
+          durationMs: Date.now() - timestamp,
+          success: false,
+          requestBytes,
+          responseBytes: 0,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      }
+    }
+  }
+
+  private async dequeueOnce(
+    warmupEnd: number,
+    metrics: QueueMetrics[],
+    headers: Record<string, string>,
+    body: string,
+    httpLimiter: ConcurrencyLimiter
+  ): Promise<void> {
+    const isWarmup = Date.now() < warmupEnd;
+    const timestamp = Date.now();
+    const requestBytes = textByteLength(body);
+
+    try {
+      const { response, responseBytes } = await httpLimiter.run(async () => {
+        const response = await fetch(`${this.context.jobforgeUrl}/admin/queue/next`, {
+          method: 'POST',
+          headers,
+          body,
+        });
+        const responseText = await response.text();
+        const responseBytes = textByteLength(responseText);
+        return { response, responseBytes };
+      });
+
+      const durationMs = Date.now() - timestamp;
+
+      if (!isWarmup) {
+        if (response.ok) {
+          metrics.push({
+            operation: 'dequeue',
+            timestamp,
+            durationMs,
+            success: true,
+            requestBytes,
+            responseBytes,
+          });
+        } else if (response.status !== 204) {
+          metrics.push({
+            operation: 'dequeue',
+            timestamp,
+            durationMs,
+            success: false,
+            requestBytes,
+            responseBytes,
+            error: new Error(`HTTP ${response.status}`),
+          });
+        }
+      }
+    } catch (error) {
+      if (!isWarmup) {
+        metrics.push({
+          operation: 'dequeue',
+          timestamp,
+          durationMs: Date.now() - timestamp,
+          success: false,
+          requestBytes,
+          responseBytes: 0,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      }
+    }
   }
 }

@@ -31,6 +31,21 @@ program
   .option('-v, --verbose', 'Verbose output', false)
   .option('--target-rps <rps>', 'Target requests per second (optional)')
   .option('--iterations <n>', 'Number of iterations for contract validation', '10000')
+  .option(
+    '--percentile-mode <mode>',
+    'Percentile calculation mode (exact|histogram)',
+    'exact'
+  )
+  .option(
+    '--percentile-threshold <n>',
+    'Sample threshold for approximate percentiles (default 10000)'
+  )
+  .option('--percentile-bins <n>', 'Histogram bin count for approximate percentiles (default 200)')
+  .option(
+    '--http-concurrency <n>',
+    'Maximum in-flight HTTP requests for health/queue runners (default: concurrency)'
+  )
+  .option('--http-batch-size <n>', 'HTTP request batch size for health/queue runners', '1')
   .option('--threshold-error-rate <rate>', 'Maximum acceptable error rate (0-1)', '0.05')
   .option('--threshold-max-latency <ms>', 'Maximum acceptable latency in ms')
   .option('--threshold-min-throughput <rps>', 'Minimum acceptable throughput')
@@ -96,6 +111,17 @@ function createBenchmarkConfig(options: any): BenchmarkConfig {
     concurrency: parseInt(options.concurrency),
     targetRps: options.targetRps ? parseFloat(options.targetRps) : undefined,
     iterations: options.iterations ? parseInt(options.iterations) : undefined,
+    percentiles: {
+      mode: options.percentileMode === 'histogram' ? 'histogram' : 'exact',
+      sampleThreshold: options.percentileThreshold
+        ? parseInt(options.percentileThreshold)
+        : 10_000,
+      histogramBins: options.percentileBins ? parseInt(options.percentileBins) : 200,
+    },
+    http: {
+      concurrencyLimit: options.httpConcurrency ? parseInt(options.httpConcurrency) : undefined,
+      batchSize: options.httpBatchSize ? parseInt(options.httpBatchSize) : 1,
+    },
     thresholds,
   };
 }

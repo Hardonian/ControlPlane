@@ -64,6 +64,19 @@ export const BenchmarkConfig = z.object({
   concurrency: z.number().int().positive().default(10),
   targetRps: z.number().positive().optional(),
   iterations: z.number().int().positive().optional(),
+  percentiles: z
+    .object({
+      mode: z.enum(['exact', 'histogram']).default('exact'),
+      sampleThreshold: z.number().int().positive().default(10_000),
+      histogramBins: z.number().int().positive().default(200),
+    })
+    .default({}),
+  http: z
+    .object({
+      concurrencyLimit: z.number().int().positive().optional(),
+      batchSize: z.number().int().positive().default(1),
+    })
+    .default({}),
   thresholds: z
     .object({
       minThroughput: z.number().optional(),

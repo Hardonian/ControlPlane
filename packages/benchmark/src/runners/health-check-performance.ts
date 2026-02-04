@@ -1,16 +1,27 @@
 import type { BenchmarkConfig, BenchmarkResult, BenchmarkMetric } from '../contracts/index.js';
 import { BenchmarkRunner } from './base-runner.js';
+import { ConcurrencyLimiter } from '../utils/concurrency.js';
+import { textByteLength } from '../utils/bytes.js';
+import { computeDistributionStats } from '../utils/percentiles.js';
 
 interface HealthCheckStats {
   latencies: number[];
   total: number;
   healthy: number;
+  requestBytesTotal: number;
+  responseBytesTotal: number;
+  requestBytesMax: number;
+  responseBytesMax: number;
 }
 
 interface OverallHealthStats {
   latencies: number[];
   total: number;
   healthy: number;
+  requestBytesTotal: number;
+  responseBytesTotal: number;
+  requestBytesMax: number;
+  responseBytesMax: number;
 }
 
 export class HealthCheckPerformanceRunner extends BenchmarkRunner {
@@ -31,17 +42,46 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
     ];
 
     const perServiceStats = new Map<string, HealthCheckStats>();
-    const overallStats: OverallHealthStats = { latencies: [], total: 0, healthy: 0 };
+    const overallStats: OverallHealthStats = {
+      latencies: [],
+      total: 0,
+      healthy: 0,
+      requestBytesTotal: 0,
+      responseBytesTotal: 0,
+      requestBytesMax: 0,
+      responseBytesMax: 0,
+    };
+
+    const httpConcurrencyLimit = config.http?.concurrencyLimit ?? config.concurrency;
+    const httpBatchSize = Math.max(1, config.http?.batchSize ?? services.length);
+    const httpLimiter = new ConcurrencyLimiter(httpConcurrencyLimit);
 
     for (const service of services) {
-      perServiceStats.set(service.name, { latencies: [], total: 0, healthy: 0 });
+      perServiceStats.set(service.name, {
+        latencies: [],
+        total: 0,
+        healthy: 0,
+        requestBytesTotal: 0,
+        responseBytesTotal: 0,
+        requestBytesMax: 0,
+        responseBytesMax: 0,
+      });
     }
 
     const workers: Promise<void>[] = [];
 
     for (let i = 0; i < config.concurrency; i++) {
       workers.push(
-        this.healthCheckWorker(i, warmupEnd, testEnd, services, perServiceStats, overallStats)
+        this.healthCheckWorker(
+          i,
+          warmupEnd,
+          testEnd,
+          services,
+          perServiceStats,
+          overallStats,
+          httpLimiter,
+          httpBatchSize
+        )
       );
     }
 
@@ -59,16 +99,16 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
       if (!serviceStats || serviceStats.total === 0) continue;
 
       const latencies = serviceStats.latencies;
-      const sorted = [...latencies].sort((a, b) => a - b);
-
-      const min = sorted[0];
-      const max = sorted[sorted.length - 1];
-      const mean = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-      const p50 = sorted[Math.floor(sorted.length * 0.5)] || 0;
-      const p95 = sorted[Math.floor(sorted.length * 0.95)] || max;
-      const p99 = sorted[Math.floor(sorted.length * 0.99)] || max;
+      const latencyStats = computeDistributionStats(latencies, [50, 95, 99], config.percentiles);
+      const p50 = latencyStats.percentiles[50] ?? 0;
+      const p95 = latencyStats.percentiles[95] ?? 0;
+      const p99 = latencyStats.percentiles[99] ?? 0;
 
       const healthRate = serviceStats.total > 0 ? serviceStats.healthy / serviceStats.total : 0;
+      const avgRequestBytes =
+        serviceStats.total > 0 ? serviceStats.requestBytesTotal / serviceStats.total : 0;
+      const avgResponseBytes =
+        serviceStats.total > 0 ? serviceStats.responseBytesTotal / serviceStats.total : 0;
 
       const throughput = serviceStats.total / (duration / 1000);
 
@@ -87,19 +127,19 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
         },
         {
           name: `${service.name.toLowerCase()}_avg_latency`,
-          value: Number(mean.toFixed(2)),
+          value: Number(latencyStats.mean.toFixed(2)),
           unit: 'ms',
           description: `Average health check latency for ${service.name}`,
         },
         {
           name: `${service.name.toLowerCase()}_min_latency`,
-          value: min,
+          value: latencyStats.min,
           unit: 'ms',
           description: `Minimum health check latency for ${service.name}`,
         },
         {
           name: `${service.name.toLowerCase()}_max_latency`,
-          value: max,
+          value: latencyStats.max,
           unit: 'ms',
           description: `Maximum health check latency for ${service.name}`,
         },
@@ -126,6 +166,30 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
           value: Number(throughput.toFixed(2)),
           unit: 'req/s',
           description: `Health check throughput for ${service.name}`,
+        },
+        {
+          name: `${service.name.toLowerCase()}_avg_request_bytes`,
+          value: Number(avgRequestBytes.toFixed(2)),
+          unit: 'bytes',
+          description: `Average request size for ${service.name} health checks`,
+        },
+        {
+          name: `${service.name.toLowerCase()}_max_request_bytes`,
+          value: serviceStats.requestBytesMax,
+          unit: 'bytes',
+          description: `Maximum request size for ${service.name} health checks`,
+        },
+        {
+          name: `${service.name.toLowerCase()}_avg_response_bytes`,
+          value: Number(avgResponseBytes.toFixed(2)),
+          unit: 'bytes',
+          description: `Average response size for ${service.name} health checks`,
+        },
+        {
+          name: `${service.name.toLowerCase()}_max_response_bytes`,
+          value: serviceStats.responseBytesMax,
+          unit: 'bytes',
+          description: `Maximum response size for ${service.name} health checks`,
         }
       );
     }
@@ -139,6 +203,10 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
       overallLatencies.length > 0
         ? overallLatencies.reduce((a, b) => a + b, 0) / overallLatencies.length
         : 0;
+    const overallAvgRequestBytes =
+      overallStats.total > 0 ? overallStats.requestBytesTotal / overallStats.total : 0;
+    const overallAvgResponseBytes =
+      overallStats.total > 0 ? overallStats.responseBytesTotal / overallStats.total : 0;
 
     metrics.push(
       {
@@ -158,6 +226,30 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
         value: Number(overallAvg.toFixed(2)),
         unit: 'ms',
         description: 'Average health check latency across all services',
+      },
+      {
+        name: 'overall_avg_request_bytes',
+        value: Number(overallAvgRequestBytes.toFixed(2)),
+        unit: 'bytes',
+        description: 'Average request size across all health checks',
+      },
+      {
+        name: 'overall_max_request_bytes',
+        value: overallStats.requestBytesMax,
+        unit: 'bytes',
+        description: 'Maximum request size across all health checks',
+      },
+      {
+        name: 'overall_avg_response_bytes',
+        value: Number(overallAvgResponseBytes.toFixed(2)),
+        unit: 'bytes',
+        description: 'Average response size across all health checks',
+      },
+      {
+        name: 'overall_max_response_bytes',
+        value: overallStats.responseBytesMax,
+        unit: 'bytes',
+        description: 'Maximum response size across all health checks',
       }
     );
 
@@ -187,66 +279,114 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
     testEnd: number,
     services: { name: string; url: string }[],
     perServiceStats: Map<string, HealthCheckStats>,
-    overallStats: OverallHealthStats
+    overallStats: OverallHealthStats,
+    httpLimiter: ConcurrencyLimiter,
+    httpBatchSize: number
   ): Promise<void> {
     let counter = 0;
 
     while (Date.now() < testEnd) {
       const isWarmup = Date.now() < warmupEnd;
 
-      for (const service of services) {
-        const timestamp = Date.now();
-        const stats = perServiceStats.get(service.name);
-
-        if (!stats) continue;
-
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-          const response = await fetch(`${service.url}/health`, {
-            method: 'GET',
-            signal: controller.signal,
-          });
-
-          clearTimeout(timeoutId);
-
-          const responseTimeMs = Date.now() - timestamp;
-
-          if (!isWarmup) {
-            if (response.ok) {
-              const data = (await response.json()) as { status?: string };
-              const isHealthy = data.status === 'healthy' || data.status === 'ok';
-
-              stats.total++;
-              stats.latencies.push(responseTimeMs);
-              overallStats.total++;
-              overallStats.latencies.push(responseTimeMs);
-              if (isHealthy) {
-                stats.healthy++;
-                overallStats.healthy++;
-              }
-            } else {
-              stats.total++;
-              stats.latencies.push(responseTimeMs);
-              overallStats.total++;
-              overallStats.latencies.push(responseTimeMs);
-            }
-          }
-        } catch (error) {
-          if (!isWarmup) {
-            const responseTimeMs = Date.now() - timestamp;
-            stats.total++;
-            stats.latencies.push(responseTimeMs);
-            overallStats.total++;
-            overallStats.latencies.push(responseTimeMs);
-          }
-        }
+      for (let offset = 0; offset < services.length; offset += httpBatchSize) {
+        const batch = services.slice(offset, offset + httpBatchSize);
+        await Promise.all(
+          batch.map((service) =>
+            this.performHealthCheck(service, isWarmup, perServiceStats, overallStats, httpLimiter)
+          )
+        );
       }
 
       counter++;
 
       await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
+  private async performHealthCheck(
+    service: { name: string; url: string },
+    isWarmup: boolean,
+    perServiceStats: Map<string, HealthCheckStats>,
+    overallStats: OverallHealthStats,
+    httpLimiter: ConcurrencyLimiter
+  ): Promise<void> {
+    const timestamp = Date.now();
+    const stats = perServiceStats.get(service.name);
+
+    if (!stats) return;
+
+    const requestBytes = 0;
+
+    try {
+      const result = await httpLimiter.run(async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        try {
+          const response = await fetch(`${service.url}/health`, {
+            method: 'GET',
+            signal: controller.signal,
+          });
+
+          const bodyText = await response.text();
+          const responseBytes = textByteLength(bodyText);
+          clearTimeout(timeoutId);
+
+          return { response, bodyText, responseBytes };
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      });
+
+      const responseTimeMs = Date.now() - timestamp;
+
+      if (!isWarmup) {
+        const isHealthy =
+          result.response.ok &&
+          (() => {
+            try {
+              const data = JSON.parse(result.bodyText) as { status?: string };
+              return data.status === 'healthy' || data.status === 'ok';
+            } catch {
+              return false;
+            }
+          })();
+
+        stats.total++;
+        stats.latencies.push(responseTimeMs);
+        overallStats.total++;
+        overallStats.latencies.push(responseTimeMs);
+
+        stats.requestBytesTotal += requestBytes;
+        stats.responseBytesTotal += result.responseBytes;
+        stats.requestBytesMax = Math.max(stats.requestBytesMax, requestBytes);
+        stats.responseBytesMax = Math.max(stats.responseBytesMax, result.responseBytes);
+        overallStats.requestBytesTotal += requestBytes;
+        overallStats.responseBytesTotal += result.responseBytes;
+        overallStats.requestBytesMax = Math.max(overallStats.requestBytesMax, requestBytes);
+        overallStats.responseBytesMax = Math.max(
+          overallStats.responseBytesMax,
+          result.responseBytes
+        );
+
+        if (isHealthy) {
+          stats.healthy++;
+          overallStats.healthy++;
+        }
+      }
+    } catch {
+      if (!isWarmup) {
+        const responseTimeMs = Date.now() - timestamp;
+        stats.total++;
+        stats.latencies.push(responseTimeMs);
+        overallStats.total++;
+        overallStats.latencies.push(responseTimeMs);
+
+        stats.requestBytesTotal += requestBytes;
+        stats.requestBytesMax = Math.max(stats.requestBytesMax, requestBytes);
+        overallStats.requestBytesTotal += requestBytes;
+        overallStats.requestBytesMax = Math.max(overallStats.requestBytesMax, requestBytes);
+      }
     }
   }
 }
