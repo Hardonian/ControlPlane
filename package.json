@@ -41,6 +41,7 @@
     "compat:generate": "node scripts/generate-compat-matrix.js",
     "compat:check": "node scripts/generate-compat-matrix.js --strict",
     "compat:json": "node scripts/generate-compat-matrix.js --json --output=compatibility-matrix.json",
+    "distribution:verify": "node scripts/verify-distribution.js",
     "release": "semantic-release",
     "release:prepare": "node scripts/release-prepare.js",
     "release:validate": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run compat:check && pnpm run build",
