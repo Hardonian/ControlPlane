@@ -417,3 +417,6 @@ export function runAllContractTests(): { passed: number; failed: number; details
 
 // Export discovery utilities
 export * from './discovery.js';
+
+// Export marketplace utilities
+export * from './marketplace.js';
