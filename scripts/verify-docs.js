@@ -25,7 +25,9 @@ function ensureNoTodo(content, label) {
 
 function extractSection(content, heading) {
   const lines = content.split('\n');
-  const headingIndex = lines.findIndex((line) => line.trim().toLowerCase() === heading.toLowerCase());
+  const headingIndex = lines.findIndex(
+    (line) => line.trim().toLowerCase() === heading.toLowerCase()
+  );
   if (headingIndex === -1) {
     fail(`missing section ${heading} in README.md`);
   }

@@ -10,15 +10,7 @@ const patterns = [
   { name: 'Generic Secret', regex: /(?:secret|api[_-]?key|password)\s*[:=]\s*['"][^'"\s]{8,}/i },
 ];
 
-const allowedExtensions = new Set([
-  '.js',
-  '.ts',
-  '.tsx',
-  '.json',
-  '.yml',
-  '.yaml',
-  '.md',
-]);
+const allowedExtensions = new Set(['.js', '.ts', '.tsx', '.json', '.yml', '.yaml', '.md']);
 
 function listFiles() {
   const output = execSync('git ls-files', { encoding: 'utf8' });

@@ -20,7 +20,22 @@ export type ErrorSeverity = z.infer<typeof ErrorSeveritySchema>;
  * Zod schema for ErrorCategory
  * @category errors
  */
-export const ErrorCategorySchema = z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']);
+export const ErrorCategorySchema = z.enum([
+  'VALIDATION_ERROR',
+  'SCHEMA_MISMATCH',
+  'RUNTIME_ERROR',
+  'TIMEOUT',
+  'NETWORK_ERROR',
+  'AUTHENTICATION_ERROR',
+  'AUTHORIZATION_ERROR',
+  'RESOURCE_NOT_FOUND',
+  'RESOURCE_CONFLICT',
+  'RATE_LIMITED',
+  'SERVICE_UNAVAILABLE',
+  'RUNNER_ERROR',
+  'TRUTHCORE_ERROR',
+  'INTERNAL_ERROR',
+]);
 
 /**
  * TypeScript type inferred from ErrorCategorySchema
@@ -36,8 +51,52 @@ export const RetryPolicySchema = z.object({
   backoffMs: z.number().min(0).default(1000),
   maxBackoffMs: z.number().min(0).default(30000),
   backoffMultiplier: z.number().default(2),
-  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
-  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
+  retryableCategories: z
+    .array(
+      z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ])
+    )
+    .default(['TIMEOUT', 'NETWORK_ERROR', 'SERVICE_UNAVAILABLE', 'RUNTIME_ERROR']),
+  nonRetryableCategories: z
+    .array(
+      z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ])
+    )
+    .default([
+      'VALIDATION_ERROR',
+      'SCHEMA_MISMATCH',
+      'AUTHENTICATION_ERROR',
+      'AUTHORIZATION_ERROR',
+      'RESOURCE_NOT_FOUND',
+    ]),
 });
 
 /**
@@ -53,7 +112,7 @@ export const ErrorDetailSchema = z.object({
   path: z.array(z.string()).optional(),
   message: z.string(),
   code: z.string().optional(),
-  value: z.unknown().optional()
+  value: z.unknown().optional(),
 });
 
 /**
@@ -68,16 +127,35 @@ export type ErrorDetail = z.infer<typeof ErrorDetailSchema>;
 export const ErrorEnvelopeSchema = z.object({
   id: z.string().uuid(),
   timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
+  category: z.enum([
+    'VALIDATION_ERROR',
+    'SCHEMA_MISMATCH',
+    'RUNTIME_ERROR',
+    'TIMEOUT',
+    'NETWORK_ERROR',
+    'AUTHENTICATION_ERROR',
+    'AUTHORIZATION_ERROR',
+    'RESOURCE_NOT_FOUND',
+    'RESOURCE_CONFLICT',
+    'RATE_LIMITED',
+    'SERVICE_UNAVAILABLE',
+    'RUNNER_ERROR',
+    'TRUTHCORE_ERROR',
+    'INTERNAL_ERROR',
+  ]),
   severity: z.enum(['fatal', 'error', 'warning', 'info']),
   code: z.string(),
   message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
+  details: z
+    .array(
+      z.object({
+        path: z.array(z.string()).optional(),
+        message: z.string(),
+        code: z.string().optional(),
+        value: z.unknown().optional(),
+      })
+    )
+    .default([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
@@ -85,11 +163,11 @@ export const ErrorEnvelopeSchema = z.object({
   retryable: z.boolean().default(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
+    major: z.number().int().min(0),
+    minor: z.number().int().min(0),
+    patch: z.number().int().min(0),
+    preRelease: z.string().optional(),
+  }),
 });
 
 /**
@@ -107,7 +185,7 @@ export const ContractVersionSchema = z.object({
   major: z.number().int().min(0),
   minor: z.number().int().min(0),
   patch: z.number().int().min(0),
-  preRelease: z.string().optional()
+  preRelease: z.string().optional(),
 });
 
 /**
@@ -121,23 +199,27 @@ export type ContractVersion = z.infer<typeof ContractVersionSchema>;
  */
 export const ContractRangeSchema = z.object({
   min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
+    major: z.number().int().min(0),
+    minor: z.number().int().min(0),
+    patch: z.number().int().min(0),
+    preRelease: z.string().optional(),
+  }),
+  max: z
+    .object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    })
+    .optional(),
+  exact: z
+    .object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -162,7 +244,15 @@ export type JobId = z.infer<typeof JobIdSchema>;
  * Zod schema for JobStatus
  * @category types
  */
-export const JobStatusSchema = z.enum(['pending', 'queued', 'running', 'completed', 'failed', 'cancelled', 'retrying']);
+export const JobStatusSchema = z.enum([
+  'pending',
+  'queued',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+  'retrying',
+]);
 
 /**
  * TypeScript type inferred from JobStatusSchema
@@ -193,7 +283,7 @@ export const JobMetadataSchema = z.object({
   tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   scheduledAt: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional()
+  expiresAt: z.string().datetime().optional(),
 });
 
 /**
@@ -207,9 +297,9 @@ export type JobMetadata = z.infer<typeof JobMetadataSchema>;
  */
 export const JobPayloadSchema = z.object({
   type: z.string(),
-  version: z.string().default("1.0.0"),
+  version: z.string().default('1.0.0'),
   data: z.record(z.unknown()),
-  options: z.record(z.unknown()).default({})
+  options: z.record(z.unknown()).default({}),
 });
 
 /**
@@ -226,31 +316,84 @@ export const JobRequestSchema = z.object({
   type: z.string(),
   priority: z.number().int().min(0).max(100).default(50),
   payload: z.object({
-  type: z.string(),
-  version: z.string().default("1.0.0"),
-  data: z.record(z.unknown()),
-  options: z.record(z.unknown()).default({})
-}),
+    type: z.string(),
+    version: z.string().default('1.0.0'),
+    data: z.record(z.unknown()),
+    options: z.record(z.unknown()).default({}),
+  }),
   metadata: z.object({
-  source: z.string(),
-  userId: z.string().optional(),
-  sessionId: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  tags: z.array(z.string()).default([]),
-  createdAt: z.string().datetime(),
-  scheduledAt: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional()
-}),
-  retryPolicy: z.object({
-  maxRetries: z.number().int().min(0).default(3),
-  backoffMs: z.number().min(0).default(1000),
-  maxBackoffMs: z.number().min(0).default(30000),
-  backoffMultiplier: z.number().default(2),
-  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
-  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
-}).default({"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]}),
-  timeoutMs: z.number().default(30000)
+    source: z.string(),
+    userId: z.string().optional(),
+    sessionId: z.string().optional(),
+    correlationId: z.string().uuid().optional(),
+    causationId: z.string().uuid().optional(),
+    tags: z.array(z.string()).default([]),
+    createdAt: z.string().datetime(),
+    scheduledAt: z.string().datetime().optional(),
+    expiresAt: z.string().datetime().optional(),
+  }),
+  retryPolicy: z
+    .object({
+      maxRetries: z.number().int().min(0).default(3),
+      backoffMs: z.number().min(0).default(1000),
+      maxBackoffMs: z.number().min(0).default(30000),
+      backoffMultiplier: z.number().default(2),
+      retryableCategories: z
+        .array(
+          z.enum([
+            'VALIDATION_ERROR',
+            'SCHEMA_MISMATCH',
+            'RUNTIME_ERROR',
+            'TIMEOUT',
+            'NETWORK_ERROR',
+            'AUTHENTICATION_ERROR',
+            'AUTHORIZATION_ERROR',
+            'RESOURCE_NOT_FOUND',
+            'RESOURCE_CONFLICT',
+            'RATE_LIMITED',
+            'SERVICE_UNAVAILABLE',
+            'RUNNER_ERROR',
+            'TRUTHCORE_ERROR',
+            'INTERNAL_ERROR',
+          ])
+        )
+        .default(['TIMEOUT', 'NETWORK_ERROR', 'SERVICE_UNAVAILABLE', 'RUNTIME_ERROR']),
+      nonRetryableCategories: z
+        .array(
+          z.enum([
+            'VALIDATION_ERROR',
+            'SCHEMA_MISMATCH',
+            'RUNTIME_ERROR',
+            'TIMEOUT',
+            'NETWORK_ERROR',
+            'AUTHENTICATION_ERROR',
+            'AUTHORIZATION_ERROR',
+            'RESOURCE_NOT_FOUND',
+            'RESOURCE_CONFLICT',
+            'RATE_LIMITED',
+            'SERVICE_UNAVAILABLE',
+            'RUNNER_ERROR',
+            'TRUTHCORE_ERROR',
+            'INTERNAL_ERROR',
+          ])
+        )
+        .default([
+          'VALIDATION_ERROR',
+          'SCHEMA_MISMATCH',
+          'AUTHENTICATION_ERROR',
+          'AUTHORIZATION_ERROR',
+          'RESOURCE_NOT_FOUND',
+        ]),
+    })
+    .default({
+      maxRetries: 3,
+      backoffMs: 1000,
+      maxBackoffMs: 30000,
+      backoffMultiplier: 2,
+      retryableCategories: [],
+      nonRetryableCategories: [],
+    }),
+  timeoutMs: z.number().default(30000),
 });
 
 /**
@@ -265,40 +408,61 @@ export type JobRequest = z.infer<typeof JobRequestSchema>;
 export const JobResultSchema = z.object({
   success: z.boolean(),
   data: z.unknown().optional(),
-  error: z.object({
-  id: z.string().uuid(),
-  timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
-  severity: z.enum(['fatal', 'error', 'warning', 'info']),
-  code: z.string(),
-  message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
-  service: z.string(),
-  operation: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
-  retryAfter: z.number().min(0).optional(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
-}).optional(),
+  error: z
+    .object({
+      id: z.string().uuid(),
+      timestamp: z.string().datetime(),
+      category: z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ]),
+      severity: z.enum(['fatal', 'error', 'warning', 'info']),
+      code: z.string(),
+      message: z.string(),
+      details: z
+        .array(
+          z.object({
+            path: z.array(z.string()).optional(),
+            message: z.string(),
+            code: z.string().optional(),
+            value: z.unknown().optional(),
+          })
+        )
+        .default([]),
+      service: z.string(),
+      operation: z.string().optional(),
+      correlationId: z.string().uuid().optional(),
+      causationId: z.string().uuid().optional(),
+      retryable: z.boolean().default(false),
+      retryAfter: z.number().min(0).optional(),
+      contractVersion: z.object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      }),
+    })
+    .optional(),
   metadata: z.object({
-  startedAt: z.string().datetime().optional(),
-  completedAt: z.string().datetime(),
-  durationMs: z.number().min(0),
-  attempts: z.number().int().default(1),
-  runnerId: z.string().optional(),
-  runnerVersion: z.string().optional()
-})
+    startedAt: z.string().datetime().optional(),
+    completedAt: z.string().datetime(),
+    durationMs: z.number().min(0),
+    attempts: z.number().int().default(1),
+    runnerId: z.string().optional(),
+    runnerVersion: z.string().optional(),
+  }),
 });
 
 /**
@@ -314,101 +478,198 @@ export const JobResponseSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(['pending', 'queued', 'running', 'completed', 'failed', 'cancelled', 'retrying']),
   request: z.object({
-  id: z.string().uuid(),
-  type: z.string(),
-  priority: z.number().int().min(0).max(100).default(50),
-  payload: z.object({
-  type: z.string(),
-  version: z.string().default("1.0.0"),
-  data: z.record(z.unknown()),
-  options: z.record(z.unknown()).default({})
-}),
-  metadata: z.object({
-  source: z.string(),
-  userId: z.string().optional(),
-  sessionId: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  tags: z.array(z.string()).default([]),
-  createdAt: z.string().datetime(),
-  scheduledAt: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional()
-}),
-  retryPolicy: z.object({
-  maxRetries: z.number().int().min(0).default(3),
-  backoffMs: z.number().min(0).default(1000),
-  maxBackoffMs: z.number().min(0).default(30000),
-  backoffMultiplier: z.number().default(2),
-  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
-  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
-}).default({"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]}),
-  timeoutMs: z.number().default(30000)
-}),
-  result: z.object({
-  success: z.boolean(),
-  data: z.unknown().optional(),
-  error: z.object({
-  id: z.string().uuid(),
-  timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
-  severity: z.enum(['fatal', 'error', 'warning', 'info']),
-  code: z.string(),
-  message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
-  service: z.string(),
-  operation: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
-  retryAfter: z.number().min(0).optional(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
-}).optional(),
-  metadata: z.object({
-  startedAt: z.string().datetime().optional(),
-  completedAt: z.string().datetime(),
-  durationMs: z.number().min(0),
-  attempts: z.number().int().default(1),
-  runnerId: z.string().optional(),
-  runnerVersion: z.string().optional()
-})
-}).optional(),
-  error: z.object({
-  id: z.string().uuid(),
-  timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
-  severity: z.enum(['fatal', 'error', 'warning', 'info']),
-  code: z.string(),
-  message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
-  service: z.string(),
-  operation: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
-  retryAfter: z.number().min(0).optional(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
-}).optional(),
-  updatedAt: z.string().datetime()
+    id: z.string().uuid(),
+    type: z.string(),
+    priority: z.number().int().min(0).max(100).default(50),
+    payload: z.object({
+      type: z.string(),
+      version: z.string().default('1.0.0'),
+      data: z.record(z.unknown()),
+      options: z.record(z.unknown()).default({}),
+    }),
+    metadata: z.object({
+      source: z.string(),
+      userId: z.string().optional(),
+      sessionId: z.string().optional(),
+      correlationId: z.string().uuid().optional(),
+      causationId: z.string().uuid().optional(),
+      tags: z.array(z.string()).default([]),
+      createdAt: z.string().datetime(),
+      scheduledAt: z.string().datetime().optional(),
+      expiresAt: z.string().datetime().optional(),
+    }),
+    retryPolicy: z
+      .object({
+        maxRetries: z.number().int().min(0).default(3),
+        backoffMs: z.number().min(0).default(1000),
+        maxBackoffMs: z.number().min(0).default(30000),
+        backoffMultiplier: z.number().default(2),
+        retryableCategories: z
+          .array(
+            z.enum([
+              'VALIDATION_ERROR',
+              'SCHEMA_MISMATCH',
+              'RUNTIME_ERROR',
+              'TIMEOUT',
+              'NETWORK_ERROR',
+              'AUTHENTICATION_ERROR',
+              'AUTHORIZATION_ERROR',
+              'RESOURCE_NOT_FOUND',
+              'RESOURCE_CONFLICT',
+              'RATE_LIMITED',
+              'SERVICE_UNAVAILABLE',
+              'RUNNER_ERROR',
+              'TRUTHCORE_ERROR',
+              'INTERNAL_ERROR',
+            ])
+          )
+          .default(['TIMEOUT', 'NETWORK_ERROR', 'SERVICE_UNAVAILABLE', 'RUNTIME_ERROR']),
+        nonRetryableCategories: z
+          .array(
+            z.enum([
+              'VALIDATION_ERROR',
+              'SCHEMA_MISMATCH',
+              'RUNTIME_ERROR',
+              'TIMEOUT',
+              'NETWORK_ERROR',
+              'AUTHENTICATION_ERROR',
+              'AUTHORIZATION_ERROR',
+              'RESOURCE_NOT_FOUND',
+              'RESOURCE_CONFLICT',
+              'RATE_LIMITED',
+              'SERVICE_UNAVAILABLE',
+              'RUNNER_ERROR',
+              'TRUTHCORE_ERROR',
+              'INTERNAL_ERROR',
+            ])
+          )
+          .default([
+            'VALIDATION_ERROR',
+            'SCHEMA_MISMATCH',
+            'AUTHENTICATION_ERROR',
+            'AUTHORIZATION_ERROR',
+            'RESOURCE_NOT_FOUND',
+          ]),
+      })
+      .default({
+        maxRetries: 3,
+        backoffMs: 1000,
+        maxBackoffMs: 30000,
+        backoffMultiplier: 2,
+        retryableCategories: [],
+        nonRetryableCategories: [],
+      }),
+    timeoutMs: z.number().default(30000),
+  }),
+  result: z
+    .object({
+      success: z.boolean(),
+      data: z.unknown().optional(),
+      error: z
+        .object({
+          id: z.string().uuid(),
+          timestamp: z.string().datetime(),
+          category: z.enum([
+            'VALIDATION_ERROR',
+            'SCHEMA_MISMATCH',
+            'RUNTIME_ERROR',
+            'TIMEOUT',
+            'NETWORK_ERROR',
+            'AUTHENTICATION_ERROR',
+            'AUTHORIZATION_ERROR',
+            'RESOURCE_NOT_FOUND',
+            'RESOURCE_CONFLICT',
+            'RATE_LIMITED',
+            'SERVICE_UNAVAILABLE',
+            'RUNNER_ERROR',
+            'TRUTHCORE_ERROR',
+            'INTERNAL_ERROR',
+          ]),
+          severity: z.enum(['fatal', 'error', 'warning', 'info']),
+          code: z.string(),
+          message: z.string(),
+          details: z
+            .array(
+              z.object({
+                path: z.array(z.string()).optional(),
+                message: z.string(),
+                code: z.string().optional(),
+                value: z.unknown().optional(),
+              })
+            )
+            .default([]),
+          service: z.string(),
+          operation: z.string().optional(),
+          correlationId: z.string().uuid().optional(),
+          causationId: z.string().uuid().optional(),
+          retryable: z.boolean().default(false),
+          retryAfter: z.number().min(0).optional(),
+          contractVersion: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+        })
+        .optional(),
+      metadata: z.object({
+        startedAt: z.string().datetime().optional(),
+        completedAt: z.string().datetime(),
+        durationMs: z.number().min(0),
+        attempts: z.number().int().default(1),
+        runnerId: z.string().optional(),
+        runnerVersion: z.string().optional(),
+      }),
+    })
+    .optional(),
+  error: z
+    .object({
+      id: z.string().uuid(),
+      timestamp: z.string().datetime(),
+      category: z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ]),
+      severity: z.enum(['fatal', 'error', 'warning', 'info']),
+      code: z.string(),
+      message: z.string(),
+      details: z
+        .array(
+          z.object({
+            path: z.array(z.string()).optional(),
+            message: z.string(),
+            code: z.string().optional(),
+            value: z.unknown().optional(),
+          })
+        )
+        .default([]),
+      service: z.string(),
+      operation: z.string().optional(),
+      correlationId: z.string().uuid().optional(),
+      causationId: z.string().uuid().optional(),
+      retryable: z.boolean().default(false),
+      retryAfter: z.number().min(0).optional(),
+      contractVersion: z.object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      }),
+    })
+    .optional(),
+  updatedAt: z.string().datetime(),
 });
 
 /**
@@ -430,11 +691,13 @@ export const RunnerCapabilitySchema = z.object({
   supportedJobTypes: z.array(z.string()),
   maxConcurrency: z.number().int().default(1),
   timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  resourceRequirements: z
+    .object({
+      cpu: z.string().optional(),
+      memory: z.string().optional(),
+      gpu: z.boolean().default(false),
+    })
+    .default({}),
 });
 
 /**
@@ -451,33 +714,37 @@ export const RunnerMetadataSchema = z.object({
   name: z.string(),
   version: z.string(),
   contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
+    major: z.number().int().min(0),
+    minor: z.number().int().min(0),
+    patch: z.number().int().min(0),
+    preRelease: z.string().optional(),
+  }),
+  capabilities: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      version: z.string(),
+      description: z.string(),
+      inputSchema: z.record(z.unknown()),
+      outputSchema: z.record(z.unknown()),
+      supportedJobTypes: z.array(z.string()),
+      maxConcurrency: z.number().int().default(1),
+      timeoutMs: z.number().default(30000),
+      resourceRequirements: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          gpu: z.boolean().default(false),
+        })
+        .default({}),
+    })
+  ),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default('healthy'),
+  tags: z.array(z.string()).default([]),
 });
 
 /**
@@ -493,29 +760,33 @@ export const RunnerRegistrationRequestSchema = z.object({
   name: z.string(),
   version: z.string(),
   contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
+    major: z.number().int().min(0),
+    minor: z.number().int().min(0),
+    patch: z.number().int().min(0),
+    preRelease: z.string().optional(),
+  }),
+  capabilities: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      version: z.string(),
+      description: z.string(),
+      inputSchema: z.record(z.unknown()),
+      outputSchema: z.record(z.unknown()),
+      supportedJobTypes: z.array(z.string()),
+      maxConcurrency: z.number().int().default(1),
+      timeoutMs: z.number().default(30000),
+      resourceRequirements: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          gpu: z.boolean().default(false),
+        })
+        .default({}),
+    })
+  ),
   healthCheckEndpoint: z.string().url(),
-  tags: z.array(z.string()).default([])
+  tags: z.array(z.string()).default([]),
 });
 
 /**
@@ -530,7 +801,7 @@ export type RunnerRegistrationRequest = z.infer<typeof RunnerRegistrationRequest
 export const RunnerRegistrationResponseSchema = z.object({
   runnerId: z.string().uuid(),
   registeredAt: z.string().datetime(),
-  heartbeatIntervalMs: z.number().default(30000)
+  heartbeatIntervalMs: z.number().default(30000),
 });
 
 /**
@@ -548,11 +819,13 @@ export const RunnerHeartbeatSchema = z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy']),
   activeJobs: z.number().int().min(0).default(0),
   queuedJobs: z.number().int().min(0).default(0),
-  metrics: z.object({
-  cpuUsage: z.number().min(0).max(100).optional(),
-  memoryUsage: z.number().min(0).max(100).optional(),
-  jobThroughput: z.number().min(0).optional()
-}).default({})
+  metrics: z
+    .object({
+      cpuUsage: z.number().min(0).max(100).optional(),
+      memoryUsage: z.number().min(0).max(100).optional(),
+      jobThroughput: z.number().min(0).optional(),
+    })
+    .default({}),
 });
 
 /**
@@ -571,30 +844,34 @@ export const ModuleManifestSchema = z.object({
   description: z.string(),
   entryPoint: z.string(),
   contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
+    major: z.number().int().min(0),
+    minor: z.number().int().min(0),
+    patch: z.number().int().min(0),
+    preRelease: z.string().optional(),
+  }),
+  capabilities: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      version: z.string(),
+      description: z.string(),
+      inputSchema: z.record(z.unknown()),
+      outputSchema: z.record(z.unknown()),
+      supportedJobTypes: z.array(z.string()),
+      maxConcurrency: z.number().int().default(1),
+      timeoutMs: z.number().default(30000),
+      resourceRequirements: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          gpu: z.boolean().default(false),
+        })
+        .default({}),
+    })
+  ),
   dependencies: z.array(z.string()).default([]),
   configSchema: z.record(z.unknown()).optional(),
-  defaultConfig: z.record(z.unknown()).default({})
+  defaultConfig: z.record(z.unknown()).default({}),
 });
 
 /**
@@ -612,10 +889,12 @@ export const RunnerExecutionRequestSchema = z.object({
   capabilityId: z.string(),
   payload: z.record(z.unknown()),
   timeoutMs: z.number().default(30000),
-  metadata: z.object({
-  correlationId: z.string().uuid().optional(),
-  userId: z.string().optional()
-}).default({})
+  metadata: z
+    .object({
+      correlationId: z.string().uuid().optional(),
+      userId: z.string().optional(),
+    })
+    .default({}),
 });
 
 /**
@@ -631,34 +910,55 @@ export const RunnerExecutionResponseSchema = z.object({
   jobId: z.string().uuid(),
   success: z.boolean(),
   data: z.unknown().optional(),
-  error: z.object({
-  id: z.string().uuid(),
-  timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
-  severity: z.enum(['fatal', 'error', 'warning', 'info']),
-  code: z.string(),
-  message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
-  service: z.string(),
-  operation: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
-  retryAfter: z.number().min(0).optional(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
-}).optional(),
+  error: z
+    .object({
+      id: z.string().uuid(),
+      timestamp: z.string().datetime(),
+      category: z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ]),
+      severity: z.enum(['fatal', 'error', 'warning', 'info']),
+      code: z.string(),
+      message: z.string(),
+      details: z
+        .array(
+          z.object({
+            path: z.array(z.string()).optional(),
+            message: z.string(),
+            code: z.string().optional(),
+            value: z.unknown().optional(),
+          })
+        )
+        .default([]),
+      service: z.string(),
+      operation: z.string().optional(),
+      correlationId: z.string().uuid().optional(),
+      causationId: z.string().uuid().optional(),
+      retryable: z.boolean().default(false),
+      retryAfter: z.number().min(0).optional(),
+      contractVersion: z.object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      }),
+    })
+    .optional(),
   executionTimeMs: z.number().min(0),
-  runnerId: z.string().uuid()
+  runnerId: z.string().uuid(),
 });
 
 /**
@@ -674,12 +974,19 @@ export const TruthAssertionSchema = z.object({
   id: z.string().uuid(),
   subject: z.string(),
   predicate: z.string(),
-  object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.unknown())]),
+  object: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(z.unknown()),
+    z.record(z.unknown()),
+  ]),
   confidence: z.number().min(0).max(1).default(1),
   timestamp: z.string().datetime(),
   source: z.string(),
   expiresAt: z.string().datetime().optional(),
-  metadata: z.record(z.unknown()).default({})
+  metadata: z.record(z.unknown()).default({}),
 });
 
 /**
@@ -694,18 +1001,29 @@ export type TruthAssertion = z.infer<typeof TruthAssertionSchema>;
 export const TruthQuerySchema = z.object({
   id: z.string().uuid(),
   pattern: z.object({
-  subject: z.string().optional(),
-  predicate: z.string().optional(),
-  object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.unknown())]).optional()
-}),
-  filters: z.object({
-  minConfidence: z.number().min(0).max(1).default(0),
-  sources: z.array(z.string()).optional(),
-  before: z.string().datetime().optional(),
-  after: z.string().datetime().optional()
-}).default({}),
+    subject: z.string().optional(),
+    predicate: z.string().optional(),
+    object: z
+      .union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.array(z.unknown()),
+        z.record(z.unknown()),
+      ])
+      .optional(),
+  }),
+  filters: z
+    .object({
+      minConfidence: z.number().min(0).max(1).default(0),
+      sources: z.array(z.string()).optional(),
+      before: z.string().datetime().optional(),
+      after: z.string().datetime().optional(),
+    })
+    .default({}),
   limit: z.number().int().default(100),
-  offset: z.number().int().min(0).default(0)
+  offset: z.number().int().min(0).default(0),
 });
 
 /**
@@ -719,20 +1037,29 @@ export type TruthQuery = z.infer<typeof TruthQuerySchema>;
  */
 export const TruthQueryResultSchema = z.object({
   queryId: z.string().uuid(),
-  assertions: z.array(z.object({
-  id: z.string().uuid(),
-  subject: z.string(),
-  predicate: z.string(),
-  object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.unknown())]),
-  confidence: z.number().min(0).max(1).default(1),
-  timestamp: z.string().datetime(),
-  source: z.string(),
-  expiresAt: z.string().datetime().optional(),
-  metadata: z.record(z.unknown()).default({})
-})),
+  assertions: z.array(
+    z.object({
+      id: z.string().uuid(),
+      subject: z.string(),
+      predicate: z.string(),
+      object: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.array(z.unknown()),
+        z.record(z.unknown()),
+      ]),
+      confidence: z.number().min(0).max(1).default(1),
+      timestamp: z.string().datetime(),
+      source: z.string(),
+      expiresAt: z.string().datetime().optional(),
+      metadata: z.record(z.unknown()).default({}),
+    })
+  ),
   totalCount: z.number().int().min(0),
   hasMore: z.boolean().default(false),
-  queryTimeMs: z.number().min(0)
+  queryTimeMs: z.number().min(0),
 });
 
 /**
@@ -747,15 +1074,26 @@ export type TruthQueryResult = z.infer<typeof TruthQueryResultSchema>;
 export const TruthSubscriptionSchema = z.object({
   id: z.string().uuid(),
   pattern: z.object({
-  subject: z.string().optional(),
-  predicate: z.string().optional(),
-  object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.unknown())]).optional()
-}),
-  filters: z.object({
-  minConfidence: z.number().min(0).max(1).default(0)
-}).default({}),
+    subject: z.string().optional(),
+    predicate: z.string().optional(),
+    object: z
+      .union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.array(z.unknown()),
+        z.record(z.unknown()),
+      ])
+      .optional(),
+  }),
+  filters: z
+    .object({
+      minConfidence: z.number().min(0).max(1).default(0),
+    })
+    .default({}),
   webhookUrl: z.string().url().optional(),
-  createdAt: z.string().datetime()
+  createdAt: z.string().datetime(),
 });
 
 /**
@@ -772,10 +1110,10 @@ export const TruthCoreRequestSchema = z.object({
   type: z.enum(['assert', 'query', 'subscribe', 'unsubscribe']),
   payload: z.record(z.unknown()),
   metadata: z.object({
-  correlationId: z.string().uuid().optional(),
-  source: z.string(),
-  timestamp: z.string().datetime()
-})
+    correlationId: z.string().uuid().optional(),
+    source: z.string(),
+    timestamp: z.string().datetime(),
+  }),
 });
 
 /**
@@ -791,33 +1129,54 @@ export const TruthCoreResponseSchema = z.object({
   requestId: z.string().uuid(),
   success: z.boolean(),
   data: z.unknown().optional(),
-  error: z.object({
-  id: z.string().uuid(),
+  error: z
+    .object({
+      id: z.string().uuid(),
+      timestamp: z.string().datetime(),
+      category: z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ]),
+      severity: z.enum(['fatal', 'error', 'warning', 'info']),
+      code: z.string(),
+      message: z.string(),
+      details: z
+        .array(
+          z.object({
+            path: z.array(z.string()).optional(),
+            message: z.string(),
+            code: z.string().optional(),
+            value: z.unknown().optional(),
+          })
+        )
+        .default([]),
+      service: z.string(),
+      operation: z.string().optional(),
+      correlationId: z.string().uuid().optional(),
+      causationId: z.string().uuid().optional(),
+      retryable: z.boolean().default(false),
+      retryAfter: z.number().min(0).optional(),
+      contractVersion: z.object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      }),
+    })
+    .optional(),
   timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
-  severity: z.enum(['fatal', 'error', 'warning', 'info']),
-  code: z.string(),
-  message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
-  service: z.string(),
-  operation: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
-  retryAfter: z.number().min(0).optional(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
-}).optional(),
-  timestamp: z.string().datetime()
 });
 
 /**
@@ -840,7 +1199,14 @@ export type ConsistencyLevel = z.infer<typeof ConsistencyLevelSchema>;
  * Zod schema for TruthValue
  * @category types
  */
-export const TruthValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.unknown())]);
+export const TruthValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+  z.array(z.unknown()),
+  z.record(z.unknown()),
+]);
 
 /**
  * TypeScript type inferred from TruthValueSchema
@@ -868,12 +1234,16 @@ export const HealthCheckSchema = z.object({
   timestamp: z.string().datetime(),
   version: z.string(),
   uptime: z.number().min(0),
-  checks: z.array(z.object({
-  name: z.string(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'unknown']),
-  responseTimeMs: z.number().min(0),
-  message: z.string().optional()
-})).default([])
+  checks: z
+    .array(
+      z.object({
+        name: z.string(),
+        status: z.enum(['healthy', 'degraded', 'unhealthy', 'unknown']),
+        responseTimeMs: z.number().min(0),
+        message: z.string().optional(),
+      })
+    )
+    .default([]),
 });
 
 /**
@@ -889,9 +1259,9 @@ export const ServiceMetadataSchema = z.object({
   name: z.string(),
   version: z.string(),
   contractVersion: z.string(),
-  environment: z.enum(['development', 'staging', 'production']).default("development"),
+  environment: z.enum(['development', 'staging', 'production']).default('development'),
   startTime: z.string().datetime(),
-  features: z.array(z.string()).default([])
+  features: z.array(z.string()).default([]),
 });
 
 /**
@@ -908,7 +1278,7 @@ export const PaginatedRequestSchema = z.object({
   offset: z.number().int().min(0).default(0),
   cursor: z.string().optional(),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default("asc")
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
 /**
@@ -926,7 +1296,7 @@ export const PaginatedResponseSchema = z.object({
   limit: z.number().int(),
   offset: z.number().int().min(0),
   hasMore: z.boolean(),
-  nextCursor: z.string().optional()
+  nextCursor: z.string().optional(),
 });
 
 /**
@@ -946,10 +1316,10 @@ export const ApiRequestSchema = z.object({
   query: z.record(z.unknown()).default({}),
   body: z.unknown(),
   metadata: z.object({
-  correlationId: z.string().uuid().optional(),
-  userId: z.string().optional(),
-  timestamp: z.string().datetime()
-})
+    correlationId: z.string().uuid().optional(),
+    userId: z.string().optional(),
+    timestamp: z.string().datetime(),
+  }),
 });
 
 /**
@@ -966,36 +1336,57 @@ export const ApiResponseSchema = z.object({
   statusCode: z.number().int().min(100).max(599),
   headers: z.record(z.string()).default({}),
   body: z.unknown(),
-  error: z.object({
-  id: z.string().uuid(),
-  timestamp: z.string().datetime(),
-  category: z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']),
-  severity: z.enum(['fatal', 'error', 'warning', 'info']),
-  code: z.string(),
-  message: z.string(),
-  details: z.array(z.object({
-  path: z.array(z.string()).optional(),
-  message: z.string(),
-  code: z.string().optional(),
-  value: z.unknown().optional()
-})).default([]),
-  service: z.string(),
-  operation: z.string().optional(),
-  correlationId: z.string().uuid().optional(),
-  causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
-  retryAfter: z.number().min(0).optional(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-})
-}).optional(),
+  error: z
+    .object({
+      id: z.string().uuid(),
+      timestamp: z.string().datetime(),
+      category: z.enum([
+        'VALIDATION_ERROR',
+        'SCHEMA_MISMATCH',
+        'RUNTIME_ERROR',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+        'AUTHENTICATION_ERROR',
+        'AUTHORIZATION_ERROR',
+        'RESOURCE_NOT_FOUND',
+        'RESOURCE_CONFLICT',
+        'RATE_LIMITED',
+        'SERVICE_UNAVAILABLE',
+        'RUNNER_ERROR',
+        'TRUTHCORE_ERROR',
+        'INTERNAL_ERROR',
+      ]),
+      severity: z.enum(['fatal', 'error', 'warning', 'info']),
+      code: z.string(),
+      message: z.string(),
+      details: z
+        .array(
+          z.object({
+            path: z.array(z.string()).optional(),
+            message: z.string(),
+            code: z.string().optional(),
+            value: z.unknown().optional(),
+          })
+        )
+        .default([]),
+      service: z.string(),
+      operation: z.string().optional(),
+      correlationId: z.string().uuid().optional(),
+      causationId: z.string().uuid().optional(),
+      retryable: z.boolean().default(false),
+      retryAfter: z.number().min(0).optional(),
+      contractVersion: z.object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      }),
+    })
+    .optional(),
   metadata: z.object({
-  durationMs: z.number().min(0),
-  timestamp: z.string().datetime()
-})
+    durationMs: z.number().min(0),
+    timestamp: z.string().datetime(),
+  }),
 });
 
 /**
@@ -1011,125 +1402,159 @@ export const CapabilityRegistrySchema = z.object({
   version: z.string(),
   generatedAt: z.string().datetime(),
   system: z.object({
-  name: z.string(),
-  version: z.string(),
-  environment: z.enum(['development', 'staging', 'production'])
-}),
+    name: z.string(),
+    version: z.string(),
+    environment: z.enum(['development', 'staging', 'production']),
+  }),
   truthcore: z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  supportedVersions: z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-}),
-  features: z.array(z.string()).default([]),
-  breakingChanges: z.array(z.string()).default([]),
-  deprecatedFeatures: z.array(z.string()).default([])
-}),
-  runners: z.array(z.object({
-  metadata: z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  version: z.string(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  supportedContracts: z.array(z.string()),
-  healthCheckEndpoint: z.string().url(),
-  registeredAt: z.string().datetime(),
-  lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
-}),
-  category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
-  connectors: z.array(z.string()),
-  health: z.object({
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']),
-  lastHeartbeat: z.string().datetime().optional(),
-  activeJobs: z.number().int().min(0).default(0),
-  queuedJobs: z.number().int().min(0).default(0)
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-}))
-})),
-  connectors: z.array(z.object({
-  config: z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']),
-  version: z.string(),
-  description: z.string(),
-  configSchema: z.record(z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
-}),
-  status: z.enum(['connected', 'disconnected', 'error', 'unknown']),
-  lastConnectedAt: z.string().datetime().optional(),
-  lastErrorAt: z.string().datetime().optional(),
-  errorMessage: z.string().optional(),
-  metadata: z.record(z.unknown()).default({})
-})),
+    contractVersion: z.object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    }),
+    supportedVersions: z.object({
+      min: z.object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      }),
+      max: z
+        .object({
+          major: z.number().int().min(0),
+          minor: z.number().int().min(0),
+          patch: z.number().int().min(0),
+          preRelease: z.string().optional(),
+        })
+        .optional(),
+      exact: z
+        .object({
+          major: z.number().int().min(0),
+          minor: z.number().int().min(0),
+          patch: z.number().int().min(0),
+          preRelease: z.string().optional(),
+        })
+        .optional(),
+    }),
+    features: z.array(z.string()).default([]),
+    breakingChanges: z.array(z.string()).default([]),
+    deprecatedFeatures: z.array(z.string()).default([]),
+  }),
+  runners: z.array(
+    z.object({
+      metadata: z.object({
+        id: z.string().uuid(),
+        name: z.string(),
+        version: z.string(),
+        contractVersion: z.object({
+          major: z.number().int().min(0),
+          minor: z.number().int().min(0),
+          patch: z.number().int().min(0),
+          preRelease: z.string().optional(),
+        }),
+        capabilities: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            version: z.string(),
+            description: z.string(),
+            inputSchema: z.record(z.unknown()),
+            outputSchema: z.record(z.unknown()),
+            supportedJobTypes: z.array(z.string()),
+            maxConcurrency: z.number().int().default(1),
+            timeoutMs: z.number().default(30000),
+            resourceRequirements: z
+              .object({
+                cpu: z.string().optional(),
+                memory: z.string().optional(),
+                gpu: z.boolean().default(false),
+              })
+              .default({}),
+          })
+        ),
+        supportedContracts: z.array(z.string()),
+        healthCheckEndpoint: z.string().url(),
+        registeredAt: z.string().datetime(),
+        lastHeartbeatAt: z.string().datetime(),
+        status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default('healthy'),
+        tags: z.array(z.string()).default([]),
+      }),
+      category: z.enum([
+        'ops',
+        'finops',
+        'support',
+        'growth',
+        'analytics',
+        'security',
+        'infrastructure',
+        'custom',
+      ]),
+      connectors: z.array(z.string()),
+      health: z.object({
+        status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']),
+        lastHeartbeat: z.string().datetime().optional(),
+        activeJobs: z.number().int().min(0).default(0),
+        queuedJobs: z.number().int().min(0).default(0),
+      }),
+      capabilities: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          version: z.string(),
+          description: z.string(),
+          inputSchema: z.record(z.unknown()),
+          outputSchema: z.record(z.unknown()),
+          supportedJobTypes: z.array(z.string()),
+          maxConcurrency: z.number().int().default(1),
+          timeoutMs: z.number().default(30000),
+          resourceRequirements: z
+            .object({
+              cpu: z.string().optional(),
+              memory: z.string().optional(),
+              gpu: z.boolean().default(false),
+            })
+            .default({}),
+        })
+      ),
+    })
+  ),
+  connectors: z.array(
+    z.object({
+      config: z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.enum([
+          'database',
+          'queue',
+          'storage',
+          'api',
+          'webhook',
+          'stream',
+          'cache',
+          'messaging',
+        ]),
+        version: z.string(),
+        description: z.string(),
+        configSchema: z.record(z.unknown()),
+        required: z.boolean().default(false),
+        healthCheckable: z.boolean().default(true),
+      }),
+      status: z.enum(['connected', 'disconnected', 'error', 'unknown']),
+      lastConnectedAt: z.string().datetime().optional(),
+      lastErrorAt: z.string().datetime().optional(),
+      errorMessage: z.string().optional(),
+      metadata: z.record(z.unknown()).default({}),
+    })
+  ),
   summary: z.object({
-  totalRunners: z.number().int().min(0),
-  totalCapabilities: z.number().int().min(0),
-  totalConnectors: z.number().int().min(0),
-  healthyRunners: z.number().int().min(0),
-  healthyConnectors: z.number().int().min(0),
-  categories: z.record(z.number().int().min(0))
-})
+    totalRunners: z.number().int().min(0),
+    totalCapabilities: z.number().int().min(0),
+    totalConnectors: z.number().int().min(0),
+    healthyRunners: z.number().int().min(0),
+    healthyConnectors: z.number().int().min(0),
+    categories: z.record(z.number().int().min(0)),
+  }),
 });
 
 /**
@@ -1143,62 +1568,79 @@ export type CapabilityRegistry = z.infer<typeof CapabilityRegistrySchema>;
  */
 export const RegisteredRunnerSchema = z.object({
   metadata: z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  version: z.string(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  supportedContracts: z.array(z.string()),
-  healthCheckEndpoint: z.string().url(),
-  registeredAt: z.string().datetime(),
-  lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
-}),
-  category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
+    id: z.string().uuid(),
+    name: z.string(),
+    version: z.string(),
+    contractVersion: z.object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    }),
+    capabilities: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        version: z.string(),
+        description: z.string(),
+        inputSchema: z.record(z.unknown()),
+        outputSchema: z.record(z.unknown()),
+        supportedJobTypes: z.array(z.string()),
+        maxConcurrency: z.number().int().default(1),
+        timeoutMs: z.number().default(30000),
+        resourceRequirements: z
+          .object({
+            cpu: z.string().optional(),
+            memory: z.string().optional(),
+            gpu: z.boolean().default(false),
+          })
+          .default({}),
+      })
+    ),
+    supportedContracts: z.array(z.string()),
+    healthCheckEndpoint: z.string().url(),
+    registeredAt: z.string().datetime(),
+    lastHeartbeatAt: z.string().datetime(),
+    status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default('healthy'),
+    tags: z.array(z.string()).default([]),
+  }),
+  category: z.enum([
+    'ops',
+    'finops',
+    'support',
+    'growth',
+    'analytics',
+    'security',
+    'infrastructure',
+    'custom',
+  ]),
   connectors: z.array(z.string()),
   health: z.object({
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']),
-  lastHeartbeat: z.string().datetime().optional(),
-  activeJobs: z.number().int().min(0).default(0),
-  queuedJobs: z.number().int().min(0).default(0)
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-}))
+    status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']),
+    lastHeartbeat: z.string().datetime().optional(),
+    activeJobs: z.number().int().min(0).default(0),
+    queuedJobs: z.number().int().min(0).default(0),
+  }),
+  capabilities: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      version: z.string(),
+      description: z.string(),
+      inputSchema: z.record(z.unknown()),
+      outputSchema: z.record(z.unknown()),
+      supportedJobTypes: z.array(z.string()),
+      maxConcurrency: z.number().int().default(1),
+      timeoutMs: z.number().default(30000),
+      resourceRequirements: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          gpu: z.boolean().default(false),
+        })
+        .default({}),
+    })
+  ),
 });
 
 /**
@@ -1218,7 +1660,7 @@ export const ConnectorConfigSchema = z.object({
   description: z.string(),
   configSchema: z.record(z.unknown()),
   required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  healthCheckable: z.boolean().default(true),
 });
 
 /**
@@ -1230,7 +1672,16 @@ export type ConnectorConfig = z.infer<typeof ConnectorConfigSchema>;
  * Zod schema for ConnectorType
  * @category types
  */
-export const ConnectorTypeSchema = z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']);
+export const ConnectorTypeSchema = z.enum([
+  'database',
+  'queue',
+  'storage',
+  'api',
+  'webhook',
+  'stream',
+  'cache',
+  'messaging',
+]);
 
 /**
  * TypeScript type inferred from ConnectorTypeSchema
@@ -1243,20 +1694,29 @@ export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
  */
 export const ConnectorInstanceSchema = z.object({
   config: z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']),
-  version: z.string(),
-  description: z.string(),
-  configSchema: z.record(z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
-}),
+    id: z.string(),
+    name: z.string(),
+    type: z.enum([
+      'database',
+      'queue',
+      'storage',
+      'api',
+      'webhook',
+      'stream',
+      'cache',
+      'messaging',
+    ]),
+    version: z.string(),
+    description: z.string(),
+    configSchema: z.record(z.unknown()),
+    required: z.boolean().default(false),
+    healthCheckable: z.boolean().default(true),
+  }),
   status: z.enum(['connected', 'disconnected', 'error', 'unknown']),
   lastConnectedAt: z.string().datetime().optional(),
   lastErrorAt: z.string().datetime().optional(),
   errorMessage: z.string().optional(),
-  metadata: z.record(z.unknown()).default({})
+  metadata: z.record(z.unknown()).default({}),
 });
 
 /**
@@ -1268,7 +1728,16 @@ export type ConnectorInstance = z.infer<typeof ConnectorInstanceSchema>;
  * Zod schema for RunnerCategory
  * @category types
  */
-export const RunnerCategorySchema = z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']);
+export const RunnerCategorySchema = z.enum([
+  'ops',
+  'finops',
+  'support',
+  'growth',
+  'analytics',
+  'security',
+  'infrastructure',
+  'custom',
+]);
 
 /**
  * TypeScript type inferred from RunnerCategorySchema
@@ -1280,11 +1749,24 @@ export type RunnerCategory = z.infer<typeof RunnerCategorySchema>;
  * @category types
  */
 export const RegistryQuerySchema = z.object({
-  category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']).optional(),
-  connectorType: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']).optional(),
-  healthStatus: z.enum(['healthy', 'degraded', 'unhealthy', 'offline', 'any']).default("any"),
+  category: z
+    .enum([
+      'ops',
+      'finops',
+      'support',
+      'growth',
+      'analytics',
+      'security',
+      'infrastructure',
+      'custom',
+    ])
+    .optional(),
+  connectorType: z
+    .enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging'])
+    .optional(),
+  healthStatus: z.enum(['healthy', 'degraded', 'unhealthy', 'offline', 'any']).default('any'),
   includeCapabilities: z.boolean().default(true),
-  includeConnectors: z.boolean().default(true)
+  includeConnectors: z.boolean().default(true),
 });
 
 /**
@@ -1297,26 +1779,34 @@ export type RegistryQuery = z.infer<typeof RegistryQuerySchema>;
  * @category types
  */
 export const RegistryDiffSchema = z.object({
-  added: z.array(z.object({
-  type: z.enum(['runner', 'connector', 'capability']),
-  id: z.string(),
-  data: z.unknown()
-})),
-  removed: z.array(z.object({
-  type: z.enum(['runner', 'connector', 'capability']),
-  id: z.string()
-})),
-  modified: z.array(z.object({
-  type: z.enum(['runner', 'connector', 'capability']),
-  id: z.string(),
-  changes: z.record(z.object({
-  old: z.unknown(),
-  new: z.unknown()
-}))
-})),
+  added: z.array(
+    z.object({
+      type: z.enum(['runner', 'connector', 'capability']),
+      id: z.string(),
+      data: z.unknown(),
+    })
+  ),
+  removed: z.array(
+    z.object({
+      type: z.enum(['runner', 'connector', 'capability']),
+      id: z.string(),
+    })
+  ),
+  modified: z.array(
+    z.object({
+      type: z.enum(['runner', 'connector', 'capability']),
+      id: z.string(),
+      changes: z.record(
+        z.object({
+          old: z.unknown(),
+          new: z.unknown(),
+        })
+      ),
+    })
+  ),
   timestamp: z.string().datetime(),
   previousChecksum: z.string(),
-  currentChecksum: z.string()
+  currentChecksum: z.string(),
 });
 
 /**
@@ -1332,318 +1822,434 @@ export const MarketplaceIndexSchema = z.object({
   version: z.string(),
   generatedAt: z.string().datetime(),
   schema: z.object({
-  version: z.string(),
-  url: z.string().url()
-}),
+    version: z.string(),
+    url: z.string().url(),
+  }),
   system: z.object({
-  name: z.string(),
-  version: z.string(),
-  environment: z.enum(['development', 'staging', 'production'])
-}),
+    name: z.string(),
+    version: z.string(),
+    environment: z.enum(['development', 'staging', 'production']),
+  }),
   stats: z.object({
-  totalRunners: z.number().min(0),
-  totalConnectors: z.number().min(0),
-  totalCapabilities: z.number().min(0),
-  verifiedCount: z.number().min(0),
-  pendingReviewCount: z.number().min(0),
-  deprecatedCount: z.number().min(0),
-  categories: z.record(z.number().min(0)),
-  connectorTypes: z.record(z.number().min(0))
-}),
-  runners: z.array(z.object({
-  id: z.string(),
-  metadata: z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  version: z.string(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  supportedContracts: z.array(z.string()),
-  healthCheckEndpoint: z.string().url(),
-  registeredAt: z.string().datetime(),
-  lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
-}),
-  category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
-  description: z.string(),
-  longDescription: z.string().optional(),
-  author: z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  url: z.string().url().optional(),
-  organization: z.string().optional()
-}),
-  repository: z.object({
-  url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
-}).optional(),
-  documentation: z.object({
-  readme: z.string().url().optional(),
-  changelog: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
-  license: z.string(),
-  keywords: z.array(z.string()).default([]),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  compatibility: z.object({
-  minContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  maxContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  supportedRanges: z.array(z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
-  testedWith: z.array(z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  testedAt: z.string().datetime(),
-  result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
-}),
-  trustSignals: z.object({
-  overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
-  contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
-  lastContractTestAt: z.string().datetime().optional(),
-  lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
-  securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
-  lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
-  codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
-}),
-  deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
-  deprecationDate: z.string().datetime().optional(),
-  replacementId: z.string().optional(),
-  migrationGuide: z.string().url().optional(),
-  reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
-  publishedAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  versionHistory: z.array(z.object({
-  version: z.string(),
-  publishedAt: z.string().datetime(),
-  changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
-  installation: z.object({
-  npm: z.string().optional(),
-  docker: z.string().optional(),
-  binary: z.string().optional(),
-  source: z.string().optional()
-}).default({})
-})),
-  connectors: z.array(z.object({
-  id: z.string(),
-  config: z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']),
-  version: z.string(),
-  description: z.string(),
-  configSchema: z.record(z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
-}),
-  description: z.string(),
-  longDescription: z.string().optional(),
-  author: z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  url: z.string().url().optional(),
-  organization: z.string().optional()
-}),
-  repository: z.object({
-  url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
-}).optional(),
-  documentation: z.object({
-  readme: z.string().url().optional(),
-  configuration: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
-  license: z.string(),
-  keywords: z.array(z.string()).default([]),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  compatibility: z.object({
-  minContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  maxContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  supportedRanges: z.array(z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
-  testedWith: z.array(z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  testedAt: z.string().datetime(),
-  result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
-}),
-  trustSignals: z.object({
-  overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
-  contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
-  lastContractTestAt: z.string().datetime().optional(),
-  lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
-  securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
-  lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
-  codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
-}),
-  deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
-  deprecationDate: z.string().datetime().optional(),
-  replacementId: z.string().optional(),
-  migrationGuide: z.string().url().optional(),
-  reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
-  publishedAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  versionHistory: z.array(z.object({
-  version: z.string(),
-  publishedAt: z.string().datetime(),
-  changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
-  installation: z.object({
-  npm: z.string().optional(),
-  docker: z.string().optional()
-}).default({})
-})),
+    totalRunners: z.number().min(0),
+    totalConnectors: z.number().min(0),
+    totalCapabilities: z.number().min(0),
+    verifiedCount: z.number().min(0),
+    pendingReviewCount: z.number().min(0),
+    deprecatedCount: z.number().min(0),
+    categories: z.record(z.number().min(0)),
+    connectorTypes: z.record(z.number().min(0)),
+  }),
+  runners: z.array(
+    z.object({
+      id: z.string(),
+      metadata: z.object({
+        id: z.string().uuid(),
+        name: z.string(),
+        version: z.string(),
+        contractVersion: z.object({
+          major: z.number().int().min(0),
+          minor: z.number().int().min(0),
+          patch: z.number().int().min(0),
+          preRelease: z.string().optional(),
+        }),
+        capabilities: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            version: z.string(),
+            description: z.string(),
+            inputSchema: z.record(z.unknown()),
+            outputSchema: z.record(z.unknown()),
+            supportedJobTypes: z.array(z.string()),
+            maxConcurrency: z.number().int().default(1),
+            timeoutMs: z.number().default(30000),
+            resourceRequirements: z
+              .object({
+                cpu: z.string().optional(),
+                memory: z.string().optional(),
+                gpu: z.boolean().default(false),
+              })
+              .default({}),
+          })
+        ),
+        supportedContracts: z.array(z.string()),
+        healthCheckEndpoint: z.string().url(),
+        registeredAt: z.string().datetime(),
+        lastHeartbeatAt: z.string().datetime(),
+        status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default('healthy'),
+        tags: z.array(z.string()).default([]),
+      }),
+      category: z.enum([
+        'ops',
+        'finops',
+        'support',
+        'growth',
+        'analytics',
+        'security',
+        'infrastructure',
+        'custom',
+      ]),
+      description: z.string(),
+      longDescription: z.string().optional(),
+      author: z.object({
+        name: z.string(),
+        email: z.string().email().optional(),
+        url: z.string().url().optional(),
+        organization: z.string().optional(),
+      }),
+      repository: z
+        .object({
+          url: z.string().url(),
+          type: z.enum(['git', 'svn', 'mercurial']).default('git'),
+          branch: z.string().default('main'),
+        })
+        .optional(),
+      documentation: z
+        .object({
+          readme: z.string().url().optional(),
+          changelog: z.string().url().optional(),
+          examples: z.array(z.string().url()).default([]),
+        })
+        .default({}),
+      license: z.string(),
+      keywords: z.array(z.string()).default([]),
+      capabilities: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          version: z.string(),
+          description: z.string(),
+          inputSchema: z.record(z.unknown()),
+          outputSchema: z.record(z.unknown()),
+          supportedJobTypes: z.array(z.string()),
+          maxConcurrency: z.number().int().default(1),
+          timeoutMs: z.number().default(30000),
+          resourceRequirements: z
+            .object({
+              cpu: z.string().optional(),
+              memory: z.string().optional(),
+              gpu: z.boolean().default(false),
+            })
+            .default({}),
+        })
+      ),
+      compatibility: z.object({
+        minContractVersion: z.object({
+          major: z.number().int().min(0),
+          minor: z.number().int().min(0),
+          patch: z.number().int().min(0),
+          preRelease: z.string().optional(),
+        }),
+        maxContractVersion: z
+          .object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          })
+          .optional(),
+        supportedRanges: z
+          .array(
+            z.object({
+              min: z.object({
+                major: z.number().int().min(0),
+                minor: z.number().int().min(0),
+                patch: z.number().int().min(0),
+                preRelease: z.string().optional(),
+              }),
+              max: z
+                .object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                })
+                .optional(),
+              exact: z
+                .object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                })
+                .optional(),
+            })
+          )
+          .default([]),
+        incompatibleWith: z.array(z.string()).default([]),
+        testedWith: z
+          .array(
+            z.object({
+              contractVersion: z.object({
+                major: z.number().int().min(0),
+                minor: z.number().int().min(0),
+                patch: z.number().int().min(0),
+                preRelease: z.string().optional(),
+              }),
+              testedAt: z.string().datetime(),
+              result: z.enum(['compatible', 'incompatible', 'unknown']),
+            })
+          )
+          .default([]),
+      }),
+      trustSignals: z.object({
+        overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
+        contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
+        lastContractTestAt: z.string().datetime().optional(),
+        lastVerifiedVersion: z.string().optional(),
+        verificationMethod: z.enum([
+          'automated_ci',
+          'manual_review',
+          'community_verified',
+          'official_publisher',
+        ]),
+        securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
+        lastSecurityScanAt: z.string().datetime().optional(),
+        securityScanDetails: z
+          .object({
+            vulnerabilities: z
+              .array(
+                z.object({
+                  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+                  description: z.string(),
+                  cve: z.string().optional(),
+                })
+              )
+              .default([]),
+            scanDurationMs: z.number().min(0).optional(),
+          })
+          .default({}),
+        codeQualityScore: z.number().min(0).max(100).optional(),
+        maintainerReputation: z
+          .enum(['official', 'verified', 'community', 'unknown'])
+          .default('unknown'),
+        downloadCount: z.number().min(0).default(0),
+        rating: z
+          .object({
+            average: z.number().min(0).max(5).optional(),
+            count: z.number().min(0).default(0),
+          })
+          .default({}),
+      }),
+      deprecation: z
+        .object({
+          isDeprecated: z.boolean().default(false),
+          deprecationDate: z.string().datetime().optional(),
+          replacementId: z.string().optional(),
+          migrationGuide: z.string().url().optional(),
+          reason: z.string().optional(),
+        })
+        .default({ isDeprecated: false }),
+      status: z
+        .enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted'])
+        .default('active'),
+      publishedAt: z.string().datetime(),
+      updatedAt: z.string().datetime(),
+      versionHistory: z
+        .array(
+          z.object({
+            version: z.string(),
+            publishedAt: z.string().datetime(),
+            changelog: z.string().optional(),
+            breakingChanges: z.boolean().default(false),
+          })
+        )
+        .default([]),
+      installation: z
+        .object({
+          npm: z.string().optional(),
+          docker: z.string().optional(),
+          binary: z.string().optional(),
+          source: z.string().optional(),
+        })
+        .default({}),
+    })
+  ),
+  connectors: z.array(
+    z.object({
+      id: z.string(),
+      config: z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.enum([
+          'database',
+          'queue',
+          'storage',
+          'api',
+          'webhook',
+          'stream',
+          'cache',
+          'messaging',
+        ]),
+        version: z.string(),
+        description: z.string(),
+        configSchema: z.record(z.unknown()),
+        required: z.boolean().default(false),
+        healthCheckable: z.boolean().default(true),
+      }),
+      description: z.string(),
+      longDescription: z.string().optional(),
+      author: z.object({
+        name: z.string(),
+        email: z.string().email().optional(),
+        url: z.string().url().optional(),
+        organization: z.string().optional(),
+      }),
+      repository: z
+        .object({
+          url: z.string().url(),
+          type: z.enum(['git', 'svn', 'mercurial']).default('git'),
+          branch: z.string().default('main'),
+        })
+        .optional(),
+      documentation: z
+        .object({
+          readme: z.string().url().optional(),
+          configuration: z.string().url().optional(),
+          examples: z.array(z.string().url()).default([]),
+        })
+        .default({}),
+      license: z.string(),
+      keywords: z.array(z.string()).default([]),
+      inputSchema: z.record(z.unknown()),
+      outputSchema: z.record(z.unknown()),
+      compatibility: z.object({
+        minContractVersion: z.object({
+          major: z.number().int().min(0),
+          minor: z.number().int().min(0),
+          patch: z.number().int().min(0),
+          preRelease: z.string().optional(),
+        }),
+        maxContractVersion: z
+          .object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          })
+          .optional(),
+        supportedRanges: z
+          .array(
+            z.object({
+              min: z.object({
+                major: z.number().int().min(0),
+                minor: z.number().int().min(0),
+                patch: z.number().int().min(0),
+                preRelease: z.string().optional(),
+              }),
+              max: z
+                .object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                })
+                .optional(),
+              exact: z
+                .object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                })
+                .optional(),
+            })
+          )
+          .default([]),
+        incompatibleWith: z.array(z.string()).default([]),
+        testedWith: z
+          .array(
+            z.object({
+              contractVersion: z.object({
+                major: z.number().int().min(0),
+                minor: z.number().int().min(0),
+                patch: z.number().int().min(0),
+                preRelease: z.string().optional(),
+              }),
+              testedAt: z.string().datetime(),
+              result: z.enum(['compatible', 'incompatible', 'unknown']),
+            })
+          )
+          .default([]),
+      }),
+      trustSignals: z.object({
+        overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
+        contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
+        lastContractTestAt: z.string().datetime().optional(),
+        lastVerifiedVersion: z.string().optional(),
+        verificationMethod: z.enum([
+          'automated_ci',
+          'manual_review',
+          'community_verified',
+          'official_publisher',
+        ]),
+        securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
+        lastSecurityScanAt: z.string().datetime().optional(),
+        securityScanDetails: z
+          .object({
+            vulnerabilities: z
+              .array(
+                z.object({
+                  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+                  description: z.string(),
+                  cve: z.string().optional(),
+                })
+              )
+              .default([]),
+            scanDurationMs: z.number().min(0).optional(),
+          })
+          .default({}),
+        codeQualityScore: z.number().min(0).max(100).optional(),
+        maintainerReputation: z
+          .enum(['official', 'verified', 'community', 'unknown'])
+          .default('unknown'),
+        downloadCount: z.number().min(0).default(0),
+        rating: z
+          .object({
+            average: z.number().min(0).max(5).optional(),
+            count: z.number().min(0).default(0),
+          })
+          .default({}),
+      }),
+      deprecation: z
+        .object({
+          isDeprecated: z.boolean().default(false),
+          deprecationDate: z.string().datetime().optional(),
+          replacementId: z.string().optional(),
+          migrationGuide: z.string().url().optional(),
+          reason: z.string().optional(),
+        })
+        .default({ isDeprecated: false }),
+      status: z
+        .enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted'])
+        .default('active'),
+      publishedAt: z.string().datetime(),
+      updatedAt: z.string().datetime(),
+      versionHistory: z
+        .array(
+          z.object({
+            version: z.string(),
+            publishedAt: z.string().datetime(),
+            changelog: z.string().optional(),
+            breakingChanges: z.boolean().default(false),
+          })
+        )
+        .default([]),
+      installation: z
+        .object({
+          npm: z.string().optional(),
+          docker: z.string().optional(),
+        })
+        .default({}),
+    })
+  ),
   filters: z.object({
-  categories: z.array(z.string()),
-  connectorTypes: z.array(z.string()),
-  trustLevels: z.array(z.string()),
-  licenseTypes: z.array(z.string())
-})
+    categories: z.array(z.string()),
+    connectorTypes: z.array(z.string()),
+    trustLevels: z.array(z.string()),
+    licenseTypes: z.array(z.string()),
+  }),
 });
 
 /**
@@ -1658,166 +2264,226 @@ export type MarketplaceIndex = z.infer<typeof MarketplaceIndexSchema>;
 export const MarketplaceRunnerSchema = z.object({
   id: z.string(),
   metadata: z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  version: z.string(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  supportedContracts: z.array(z.string()),
-  healthCheckEndpoint: z.string().url(),
-  registeredAt: z.string().datetime(),
-  lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
-}),
-  category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
+    id: z.string().uuid(),
+    name: z.string(),
+    version: z.string(),
+    contractVersion: z.object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    }),
+    capabilities: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        version: z.string(),
+        description: z.string(),
+        inputSchema: z.record(z.unknown()),
+        outputSchema: z.record(z.unknown()),
+        supportedJobTypes: z.array(z.string()),
+        maxConcurrency: z.number().int().default(1),
+        timeoutMs: z.number().default(30000),
+        resourceRequirements: z
+          .object({
+            cpu: z.string().optional(),
+            memory: z.string().optional(),
+            gpu: z.boolean().default(false),
+          })
+          .default({}),
+      })
+    ),
+    supportedContracts: z.array(z.string()),
+    healthCheckEndpoint: z.string().url(),
+    registeredAt: z.string().datetime(),
+    lastHeartbeatAt: z.string().datetime(),
+    status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default('healthy'),
+    tags: z.array(z.string()).default([]),
+  }),
+  category: z.enum([
+    'ops',
+    'finops',
+    'support',
+    'growth',
+    'analytics',
+    'security',
+    'infrastructure',
+    'custom',
+  ]),
   description: z.string(),
   longDescription: z.string().optional(),
   author: z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  url: z.string().url().optional(),
-  organization: z.string().optional()
-}),
-  repository: z.object({
-  url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
-}).optional(),
-  documentation: z.object({
-  readme: z.string().url().optional(),
-  changelog: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+    name: z.string(),
+    email: z.string().email().optional(),
+    url: z.string().url().optional(),
+    organization: z.string().optional(),
+  }),
+  repository: z
+    .object({
+      url: z.string().url(),
+      type: z.enum(['git', 'svn', 'mercurial']).default('git'),
+      branch: z.string().default('main'),
+    })
+    .optional(),
+  documentation: z
+    .object({
+      readme: z.string().url().optional(),
+      changelog: z.string().url().optional(),
+      examples: z.array(z.string().url()).default([]),
+    })
+    .default({}),
   license: z.string(),
   keywords: z.array(z.string()).default([]),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
+  capabilities: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      version: z.string(),
+      description: z.string(),
+      inputSchema: z.record(z.unknown()),
+      outputSchema: z.record(z.unknown()),
+      supportedJobTypes: z.array(z.string()),
+      maxConcurrency: z.number().int().default(1),
+      timeoutMs: z.number().default(30000),
+      resourceRequirements: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          gpu: z.boolean().default(false),
+        })
+        .default({}),
+    })
+  ),
   compatibility: z.object({
-  minContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  maxContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  supportedRanges: z.array(z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
-  testedWith: z.array(z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  testedAt: z.string().datetime(),
-  result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
-}),
+    minContractVersion: z.object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    }),
+    maxContractVersion: z
+      .object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      })
+      .optional(),
+    supportedRanges: z
+      .array(
+        z.object({
+          min: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          max: z
+            .object({
+              major: z.number().int().min(0),
+              minor: z.number().int().min(0),
+              patch: z.number().int().min(0),
+              preRelease: z.string().optional(),
+            })
+            .optional(),
+          exact: z
+            .object({
+              major: z.number().int().min(0),
+              minor: z.number().int().min(0),
+              patch: z.number().int().min(0),
+              preRelease: z.string().optional(),
+            })
+            .optional(),
+        })
+      )
+      .default([]),
+    incompatibleWith: z.array(z.string()).default([]),
+    testedWith: z
+      .array(
+        z.object({
+          contractVersion: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          testedAt: z.string().datetime(),
+          result: z.enum(['compatible', 'incompatible', 'unknown']),
+        })
+      )
+      .default([]),
+  }),
   trustSignals: z.object({
-  overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
-  contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
-  lastContractTestAt: z.string().datetime().optional(),
-  lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
-  securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
-  lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
-  codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
-}),
-  deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
-  deprecationDate: z.string().datetime().optional(),
-  replacementId: z.string().optional(),
-  migrationGuide: z.string().url().optional(),
-  reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+    overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
+    contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
+    lastContractTestAt: z.string().datetime().optional(),
+    lastVerifiedVersion: z.string().optional(),
+    verificationMethod: z.enum([
+      'automated_ci',
+      'manual_review',
+      'community_verified',
+      'official_publisher',
+    ]),
+    securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
+    lastSecurityScanAt: z.string().datetime().optional(),
+    securityScanDetails: z
+      .object({
+        vulnerabilities: z
+          .array(
+            z.object({
+              severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+              description: z.string(),
+              cve: z.string().optional(),
+            })
+          )
+          .default([]),
+        scanDurationMs: z.number().min(0).optional(),
+      })
+      .default({}),
+    codeQualityScore: z.number().min(0).max(100).optional(),
+    maintainerReputation: z
+      .enum(['official', 'verified', 'community', 'unknown'])
+      .default('unknown'),
+    downloadCount: z.number().min(0).default(0),
+    rating: z
+      .object({
+        average: z.number().min(0).max(5).optional(),
+        count: z.number().min(0).default(0),
+      })
+      .default({}),
+  }),
+  deprecation: z
+    .object({
+      isDeprecated: z.boolean().default(false),
+      deprecationDate: z.string().datetime().optional(),
+      replacementId: z.string().optional(),
+      migrationGuide: z.string().url().optional(),
+      reason: z.string().optional(),
+    })
+    .default({ isDeprecated: false }),
+  status: z
+    .enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted'])
+    .default('active'),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
-  versionHistory: z.array(z.object({
-  version: z.string(),
-  publishedAt: z.string().datetime(),
-  changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
-  installation: z.object({
-  npm: z.string().optional(),
-  docker: z.string().optional(),
-  binary: z.string().optional(),
-  source: z.string().optional()
-}).default({})
+  versionHistory: z
+    .array(
+      z.object({
+        version: z.string(),
+        publishedAt: z.string().datetime(),
+        changelog: z.string().optional(),
+        breakingChanges: z.boolean().default(false),
+      })
+    )
+    .default([]),
+  installation: z
+    .object({
+      npm: z.string().optional(),
+      docker: z.string().optional(),
+      binary: z.string().optional(),
+      source: z.string().optional(),
+    })
+    .default({}),
 });
 
 /**
@@ -1832,126 +2498,178 @@ export type MarketplaceRunner = z.infer<typeof MarketplaceRunnerSchema>;
 export const MarketplaceConnectorSchema = z.object({
   id: z.string(),
   config: z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']),
-  version: z.string(),
-  description: z.string(),
-  configSchema: z.record(z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
-}),
+    id: z.string(),
+    name: z.string(),
+    type: z.enum([
+      'database',
+      'queue',
+      'storage',
+      'api',
+      'webhook',
+      'stream',
+      'cache',
+      'messaging',
+    ]),
+    version: z.string(),
+    description: z.string(),
+    configSchema: z.record(z.unknown()),
+    required: z.boolean().default(false),
+    healthCheckable: z.boolean().default(true),
+  }),
   description: z.string(),
   longDescription: z.string().optional(),
   author: z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  url: z.string().url().optional(),
-  organization: z.string().optional()
-}),
-  repository: z.object({
-  url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
-}).optional(),
-  documentation: z.object({
-  readme: z.string().url().optional(),
-  configuration: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+    name: z.string(),
+    email: z.string().email().optional(),
+    url: z.string().url().optional(),
+    organization: z.string().optional(),
+  }),
+  repository: z
+    .object({
+      url: z.string().url(),
+      type: z.enum(['git', 'svn', 'mercurial']).default('git'),
+      branch: z.string().default('main'),
+    })
+    .optional(),
+  documentation: z
+    .object({
+      readme: z.string().url().optional(),
+      configuration: z.string().url().optional(),
+      examples: z.array(z.string().url()).default([]),
+    })
+    .default({}),
   license: z.string(),
   keywords: z.array(z.string()).default([]),
   inputSchema: z.record(z.unknown()),
   outputSchema: z.record(z.unknown()),
   compatibility: z.object({
-  minContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  maxContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  supportedRanges: z.array(z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
-  testedWith: z.array(z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  testedAt: z.string().datetime(),
-  result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
-}),
+    minContractVersion: z.object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    }),
+    maxContractVersion: z
+      .object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      })
+      .optional(),
+    supportedRanges: z
+      .array(
+        z.object({
+          min: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          max: z
+            .object({
+              major: z.number().int().min(0),
+              minor: z.number().int().min(0),
+              patch: z.number().int().min(0),
+              preRelease: z.string().optional(),
+            })
+            .optional(),
+          exact: z
+            .object({
+              major: z.number().int().min(0),
+              minor: z.number().int().min(0),
+              patch: z.number().int().min(0),
+              preRelease: z.string().optional(),
+            })
+            .optional(),
+        })
+      )
+      .default([]),
+    incompatibleWith: z.array(z.string()).default([]),
+    testedWith: z
+      .array(
+        z.object({
+          contractVersion: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          testedAt: z.string().datetime(),
+          result: z.enum(['compatible', 'incompatible', 'unknown']),
+        })
+      )
+      .default([]),
+  }),
   trustSignals: z.object({
-  overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
-  contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
-  lastContractTestAt: z.string().datetime().optional(),
-  lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
-  securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
-  lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
-  codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
-}),
-  deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
-  deprecationDate: z.string().datetime().optional(),
-  replacementId: z.string().optional(),
-  migrationGuide: z.string().url().optional(),
-  reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+    overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
+    contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
+    lastContractTestAt: z.string().datetime().optional(),
+    lastVerifiedVersion: z.string().optional(),
+    verificationMethod: z.enum([
+      'automated_ci',
+      'manual_review',
+      'community_verified',
+      'official_publisher',
+    ]),
+    securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
+    lastSecurityScanAt: z.string().datetime().optional(),
+    securityScanDetails: z
+      .object({
+        vulnerabilities: z
+          .array(
+            z.object({
+              severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+              description: z.string(),
+              cve: z.string().optional(),
+            })
+          )
+          .default([]),
+        scanDurationMs: z.number().min(0).optional(),
+      })
+      .default({}),
+    codeQualityScore: z.number().min(0).max(100).optional(),
+    maintainerReputation: z
+      .enum(['official', 'verified', 'community', 'unknown'])
+      .default('unknown'),
+    downloadCount: z.number().min(0).default(0),
+    rating: z
+      .object({
+        average: z.number().min(0).max(5).optional(),
+        count: z.number().min(0).default(0),
+      })
+      .default({}),
+  }),
+  deprecation: z
+    .object({
+      isDeprecated: z.boolean().default(false),
+      deprecationDate: z.string().datetime().optional(),
+      replacementId: z.string().optional(),
+      migrationGuide: z.string().url().optional(),
+      reason: z.string().optional(),
+    })
+    .default({ isDeprecated: false }),
+  status: z
+    .enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted'])
+    .default('active'),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
-  versionHistory: z.array(z.object({
-  version: z.string(),
-  publishedAt: z.string().datetime(),
-  changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
-  installation: z.object({
-  npm: z.string().optional(),
-  docker: z.string().optional()
-}).default({})
+  versionHistory: z
+    .array(
+      z.object({
+        version: z.string(),
+        publishedAt: z.string().datetime(),
+        changelog: z.string().optional(),
+        breakingChanges: z.boolean().default(false),
+      })
+    )
+    .default([]),
+  installation: z
+    .object({
+      npm: z.string().optional(),
+      docker: z.string().optional(),
+    })
+    .default({}),
 });
 
 /**
@@ -1964,24 +2682,28 @@ export type MarketplaceConnector = z.infer<typeof MarketplaceConnectorSchema>;
  * @category types
  */
 export const MarketplaceQuerySchema = z.object({
-  type: z.enum(['runner', 'connector', 'all']).default("all"),
+  type: z.enum(['runner', 'connector', 'all']).default('all'),
   category: z.string().optional(),
   connectorType: z.string().optional(),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).default("active"),
-  trustLevel: z.enum(['verified', 'community', 'all']).default("all"),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).default('active'),
+  trustLevel: z.enum(['verified', 'community', 'all']).default('all'),
   search: z.string().optional(),
-  compatibilityVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
+  compatibilityVersion: z
+    .object({
+      major: z.number().int().min(0),
+      minor: z.number().int().min(0),
+      patch: z.number().int().min(0),
+      preRelease: z.string().optional(),
+    })
+    .optional(),
   author: z.string().optional(),
   keywords: z.array(z.string()).default([]),
-  sortBy: z.enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads']).default("relevance"),
-  sortOrder: z.enum(['asc', 'desc']).default("desc"),
+  sortBy: z
+    .enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads'])
+    .default('relevance'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
   limit: z.number().min(0).max(100).default(20),
-  offset: z.number().min(0).default(0)
+  offset: z.number().min(0).default(0),
 });
 
 /**
@@ -1995,320 +2717,441 @@ export type MarketplaceQuery = z.infer<typeof MarketplaceQuerySchema>;
  */
 export const MarketplaceQueryResultSchema = z.object({
   query: z.object({
-  type: z.enum(['runner', 'connector', 'all']).default("all"),
-  category: z.string().optional(),
-  connectorType: z.string().optional(),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).default("active"),
-  trustLevel: z.enum(['verified', 'community', 'all']).default("all"),
-  search: z.string().optional(),
-  compatibilityVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  author: z.string().optional(),
-  keywords: z.array(z.string()).default([]),
-  sortBy: z.enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads']).default("relevance"),
-  sortOrder: z.enum(['asc', 'desc']).default("desc"),
-  limit: z.number().min(0).max(100).default(20),
-  offset: z.number().min(0).default(0)
-}),
+    type: z.enum(['runner', 'connector', 'all']).default('all'),
+    category: z.string().optional(),
+    connectorType: z.string().optional(),
+    status: z.enum(['active', 'deprecated', 'pending_review', 'all']).default('active'),
+    trustLevel: z.enum(['verified', 'community', 'all']).default('all'),
+    search: z.string().optional(),
+    compatibilityVersion: z
+      .object({
+        major: z.number().int().min(0),
+        minor: z.number().int().min(0),
+        patch: z.number().int().min(0),
+        preRelease: z.string().optional(),
+      })
+      .optional(),
+    author: z.string().optional(),
+    keywords: z.array(z.string()).default([]),
+    sortBy: z
+      .enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads'])
+      .default('relevance'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+    limit: z.number().min(0).max(100).default(20),
+    offset: z.number().min(0).default(0),
+  }),
   total: z.number().min(0),
   hasMore: z.boolean(),
-  items: z.array(z.union([z.object({
-  id: z.string(),
-  metadata: z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  version: z.string(),
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  supportedContracts: z.array(z.string()),
-  healthCheckEndpoint: z.string().url(),
-  registeredAt: z.string().datetime(),
-  lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
-}),
-  category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
-  description: z.string(),
-  longDescription: z.string().optional(),
-  author: z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  url: z.string().url().optional(),
-  organization: z.string().optional()
-}),
-  repository: z.object({
-  url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
-}).optional(),
-  documentation: z.object({
-  readme: z.string().url().optional(),
-  changelog: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
-  license: z.string(),
-  keywords: z.array(z.string()).default([]),
-  capabilities: z.array(z.object({
-  id: z.string(),
-  name: z.string(),
-  version: z.string(),
-  description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
-  resourceRequirements: z.object({
-  cpu: z.string().optional(),
-  memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
-})),
-  compatibility: z.object({
-  minContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  maxContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  supportedRanges: z.array(z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
-  testedWith: z.array(z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  testedAt: z.string().datetime(),
-  result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
-}),
-  trustSignals: z.object({
-  overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
-  contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
-  lastContractTestAt: z.string().datetime().optional(),
-  lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
-  securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
-  lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
-  codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
-}),
-  deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
-  deprecationDate: z.string().datetime().optional(),
-  replacementId: z.string().optional(),
-  migrationGuide: z.string().url().optional(),
-  reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
-  publishedAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  versionHistory: z.array(z.object({
-  version: z.string(),
-  publishedAt: z.string().datetime(),
-  changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
-  installation: z.object({
-  npm: z.string().optional(),
-  docker: z.string().optional(),
-  binary: z.string().optional(),
-  source: z.string().optional()
-}).default({})
-}), z.object({
-  id: z.string(),
-  config: z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']),
-  version: z.string(),
-  description: z.string(),
-  configSchema: z.record(z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
-}),
-  description: z.string(),
-  longDescription: z.string().optional(),
-  author: z.object({
-  name: z.string(),
-  email: z.string().email().optional(),
-  url: z.string().url().optional(),
-  organization: z.string().optional()
-}),
-  repository: z.object({
-  url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
-}).optional(),
-  documentation: z.object({
-  readme: z.string().url().optional(),
-  configuration: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
-  license: z.string(),
-  keywords: z.array(z.string()).default([]),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
-  compatibility: z.object({
-  minContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  maxContractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  supportedRanges: z.array(z.object({
-  min: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  max: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional(),
-  exact: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
-  testedWith: z.array(z.object({
-  contractVersion: z.object({
-  major: z.number().int().min(0),
-  minor: z.number().int().min(0),
-  patch: z.number().int().min(0),
-  preRelease: z.string().optional()
-}),
-  testedAt: z.string().datetime(),
-  result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
-}),
-  trustSignals: z.object({
-  overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
-  contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
-  lastContractTestAt: z.string().datetime().optional(),
-  lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
-  securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
-  lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
-  codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
-}),
-  deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
-  deprecationDate: z.string().datetime().optional(),
-  replacementId: z.string().optional(),
-  migrationGuide: z.string().url().optional(),
-  reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
-  publishedAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  versionHistory: z.array(z.object({
-  version: z.string(),
-  publishedAt: z.string().datetime(),
-  changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
-  installation: z.object({
-  npm: z.string().optional(),
-  docker: z.string().optional()
-}).default({})
-})])),
+  items: z.array(
+    z.union([
+      z.object({
+        id: z.string(),
+        metadata: z.object({
+          id: z.string().uuid(),
+          name: z.string(),
+          version: z.string(),
+          contractVersion: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          capabilities: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              version: z.string(),
+              description: z.string(),
+              inputSchema: z.record(z.unknown()),
+              outputSchema: z.record(z.unknown()),
+              supportedJobTypes: z.array(z.string()),
+              maxConcurrency: z.number().int().default(1),
+              timeoutMs: z.number().default(30000),
+              resourceRequirements: z
+                .object({
+                  cpu: z.string().optional(),
+                  memory: z.string().optional(),
+                  gpu: z.boolean().default(false),
+                })
+                .default({}),
+            })
+          ),
+          supportedContracts: z.array(z.string()),
+          healthCheckEndpoint: z.string().url(),
+          registeredAt: z.string().datetime(),
+          lastHeartbeatAt: z.string().datetime(),
+          status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default('healthy'),
+          tags: z.array(z.string()).default([]),
+        }),
+        category: z.enum([
+          'ops',
+          'finops',
+          'support',
+          'growth',
+          'analytics',
+          'security',
+          'infrastructure',
+          'custom',
+        ]),
+        description: z.string(),
+        longDescription: z.string().optional(),
+        author: z.object({
+          name: z.string(),
+          email: z.string().email().optional(),
+          url: z.string().url().optional(),
+          organization: z.string().optional(),
+        }),
+        repository: z
+          .object({
+            url: z.string().url(),
+            type: z.enum(['git', 'svn', 'mercurial']).default('git'),
+            branch: z.string().default('main'),
+          })
+          .optional(),
+        documentation: z
+          .object({
+            readme: z.string().url().optional(),
+            changelog: z.string().url().optional(),
+            examples: z.array(z.string().url()).default([]),
+          })
+          .default({}),
+        license: z.string(),
+        keywords: z.array(z.string()).default([]),
+        capabilities: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            version: z.string(),
+            description: z.string(),
+            inputSchema: z.record(z.unknown()),
+            outputSchema: z.record(z.unknown()),
+            supportedJobTypes: z.array(z.string()),
+            maxConcurrency: z.number().int().default(1),
+            timeoutMs: z.number().default(30000),
+            resourceRequirements: z
+              .object({
+                cpu: z.string().optional(),
+                memory: z.string().optional(),
+                gpu: z.boolean().default(false),
+              })
+              .default({}),
+          })
+        ),
+        compatibility: z.object({
+          minContractVersion: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          maxContractVersion: z
+            .object({
+              major: z.number().int().min(0),
+              minor: z.number().int().min(0),
+              patch: z.number().int().min(0),
+              preRelease: z.string().optional(),
+            })
+            .optional(),
+          supportedRanges: z
+            .array(
+              z.object({
+                min: z.object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                }),
+                max: z
+                  .object({
+                    major: z.number().int().min(0),
+                    minor: z.number().int().min(0),
+                    patch: z.number().int().min(0),
+                    preRelease: z.string().optional(),
+                  })
+                  .optional(),
+                exact: z
+                  .object({
+                    major: z.number().int().min(0),
+                    minor: z.number().int().min(0),
+                    patch: z.number().int().min(0),
+                    preRelease: z.string().optional(),
+                  })
+                  .optional(),
+              })
+            )
+            .default([]),
+          incompatibleWith: z.array(z.string()).default([]),
+          testedWith: z
+            .array(
+              z.object({
+                contractVersion: z.object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                }),
+                testedAt: z.string().datetime(),
+                result: z.enum(['compatible', 'incompatible', 'unknown']),
+              })
+            )
+            .default([]),
+        }),
+        trustSignals: z.object({
+          overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
+          contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
+          lastContractTestAt: z.string().datetime().optional(),
+          lastVerifiedVersion: z.string().optional(),
+          verificationMethod: z.enum([
+            'automated_ci',
+            'manual_review',
+            'community_verified',
+            'official_publisher',
+          ]),
+          securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
+          lastSecurityScanAt: z.string().datetime().optional(),
+          securityScanDetails: z
+            .object({
+              vulnerabilities: z
+                .array(
+                  z.object({
+                    severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+                    description: z.string(),
+                    cve: z.string().optional(),
+                  })
+                )
+                .default([]),
+              scanDurationMs: z.number().min(0).optional(),
+            })
+            .default({}),
+          codeQualityScore: z.number().min(0).max(100).optional(),
+          maintainerReputation: z
+            .enum(['official', 'verified', 'community', 'unknown'])
+            .default('unknown'),
+          downloadCount: z.number().min(0).default(0),
+          rating: z
+            .object({
+              average: z.number().min(0).max(5).optional(),
+              count: z.number().min(0).default(0),
+            })
+            .default({}),
+        }),
+        deprecation: z
+          .object({
+            isDeprecated: z.boolean().default(false),
+            deprecationDate: z.string().datetime().optional(),
+            replacementId: z.string().optional(),
+            migrationGuide: z.string().url().optional(),
+            reason: z.string().optional(),
+          })
+          .default({ isDeprecated: false }),
+        status: z
+          .enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted'])
+          .default('active'),
+        publishedAt: z.string().datetime(),
+        updatedAt: z.string().datetime(),
+        versionHistory: z
+          .array(
+            z.object({
+              version: z.string(),
+              publishedAt: z.string().datetime(),
+              changelog: z.string().optional(),
+              breakingChanges: z.boolean().default(false),
+            })
+          )
+          .default([]),
+        installation: z
+          .object({
+            npm: z.string().optional(),
+            docker: z.string().optional(),
+            binary: z.string().optional(),
+            source: z.string().optional(),
+          })
+          .default({}),
+      }),
+      z.object({
+        id: z.string(),
+        config: z.object({
+          id: z.string(),
+          name: z.string(),
+          type: z.enum([
+            'database',
+            'queue',
+            'storage',
+            'api',
+            'webhook',
+            'stream',
+            'cache',
+            'messaging',
+          ]),
+          version: z.string(),
+          description: z.string(),
+          configSchema: z.record(z.unknown()),
+          required: z.boolean().default(false),
+          healthCheckable: z.boolean().default(true),
+        }),
+        description: z.string(),
+        longDescription: z.string().optional(),
+        author: z.object({
+          name: z.string(),
+          email: z.string().email().optional(),
+          url: z.string().url().optional(),
+          organization: z.string().optional(),
+        }),
+        repository: z
+          .object({
+            url: z.string().url(),
+            type: z.enum(['git', 'svn', 'mercurial']).default('git'),
+            branch: z.string().default('main'),
+          })
+          .optional(),
+        documentation: z
+          .object({
+            readme: z.string().url().optional(),
+            configuration: z.string().url().optional(),
+            examples: z.array(z.string().url()).default([]),
+          })
+          .default({}),
+        license: z.string(),
+        keywords: z.array(z.string()).default([]),
+        inputSchema: z.record(z.unknown()),
+        outputSchema: z.record(z.unknown()),
+        compatibility: z.object({
+          minContractVersion: z.object({
+            major: z.number().int().min(0),
+            minor: z.number().int().min(0),
+            patch: z.number().int().min(0),
+            preRelease: z.string().optional(),
+          }),
+          maxContractVersion: z
+            .object({
+              major: z.number().int().min(0),
+              minor: z.number().int().min(0),
+              patch: z.number().int().min(0),
+              preRelease: z.string().optional(),
+            })
+            .optional(),
+          supportedRanges: z
+            .array(
+              z.object({
+                min: z.object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                }),
+                max: z
+                  .object({
+                    major: z.number().int().min(0),
+                    minor: z.number().int().min(0),
+                    patch: z.number().int().min(0),
+                    preRelease: z.string().optional(),
+                  })
+                  .optional(),
+                exact: z
+                  .object({
+                    major: z.number().int().min(0),
+                    minor: z.number().int().min(0),
+                    patch: z.number().int().min(0),
+                    preRelease: z.string().optional(),
+                  })
+                  .optional(),
+              })
+            )
+            .default([]),
+          incompatibleWith: z.array(z.string()).default([]),
+          testedWith: z
+            .array(
+              z.object({
+                contractVersion: z.object({
+                  major: z.number().int().min(0),
+                  minor: z.number().int().min(0),
+                  patch: z.number().int().min(0),
+                  preRelease: z.string().optional(),
+                }),
+                testedAt: z.string().datetime(),
+                result: z.enum(['compatible', 'incompatible', 'unknown']),
+              })
+            )
+            .default([]),
+        }),
+        trustSignals: z.object({
+          overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
+          contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
+          lastContractTestAt: z.string().datetime().optional(),
+          lastVerifiedVersion: z.string().optional(),
+          verificationMethod: z.enum([
+            'automated_ci',
+            'manual_review',
+            'community_verified',
+            'official_publisher',
+          ]),
+          securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
+          lastSecurityScanAt: z.string().datetime().optional(),
+          securityScanDetails: z
+            .object({
+              vulnerabilities: z
+                .array(
+                  z.object({
+                    severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+                    description: z.string(),
+                    cve: z.string().optional(),
+                  })
+                )
+                .default([]),
+              scanDurationMs: z.number().min(0).optional(),
+            })
+            .default({}),
+          codeQualityScore: z.number().min(0).max(100).optional(),
+          maintainerReputation: z
+            .enum(['official', 'verified', 'community', 'unknown'])
+            .default('unknown'),
+          downloadCount: z.number().min(0).default(0),
+          rating: z
+            .object({
+              average: z.number().min(0).max(5).optional(),
+              count: z.number().min(0).default(0),
+            })
+            .default({}),
+        }),
+        deprecation: z
+          .object({
+            isDeprecated: z.boolean().default(false),
+            deprecationDate: z.string().datetime().optional(),
+            replacementId: z.string().optional(),
+            migrationGuide: z.string().url().optional(),
+            reason: z.string().optional(),
+          })
+          .default({ isDeprecated: false }),
+        status: z
+          .enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted'])
+          .default('active'),
+        publishedAt: z.string().datetime(),
+        updatedAt: z.string().datetime(),
+        versionHistory: z
+          .array(
+            z.object({
+              version: z.string(),
+              publishedAt: z.string().datetime(),
+              changelog: z.string().optional(),
+              breakingChanges: z.boolean().default(false),
+            })
+          )
+          .default([]),
+        installation: z
+          .object({
+            npm: z.string().optional(),
+            docker: z.string().optional(),
+          })
+          .default({}),
+      }),
+    ])
+  ),
   facets: z.object({
-  categories: z.record(z.number()).default({}),
-  trustLevels: z.record(z.number()).default({}),
-  connectorTypes: z.record(z.number()).default({}),
-  status: z.record(z.number()).default({})
-})
+    categories: z.record(z.number()).default({}),
+    trustLevels: z.record(z.number()).default({}),
+    connectorTypes: z.record(z.number()).default({}),
+    status: z.record(z.number()).default({}),
+  }),
 });
 
 /**
@@ -2325,24 +3168,37 @@ export const MarketplaceTrustSignalsSchema = z.object({
   contractTestStatus: z.enum(['passing', 'failing', 'not_tested', 'stale']),
   lastContractTestAt: z.string().datetime().optional(),
   lastVerifiedVersion: z.string().optional(),
-  verificationMethod: z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']),
+  verificationMethod: z.enum([
+    'automated_ci',
+    'manual_review',
+    'community_verified',
+    'official_publisher',
+  ]),
   securityScanStatus: z.enum(['passed', 'failed', 'pending', 'not_scanned']),
   lastSecurityScanAt: z.string().datetime().optional(),
-  securityScanDetails: z.object({
-  vulnerabilities: z.array(z.object({
-  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-  description: z.string(),
-  cve: z.string().optional()
-})).default([]),
-  scanDurationMs: z.number().min(0).optional()
-}).default({}),
+  securityScanDetails: z
+    .object({
+      vulnerabilities: z
+        .array(
+          z.object({
+            severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+            description: z.string(),
+            cve: z.string().optional(),
+          })
+        )
+        .default([]),
+      scanDurationMs: z.number().min(0).optional(),
+    })
+    .default({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default('unknown'),
   downloadCount: z.number().min(0).default(0),
-  rating: z.object({
-  average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  rating: z
+    .object({
+      average: z.number().min(0).max(5).optional(),
+      count: z.number().min(0).default(0),
+    })
+    .default({}),
 });
 
 /**
@@ -2387,7 +3243,12 @@ export type ContractTestStatus = z.infer<typeof ContractTestStatusSchema>;
  * Zod schema for VerificationMethod
  * @category types
  */
-export const VerificationMethodSchema = z.enum(['automated_ci', 'manual_review', 'community_verified', 'official_publisher']);
+export const VerificationMethodSchema = z.enum([
+  'automated_ci',
+  'manual_review',
+  'community_verified',
+  'official_publisher',
+]);
 
 /**
  * TypeScript type inferred from VerificationMethodSchema

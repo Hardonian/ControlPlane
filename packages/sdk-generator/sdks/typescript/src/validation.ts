@@ -15,9 +15,10 @@ export function validate<T>(schema: z.ZodType<T>, data: unknown): T {
  * Safely validates data without throwing
  * @returns Object with success flag and either data or error
  */
-export function safeValidate<T>(schema: z.ZodType<T>, data: unknown):
-  | { success: true; data: T }
-  | { success: false; error: z.ZodError } {
+export function safeValidate<T>(
+  schema: z.ZodType<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; error: z.ZodError } {
   const result = schema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };

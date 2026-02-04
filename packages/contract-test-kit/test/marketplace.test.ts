@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createDeterministicTrustSignal,
-  queryMarketplace,
-} from '../src/marketplace.js';
+import { createDeterministicTrustSignal, queryMarketplace } from '../src/marketplace.js';
 import {
   createDefaultTrustSignals,
   createEmptyMarketplaceIndex,

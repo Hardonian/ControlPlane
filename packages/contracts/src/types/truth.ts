@@ -31,12 +31,14 @@ export const TruthQuery = z.object({
     predicate: z.string().optional(),
     object: TruthValue.optional(),
   }),
-  filters: z.object({
-    minConfidence: z.number().min(0).max(1).default(0.0),
-    sources: z.array(z.string()).optional(),
-    before: z.string().datetime().optional(),
-    after: z.string().datetime().optional(),
-  }).default({}),
+  filters: z
+    .object({
+      minConfidence: z.number().min(0).max(1).default(0.0),
+      sources: z.array(z.string()).optional(),
+      before: z.string().datetime().optional(),
+      after: z.string().datetime().optional(),
+    })
+    .default({}),
   limit: z.number().int().positive().default(100),
   offset: z.number().int().nonnegative().default(0),
 });
@@ -58,9 +60,11 @@ export const TruthSubscription = z.object({
     predicate: z.string().optional(),
     object: TruthValue.optional(),
   }),
-  filters: z.object({
-    minConfidence: z.number().min(0).max(1).default(0.0),
-  }).default({}),
+  filters: z
+    .object({
+      minConfidence: z.number().min(0).max(1).default(0.0),
+    })
+    .default({}),
   webhookUrl: z.string().url().optional(),
   createdAt: z.string().datetime(),
 });
@@ -87,9 +91,5 @@ export const TruthCoreResponse = z.object({
 });
 export type TruthCoreResponse = z.infer<typeof TruthCoreResponse>;
 
-export const ConsistencyLevel = z.enum([
-  'strict',
-  'eventual',
-  'best_effort',
-]);
+export const ConsistencyLevel = z.enum(['strict', 'eventual', 'best_effort']);
 export type ConsistencyLevel = z.infer<typeof ConsistencyLevel>;

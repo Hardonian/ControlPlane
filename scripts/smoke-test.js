@@ -2,7 +2,7 @@
 
 /**
  * Smoke Test Script
- * 
+ *
  * Verifies all services in the ControlPlane stack are healthy.
  * Uses parallel health checks for faster execution.
  * Outputs a JSON smoke report suitable for CI/CD pipelines.
@@ -61,7 +61,7 @@ function isConnectivityError(message) {
  */
 async function checkService(service) {
   const start = Date.now();
-  
+
   if (service.skip) {
     return {
       name: service.name,
@@ -74,12 +74,12 @@ async function checkService(service) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
-    
+
     const response = await fetch(`${service.url}/health`, {
       method: 'GET',
       signal: controller.signal,
     });
-    
+
     clearTimeout(timeoutId);
     const responseTime = Date.now() - start;
 
@@ -94,7 +94,7 @@ async function checkService(service) {
     }
 
     const data = await response.json().catch(() => ({}));
-    
+
     return {
       name: service.name,
       url: service.url,
@@ -126,14 +126,14 @@ async function checkService(service) {
 
 async function main() {
   const start = Date.now();
-  
+
   console.log('🔍 Running ControlPlane smoke tests...\n');
 
   // Run all health checks in parallel for faster execution
   console.log('Checking services in parallel...\n');
   const checkPromises = SERVICES.map((service) => checkService(service));
   const results = await Promise.all(checkPromises);
-  
+
   // Print results
   for (const result of results) {
     if (result.status === 'passed') {

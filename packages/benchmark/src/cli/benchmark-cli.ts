@@ -31,11 +31,7 @@ program
   .option('-v, --verbose', 'Verbose output', false)
   .option('--target-rps <rps>', 'Target requests per second (optional)')
   .option('--iterations <n>', 'Number of iterations for contract validation', '10000')
-  .option(
-    '--percentile-mode <mode>',
-    'Percentile calculation mode (exact|histogram)',
-    'exact'
-  )
+  .option('--percentile-mode <mode>', 'Percentile calculation mode (exact|histogram)', 'exact')
   .option(
     '--percentile-threshold <n>',
     'Sample threshold for approximate percentiles (default 10000)'
@@ -113,9 +109,7 @@ function createBenchmarkConfig(options: any): BenchmarkConfig {
     iterations: options.iterations ? parseInt(options.iterations) : undefined,
     percentiles: {
       mode: options.percentileMode === 'histogram' ? 'histogram' : 'exact',
-      sampleThreshold: options.percentileThreshold
-        ? parseInt(options.percentileThreshold)
-        : 10_000,
+      sampleThreshold: options.percentileThreshold ? parseInt(options.percentileThreshold) : 10_000,
       histogramBins: options.percentileBins ? parseInt(options.percentileBins) : 200,
     },
     http: {

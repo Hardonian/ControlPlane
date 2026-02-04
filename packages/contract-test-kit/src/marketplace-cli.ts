@@ -280,11 +280,7 @@ async function handleBuild(options: CLIOptions): Promise<void> {
   for (const runner of registry.runners) {
     trustSources.set(
       runner.metadata.id,
-      createDeterministicTrustSignal(
-        runner.metadata.id,
-        runner.metadata.version,
-        buildTimestamp
-      )
+      createDeterministicTrustSignal(runner.metadata.id, runner.metadata.version, buildTimestamp)
     );
   }
 

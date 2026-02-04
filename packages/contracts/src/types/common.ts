@@ -1,12 +1,7 @@
 import { z } from 'zod';
 import { ErrorEnvelope } from '../errors/index.js';
 
-export const HealthStatus = z.enum([
-  'healthy',
-  'degraded',
-  'unhealthy',
-  'unknown',
-]);
+export const HealthStatus = z.enum(['healthy', 'degraded', 'unhealthy', 'unknown']);
 export type HealthStatus = z.infer<typeof HealthStatus>;
 
 export const HealthCheck = z.object({
@@ -15,12 +10,16 @@ export const HealthCheck = z.object({
   timestamp: z.string().datetime(),
   version: z.string(),
   uptime: z.number().nonnegative(),
-  checks: z.array(z.object({
-    name: z.string(),
-    status: HealthStatus,
-    responseTimeMs: z.number().nonnegative(),
-    message: z.string().optional(),
-  })).default([]),
+  checks: z
+    .array(
+      z.object({
+        name: z.string(),
+        status: HealthStatus,
+        responseTimeMs: z.number().nonnegative(),
+        message: z.string().optional(),
+      })
+    )
+    .default([]),
 });
 export type HealthCheck = z.infer<typeof HealthCheck>;
 

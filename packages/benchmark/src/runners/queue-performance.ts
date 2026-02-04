@@ -197,14 +197,7 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
         const currentCounter = counter;
         counter += 1;
         batch.push(
-          this.enqueueOnce(
-            currentCounter,
-            warmupEnd,
-            metrics,
-            headers,
-            basePayload,
-            httpLimiter
-          )
+          this.enqueueOnce(currentCounter, warmupEnd, metrics, headers, basePayload, httpLimiter)
         );
       }
 
@@ -441,7 +434,10 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     ];
   }
 
-  private calculateSizeStats(requestBytes: number[], responseBytes: number[]): {
+  private calculateSizeStats(
+    requestBytes: number[],
+    responseBytes: number[]
+  ): {
     avgRequestBytes: number;
     maxRequestBytes: number;
     avgResponseBytes: number;

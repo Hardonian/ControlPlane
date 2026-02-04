@@ -101,8 +101,7 @@ export function createDeterministicTrustSignal(
 ): TrustSignalSource {
   const downloads = stableNumber(`${seed}:downloads`, 25, 950);
   const ratingCount = stableNumber(`${seed}:ratingCount`, 3, 80);
-  const averageRating =
-    Math.round((stableNumber(`${seed}:rating`, 36, 50) / 10) * 10) / 10;
+  const averageRating = Math.round((stableNumber(`${seed}:rating`, 36, 50) / 10) * 10) / 10;
   const codeQualityScore = stableNumber(`${seed}:quality`, 75, 98);
 
   return {

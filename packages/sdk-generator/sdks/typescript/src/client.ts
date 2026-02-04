@@ -39,7 +39,10 @@ export class ControlPlaneClient {
   /**
    * Safely validates data, returning success/failure result
    */
-  safeValidate<T>(schema: z.ZodType<T>, data: unknown): { success: true; data: T } | { success: false; error: z.ZodError } {
+  safeValidate<T>(
+    schema: z.ZodType<T>,
+    data: unknown
+  ): { success: true; data: T } | { success: false; error: z.ZodError } {
     const result = schema.safeParse(data);
     if (result.success) {
       return { success: true, data: result.data };
@@ -57,7 +60,7 @@ export class ControlPlaneClient {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` }),
+          ...(this.config.apiKey && { Authorization: `Bearer ${this.config.apiKey}` }),
           'X-Contract-Version': this.serializeVersion(this.contractVersion),
           ...options?.headers,
         },
@@ -70,7 +73,7 @@ export class ControlPlaneClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json() as T;
+      return (await response.json()) as T;
     } catch (error) {
       clearTimeout(timeoutId);
       throw error;

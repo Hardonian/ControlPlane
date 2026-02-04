@@ -27,19 +27,18 @@ export const RetryPolicy = z.object({
   backoffMs: z.number().nonnegative().default(1000),
   maxBackoffMs: z.number().nonnegative().default(30000),
   backoffMultiplier: z.number().positive().default(2),
-  retryableCategories: z.array(ErrorCategory).default([
-    'TIMEOUT',
-    'NETWORK_ERROR',
-    'SERVICE_UNAVAILABLE',
-    'RUNTIME_ERROR',
-  ]),
-  nonRetryableCategories: z.array(ErrorCategory).default([
-    'VALIDATION_ERROR',
-    'SCHEMA_MISMATCH',
-    'AUTHENTICATION_ERROR',
-    'AUTHORIZATION_ERROR',
-    'RESOURCE_NOT_FOUND',
-  ]),
+  retryableCategories: z
+    .array(ErrorCategory)
+    .default(['TIMEOUT', 'NETWORK_ERROR', 'SERVICE_UNAVAILABLE', 'RUNTIME_ERROR']),
+  nonRetryableCategories: z
+    .array(ErrorCategory)
+    .default([
+      'VALIDATION_ERROR',
+      'SCHEMA_MISMATCH',
+      'AUTHENTICATION_ERROR',
+      'AUTHORIZATION_ERROR',
+      'RESOURCE_NOT_FOUND',
+    ]),
 });
 export type RetryPolicy = z.infer<typeof RetryPolicy>;
 
@@ -48,12 +47,7 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   backoffMs: 1000,
   maxBackoffMs: 30000,
   backoffMultiplier: 2,
-  retryableCategories: [
-    'TIMEOUT',
-    'NETWORK_ERROR',
-    'SERVICE_UNAVAILABLE',
-    'RUNTIME_ERROR',
-  ],
+  retryableCategories: ['TIMEOUT', 'NETWORK_ERROR', 'SERVICE_UNAVAILABLE', 'RUNTIME_ERROR'],
   nonRetryableCategories: [
     'VALIDATION_ERROR',
     'SCHEMA_MISMATCH',
@@ -100,7 +94,10 @@ export function createErrorEnvelope(
   };
 }
 
-export function shouldRetry(error: ErrorEnvelope, policy: RetryPolicy = DEFAULT_RETRY_POLICY): boolean {
+export function shouldRetry(
+  error: ErrorEnvelope,
+  policy: RetryPolicy = DEFAULT_RETRY_POLICY
+): boolean {
   if (!error.retryable) return false;
   if (policy.nonRetryableCategories.includes(error.category)) return false;
   if (policy.retryableCategories.includes(error.category)) return true;

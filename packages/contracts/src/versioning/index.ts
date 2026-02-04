@@ -26,7 +26,7 @@ export const CONTRACT_VERSION_CURRENT: ContractVersion = {
 export function parseVersion(version: string): ContractVersion {
   const [core, pre] = version.split('-');
   const [major, minor, patch] = core.split('.').map(Number);
-  
+
   return {
     major: major ?? 0,
     minor: minor ?? 0,
@@ -69,6 +69,9 @@ export function satisfiesRange(version: ContractVersion, range: ContractRange): 
   return true;
 }
 
-export function isBreakingChange(oldVersion: ContractVersion, newVersion: ContractVersion): boolean {
+export function isBreakingChange(
+  oldVersion: ContractVersion,
+  newVersion: ContractVersion
+): boolean {
   return newVersion.major > oldVersion.major;
 }

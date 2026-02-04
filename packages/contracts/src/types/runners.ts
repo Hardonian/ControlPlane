@@ -12,11 +12,13 @@ export const RunnerCapability = z.object({
   supportedJobTypes: z.array(z.string()),
   maxConcurrency: z.number().int().positive().default(1),
   timeoutMs: z.number().positive().default(30000),
-  resourceRequirements: z.object({
-    cpu: z.string().optional(),
-    memory: z.string().optional(),
-    gpu: z.boolean().default(false),
-  }).default({}),
+  resourceRequirements: z
+    .object({
+      cpu: z.string().optional(),
+      memory: z.string().optional(),
+      gpu: z.boolean().default(false),
+    })
+    .default({}),
 });
 export type RunnerCapability = z.infer<typeof RunnerCapability>;
 
@@ -58,11 +60,13 @@ export const RunnerHeartbeat = z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy']),
   activeJobs: z.number().int().nonnegative().default(0),
   queuedJobs: z.number().int().nonnegative().default(0),
-  metrics: z.object({
-    cpuUsage: z.number().min(0).max(100).optional(),
-    memoryUsage: z.number().min(0).max(100).optional(),
-    jobThroughput: z.number().nonnegative().optional(),
-  }).default({}),
+  metrics: z
+    .object({
+      cpuUsage: z.number().min(0).max(100).optional(),
+      memoryUsage: z.number().min(0).max(100).optional(),
+      jobThroughput: z.number().nonnegative().optional(),
+    })
+    .default({}),
 });
 export type RunnerHeartbeat = z.infer<typeof RunnerHeartbeat>;
 
@@ -86,10 +90,12 @@ export const RunnerExecutionRequest = z.object({
   capabilityId: z.string(),
   payload: z.record(z.unknown()),
   timeoutMs: z.number().positive().default(30000),
-  metadata: z.object({
-    correlationId: z.string().uuid().optional(),
-    userId: z.string().optional(),
-  }).default({}),
+  metadata: z
+    .object({
+      correlationId: z.string().uuid().optional(),
+      userId: z.string().optional(),
+    })
+    .default({}),
 });
 export type RunnerExecutionRequest = z.infer<typeof RunnerExecutionRequest>;
 

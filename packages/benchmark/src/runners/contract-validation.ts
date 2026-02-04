@@ -54,7 +54,9 @@ export class ContractValidationRunner extends BenchmarkRunner {
     metrics.push(
       await this.benchmarkErrorEnvelopeValidation(iterationCount, dataPool.errorEnvelopes)
     );
-    metrics.push(await this.benchmarkComplexNestedValidation(iterationCount, dataPool.complexNested));
+    metrics.push(
+      await this.benchmarkComplexNestedValidation(iterationCount, dataPool.complexNested)
+    );
 
     const endTimestamp = Date.now();
     const endTime = new Date().toISOString();

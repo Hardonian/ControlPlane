@@ -2,7 +2,7 @@ import type { FullConfig } from '@playwright/test';
 
 async function globalSetup(config: FullConfig) {
   console.log('Setting up E2E test environment...');
-  
+
   // Verify services are running
   const services = [
     process.env.TRUTHCORE_URL || 'http://localhost:3001',
@@ -12,11 +12,11 @@ async function globalSetup(config: FullConfig) {
 
   for (const url of services) {
     try {
-      const response = await fetch(`${url}/health`, { 
+      const response = await fetch(`${url}/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
-      
+
       if (!response.ok) {
         console.warn(`Warning: ${url} health check returned ${response.status}`);
       } else {

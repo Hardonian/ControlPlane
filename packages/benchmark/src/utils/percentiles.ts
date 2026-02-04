@@ -19,9 +19,7 @@ export interface DistributionStats {
   percentiles: Record<number, number>;
 }
 
-export function resolvePercentileConfig(
-  config?: Partial<PercentileConfig>
-): PercentileConfig {
+export function resolvePercentileConfig(config?: Partial<PercentileConfig>): PercentileConfig {
   return {
     mode: config?.mode ?? DEFAULT_CONFIG.mode,
     sampleThreshold: config?.sampleThreshold ?? DEFAULT_CONFIG.sampleThreshold,
@@ -106,10 +104,7 @@ function computeHistogramPercentiles(
   const counts = new Array<number>(safeBins).fill(0);
 
   for (const value of values) {
-    const index = Math.min(
-      safeBins - 1,
-      Math.max(0, Math.floor((value - min) / binWidth))
-    );
+    const index = Math.min(safeBins - 1, Math.max(0, Math.floor((value - min) / binWidth)));
     counts[index] += 1;
   }
 
