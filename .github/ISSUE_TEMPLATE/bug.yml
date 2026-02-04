@@ -1,0 +1,67 @@
+name: "Bug report"
+description: "Report something broken or unexpected."
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve ControlPlane! Please include as much detail as you can so we can reproduce quickly.
+  - type: input
+    id: area
+    attributes:
+      label: Contribution lane
+      description: "Which area is affected? (docs / runner / connector / contracts / other)"
+      placeholder: "runner"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: "What broke?"
+      placeholder: "Contract sync fails when ..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: "Include exact commands, inputs, and config."
+      placeholder: |
+        1. pnpm install
+        2. pnpm run build:contracts
+        3. pnpm run contract:validate
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: "Contract validation passes."
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: "Validation fails with ..."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: "Paste relevant logs or screenshots."
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: "Which version or commit are you on?"
+      placeholder: "git rev-parse HEAD"
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: "OS, Node, pnpm, Docker, etc."
+      placeholder: "macOS 14, node 20.10.0, pnpm 8.12.0"
