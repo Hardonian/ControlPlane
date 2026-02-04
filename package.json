@@ -46,7 +46,12 @@
     "release:validate": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run compat:check && pnpm run build",
     "release:verify": "node scripts/smoke-test.js",
     "clean": "turbo run clean && rm -rf node_modules",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "sdk:generate": "pnpm --filter @controlplane/sdk-generator generate",
+    "sdk:validate": "pnpm --filter @controlplane/sdk-generator validate",
+    "sdk:check": "node scripts/check-sdk-drift.js",
+    "sdk:build": "pnpm --filter @controlplane/sdk-generator build",
+    "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator build"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",
