@@ -266,27 +266,6 @@ export class EndToEndLatencyRunner extends BenchmarkRunner {
             };
           }
         }
-        }
-        // Type assertion for the result object
-        const result = (await response.json()) as { status: string };
-        if (result.status === 'completed') {
-          return {
-            jobId,
-            submitTime,
-            completionTime: Date.now(),
-            totalLatency: Date.now() - submitTime,
-            status: 'completed',
-          };
-        }
-        if (result.status === 'failed') {
-          return {
-            jobId,
-            submitTime,
-            completionTime: Date.now(),
-            totalLatency: Date.now() - submitTime,
-            status: 'failed',
-          };
-        }
 
         const waitMs = Math.min(500 + attempt * 50, 3000);
         await new Promise((resolve) => setTimeout(resolve, waitMs));

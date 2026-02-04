@@ -1,13 +1,16 @@
 import type { BenchmarkConfig, BenchmarkResult, BenchmarkMetric } from '../contracts/index.js';
 import { BenchmarkRunner } from './base-runner.js';
 
-interface HealthCheckMetrics {
-  service: string;
-  timestamp: number;
-  responseTimeMs: number;
-  status: 'healthy' | 'unhealthy' | 'error';
-  statusCode?: number;
-  error?: Error;
+interface HealthCheckStats {
+  latencies: number[];
+  total: number;
+  healthy: number;
+}
+
+interface OverallHealthStats {
+  latencies: number[];
+  total: number;
+  healthy: number;
 }
 
 export class HealthCheckPerformanceRunner extends BenchmarkRunner {
@@ -27,12 +30,19 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
       { name: 'Runner', url: this.context.runnerUrl },
     ];
 
-    const allMetrics: HealthCheckMetrics[] = [];
+    const perServiceStats = new Map<string, HealthCheckStats>();
+    const overallStats: OverallHealthStats = { latencies: [], total: 0, healthy: 0 };
+
+    for (const service of services) {
+      perServiceStats.set(service.name, { latencies: [], total: 0, healthy: 0 });
+    }
 
     const workers: Promise<void>[] = [];
 
     for (let i = 0; i < config.concurrency; i++) {
-      workers.push(this.healthCheckWorker(i, warmupEnd, testEnd, services, allMetrics));
+      workers.push(
+        this.healthCheckWorker(i, warmupEnd, testEnd, services, perServiceStats, overallStats)
+      );
     }
 
     await Promise.all(workers);
@@ -44,11 +54,11 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
     const metrics: BenchmarkMetric[] = [];
 
     for (const service of services) {
-      const serviceMetrics = allMetrics.filter((m) => m.service === service.name);
+      const serviceStats = perServiceStats.get(service.name);
 
-      if (serviceMetrics.length === 0) continue;
+      if (!serviceStats || serviceStats.total === 0) continue;
 
-      const latencies = serviceMetrics.map((m) => m.responseTimeMs);
+      const latencies = serviceStats.latencies;
       const sorted = [...latencies].sort((a, b) => a - b);
 
       const min = sorted[0];
@@ -58,15 +68,14 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
       const p95 = sorted[Math.floor(sorted.length * 0.95)] || max;
       const p99 = sorted[Math.floor(sorted.length * 0.99)] || max;
 
-      const healthyCount = serviceMetrics.filter((m) => m.status === 'healthy').length;
-      const healthRate = serviceMetrics.length > 0 ? healthyCount / serviceMetrics.length : 0;
+      const healthRate = serviceStats.total > 0 ? serviceStats.healthy / serviceStats.total : 0;
 
-      const throughput = serviceMetrics.length / (duration / 1000);
+      const throughput = serviceStats.total / (duration / 1000);
 
       metrics.push(
         {
           name: `${service.name.toLowerCase()}_health_checks`,
-          value: serviceMetrics.length,
+          value: serviceStats.total,
           unit: 'count',
           description: `Total health checks for ${service.name}`,
         },
@@ -121,11 +130,11 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
       );
     }
 
-    const totalChecks = allMetrics.length;
-    const healthyChecks = allMetrics.filter((m) => m.status === 'healthy').length;
+    const totalChecks = overallStats.total;
+    const healthyChecks = overallStats.healthy;
     const overallHealthRate = totalChecks > 0 ? healthyChecks / totalChecks : 0;
 
-    const overallLatencies = allMetrics.map((m) => m.responseTimeMs);
+    const overallLatencies = overallStats.latencies;
     const overallAvg =
       overallLatencies.length > 0
         ? overallLatencies.reduce((a, b) => a + b, 0) / overallLatencies.length
@@ -177,7 +186,8 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
     warmupEnd: number,
     testEnd: number,
     services: { name: string; url: string }[],
-    metrics: HealthCheckMetrics[]
+    perServiceStats: Map<string, HealthCheckStats>,
+    overallStats: OverallHealthStats
   ): Promise<void> {
     let counter = 0;
 
@@ -186,6 +196,9 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
 
       for (const service of services) {
         const timestamp = Date.now();
+        const stats = perServiceStats.get(service.name);
+
+        if (!stats) continue;
 
         try {
           const controller = new AbortController();
@@ -202,35 +215,31 @@ export class HealthCheckPerformanceRunner extends BenchmarkRunner {
 
           if (!isWarmup) {
             if (response.ok) {
-              const data = await response.json();
+              const data = (await response.json()) as { status?: string };
               const isHealthy = data.status === 'healthy' || data.status === 'ok';
 
-              metrics.push({
-                service: service.name,
-                timestamp,
-                responseTimeMs,
-                status: isHealthy ? 'healthy' : 'unhealthy',
-                statusCode: response.status,
-              });
+              stats.total++;
+              stats.latencies.push(responseTimeMs);
+              overallStats.total++;
+              overallStats.latencies.push(responseTimeMs);
+              if (isHealthy) {
+                stats.healthy++;
+                overallStats.healthy++;
+              }
             } else {
-              metrics.push({
-                service: service.name,
-                timestamp,
-                responseTimeMs,
-                status: 'unhealthy',
-                statusCode: response.status,
-              });
+              stats.total++;
+              stats.latencies.push(responseTimeMs);
+              overallStats.total++;
+              overallStats.latencies.push(responseTimeMs);
             }
           }
         } catch (error) {
           if (!isWarmup) {
-            metrics.push({
-              service: service.name,
-              timestamp,
-              responseTimeMs: Date.now() - timestamp,
-              status: 'error',
-              error: error instanceof Error ? error : new Error(String(error)),
-            });
+            const responseTimeMs = Date.now() - timestamp;
+            stats.total++;
+            stats.latencies.push(responseTimeMs);
+            overallStats.total++;
+            overallStats.latencies.push(responseTimeMs);
           }
         }
       }

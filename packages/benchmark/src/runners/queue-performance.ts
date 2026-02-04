@@ -144,36 +144,44 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     metrics: QueueMetrics[]
   ): Promise<void> {
     let counter = 0;
+    const headers = { 'Content-Type': 'application/json' };
+    const tags = ['queue-test', `worker-${workerId}`];
+    const basePayload = {
+      id: '',
+      type: 'benchmark.queue',
+      priority: 50,
+      payload: {
+        type: 'benchmark',
+        version: '1.0.0',
+        data: {
+          workerId,
+          counter: 0,
+          timestamp: 0,
+        },
+        options: {},
+      },
+      metadata: {
+        source: 'benchmark',
+        tags,
+        createdAt: '',
+      },
+      timeoutMs: 30000,
+    };
 
     while (Date.now() < testEnd) {
       const isWarmup = Date.now() < warmupEnd;
       const timestamp = Date.now();
 
       try {
+        basePayload.id = crypto.randomUUID();
+        basePayload.payload.data.counter = counter;
+        basePayload.payload.data.timestamp = timestamp;
+        basePayload.metadata.createdAt = new Date(timestamp).toISOString();
+
         const response = await fetch(`${this.context.jobforgeUrl}/jobs`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: crypto.randomUUID(),
-            type: 'benchmark.queue',
-            priority: 50,
-            payload: {
-              type: 'benchmark',
-              version: '1.0.0',
-              data: {
-                workerId,
-                counter,
-                timestamp,
-              },
-              options: {},
-            },
-            metadata: {
-              source: 'benchmark',
-              tags: ['queue-test', `worker-${workerId}`],
-              createdAt: new Date().toISOString(),
-            },
-            timeoutMs: 30000,
-          }),
+          headers,
+          body: JSON.stringify(basePayload),
         });
 
         const durationMs = Date.now() - timestamp;
@@ -209,6 +217,12 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
     testEnd: number,
     metrics: QueueMetrics[]
   ): Promise<void> {
+    const headers = { 'Content-Type': 'application/json' };
+    const body = JSON.stringify({
+      workerId: `benchmark-worker-${workerId}`,
+      capabilities: ['benchmark.queue'],
+    });
+
     while (Date.now() < testEnd) {
       const isWarmup = Date.now() < warmupEnd;
       const timestamp = Date.now();
@@ -216,11 +230,8 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
       try {
         const response = await fetch(`${this.context.jobforgeUrl}/admin/queue/next`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workerId: `benchmark-worker-${workerId}`,
-            capabilities: ['benchmark.queue'],
-          }),
+          headers,
+          body,
         });
 
         const durationMs = Date.now() - timestamp;
@@ -294,19 +305,24 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
   }
 
   private calculateOperationMetrics(metrics: QueueMetrics[], operation: string): BenchmarkMetric[] {
-    const relevant = metrics.filter((m) => m.operation === operation && m.success);
+    const latencies: number[] = [];
 
-    if (relevant.length === 0) return [];
+    for (const metric of metrics) {
+      if (metric.operation === operation && metric.success) {
+        latencies.push(metric.durationMs);
+      }
+    }
 
-    const latencies = relevant.map((m) => m.durationMs);
-    const sorted = [...latencies].sort((a, b) => a - b);
+    if (latencies.length === 0) return [];
 
-    const min = sorted[0];
-    const max = sorted[sorted.length - 1];
+    latencies.sort((a, b) => a - b);
+
+    const min = latencies[0];
+    const max = latencies[latencies.length - 1];
     const mean = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    const p50 = sorted[Math.floor(sorted.length * 0.5)] || 0;
-    const p95 = sorted[Math.floor(sorted.length * 0.95)] || max;
-    const p99 = sorted[Math.floor(sorted.length * 0.99)] || max;
+    const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
+    const p95 = latencies[Math.floor(latencies.length * 0.95)] || max;
+    const p99 = latencies[Math.floor(latencies.length * 0.99)] || max;
 
     return [
       {
@@ -349,19 +365,23 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
   }
 
   private calculateQueueDepthStats(metrics: QueueMetrics[]): BenchmarkMetric[] {
-    const depthReadings = metrics
-      .filter((m) => m.operation === 'depth' && m.queueDepth !== undefined)
-      .map((m) => m.queueDepth!);
+    const depthReadings: number[] = [];
+
+    for (const metric of metrics) {
+      if (metric.operation === 'depth' && metric.queueDepth !== undefined) {
+        depthReadings.push(metric.queueDepth);
+      }
+    }
 
     if (depthReadings.length === 0) return [];
 
-    const sorted = [...depthReadings].sort((a, b) => a - b);
+    depthReadings.sort((a, b) => a - b);
 
-    const min = sorted[0];
-    const max = sorted[sorted.length - 1];
+    const min = depthReadings[0];
+    const max = depthReadings[depthReadings.length - 1];
     const mean = depthReadings.reduce((a, b) => a + b, 0) / depthReadings.length;
-    const p50 = sorted[Math.floor(sorted.length * 0.5)] || 0;
-    const p95 = sorted[Math.floor(sorted.length * 0.95)] || max;
+    const p50 = depthReadings[Math.floor(depthReadings.length * 0.5)] || 0;
+    const p95 = depthReadings[Math.floor(depthReadings.length * 0.95)] || max;
 
     return [
       {
