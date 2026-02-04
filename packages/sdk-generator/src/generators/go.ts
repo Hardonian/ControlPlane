@@ -12,11 +12,17 @@ export function generateGoSDK(
   const clientContent = generateGoClientFile(config);
   files.set('client.go', clientContent);
 
-  const validationContent = generateGoValidationFile(schemas);
+  const validationContent = generateGoValidationFile();
   files.set('validation.go', validationContent);
+
+  const schemasContent = generateGoSchemasFile(schemas);
+  files.set('schemas.go', schemasContent);
 
   const readmeContent = generateReadme('Go', config);
   files.set('README.md', readmeContent);
+
+  const goModContent = generateGoMod(config);
+  files.set('go.mod', goModContent);
 
   const packageConfig = {
     module: `github.com/${config.organization}/sdk-go`,
@@ -34,12 +40,13 @@ export function generateGoSDK(
 
 function generateGoTypesFile(schemas: SchemaDefinition[]): string {
   const lines: string[] = [];
-  lines.push('// Auto-generated from ControlPlane contracts');
+  lines.push('// Auto-generated Go types from ControlPlane contracts');
   lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
   lines.push('');
   lines.push('package controlplane');
   lines.push('');
   lines.push('import (');
+  lines.push('\t"encoding/json"');
   lines.push('\t"time"');
   lines.push(')');
   lines.push('');
@@ -57,11 +64,11 @@ function generateGoTypesFile(schemas: SchemaDefinition[]): string {
     string,
     SchemaDefinition[],
   ][]) {
-    lines.push(`// ${category.toUpperCase()} schemas`);
+    lines.push(`// ${category.toUpperCase()} types`);
     lines.push('');
 
     for (const schema of categorySchemas) {
-      lines.push(...generateGoSchemaCode(schema));
+      lines.push(...generateGoStructCode(schema));
       lines.push('');
     }
   }
@@ -69,78 +76,107 @@ function generateGoTypesFile(schemas: SchemaDefinition[]): string {
   return lines.join('\n');
 }
 
-function generateGoSchemaCode(schema: SchemaDefinition): string[] {
+function generateGoStructCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const jsonSchema = schema.jsonSchema;
+  const zodDef = schema.schema._def;
 
-  if (jsonSchema.enum) {
-    // Generate enum type for Go
-    lines.push(`type ${schema.name} string`);
-    lines.push('');
-    lines.push('const (');
-    for (const value of jsonSchema.enum) {
-      const constName = value.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-      lines.push(`\t${schema.name}${constName} ${schema.name} = "${value}"`);
-    }
-    lines.push(')');
-  } else if (jsonSchema.type === 'object' && jsonSchema.properties) {
-    // Generate struct for objects
-    lines.push(`type ${schema.name} struct {`);
+  // Generate doc comment
+  lines.push(`// ${schema.name} represents a ${schema.category} schema`);
+  lines.push(`type ${schema.name} struct {`);
 
-    const required = jsonSchema.required || [];
-    for (const [key, value] of Object.entries(jsonSchema.properties as Record<string, any>)) {
-      const goType = jsonSchemaTypeToGo(value);
-      const isRequired = required.includes(key);
-      const jsonTag = isRequired ? `json:"${key}"` : `json:"${key},omitempty"`;
+  if (zodDef?.typeName === 'ZodObject') {
+    const shape = zodDef.shape();
+
+    for (const [key, val] of Object.entries(shape)) {
+      const fieldDef = (val as any)._def;
+      const goType = zodToGoType(val as any);
+      const isOptional =
+        fieldDef?.typeName === 'ZodOptional' || fieldDef?.typeName === 'ZodDefault';
+      const jsonTag = isOptional ? `json:"${key},omitempty"` : `json:"${key}"`;
 
       lines.push(`\t${capitalizeFirst(key)} ${goType} \`${jsonTag}\``);
     }
-
+  } else if (zodDef?.typeName === 'ZodEnum') {
+    const values = zodDef.values as string[];
+    lines.push(`\tValue string \`json:"value"\``);
     lines.push('}');
-  } else if (jsonSchema.anyOf || jsonSchema.oneOf) {
-    // Generate interface for union types (simplified)
-    lines.push(`// ${schema.name} is a union type (simplified as interface{})`);
-    lines.push(`type ${schema.name} interface{}`);
+    lines.push('');
+    lines.push(`// ${schema.name} valid values`);
+    lines.push('const (');
+    for (const value of values) {
+      const constName = toGoConstName(schema.name, value);
+      lines.push(`\t${constName} = "${value}"`);
+    }
+    lines.push(')');
+    return lines;
   } else {
-    lines.push(`type ${schema.name} ${jsonSchemaTypeToGo(jsonSchema)}`);
+    lines.push(`\tValue interface{} \`json:"value"\``);
   }
+
+  lines.push('}');
+
+  // Add Validate method for structs
+  lines.push('');
+  lines.push(`// Validate checks if the ${schema.name} is valid`);
+  lines.push(`func (m ${schema.name}) Validate() error {`);
+  lines.push('\treturn validate' + schema.name + '(m)');
+  lines.push('}');
 
   return lines;
 }
 
-function jsonSchemaTypeToGo(schema: any): string {
-  if (!schema) return 'interface{}';
+function zodToGoType(schema: any): string {
+  if (!schema || !schema._def) return 'interface{}';
 
-  if (schema.$ref) {
-    return schema.$ref.replace('#/definitions/', '');
-  }
+  const def = schema._def;
 
-  if (schema.enum) {
-    return 'string';
-  }
-
-  switch (schema.type) {
-    case 'string':
-      if (schema.format === 'date-time') return 'time.Time';
-      if (schema.format === 'uuid') return 'string';
-      if (schema.format === 'uri') return 'string';
+  switch (def.typeName) {
+    case 'ZodString':
+      if (def.checks) {
+        for (const check of def.checks) {
+          if (check.kind === 'datetime') {
+            return 'time.Time';
+          }
+        }
+      }
       return 'string';
-    case 'number':
+
+    case 'ZodNumber':
+      if (def.checks?.some((c: any) => c.kind === 'int')) {
+        return 'int';
+      }
       return 'float64';
-    case 'integer':
-      return 'int';
-    case 'boolean':
+
+    case 'ZodBoolean':
       return 'bool';
-    case 'array':
-      if (schema.items) {
-        return `[]${jsonSchemaTypeToGo(schema.items)}`;
-      }
-      return '[]interface{}';
-    case 'object':
-      if (schema.additionalProperties) {
-        return `map[string]${jsonSchemaTypeToGo(schema.additionalProperties)}`;
-      }
+
+    case 'ZodOptional':
+      return zodToGoType(def.innerType);
+
+    case 'ZodDefault':
+      return zodToGoType(def.innerType);
+
+    case 'ZodArray':
+      const itemType = zodToGoType(def.type);
+      return `[]${itemType}`;
+
+    case 'ZodObject':
       return 'map[string]interface{}';
+
+    case 'ZodRecord':
+      const valueType = zodToGoType(def.valueType);
+      return `map[string]${valueType}`;
+
+    case 'ZodEnum':
+      return 'string';
+
+    case 'ZodUnion':
+      return 'interface{}';
+
+    case 'ZodUnknown':
+    case 'ZodAny':
+      return 'interface{}';
+
     default:
       return 'interface{}';
   }
@@ -148,6 +184,11 @@ function jsonSchemaTypeToGo(schema: any): string {
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function toGoConstName(typeName: string, value: string): string {
+  const cleanValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  return `${typeName}${cleanValue}`;
 }
 
 function generateGoClientFile(config: SDKGeneratorConfig): string {
@@ -245,32 +286,152 @@ func (c *ControlPlaneClient) Request(ctx context.Context, method, path string, b
 
 	return c.client.Do(req)
 }
+
+// Validate validates a model using the generated validators
+func (c *ControlPlaneClient) Validate(model Validatable) error {
+	return model.Validate()
+}
+
+// Validatable interface for models that can be validated
+type Validatable interface {
+	Validate() error
+}
 `;
 }
 
-function generateGoValidationFile(schemas: SchemaDefinition[]): string {
+function generateGoValidationFile(): string {
   return `// Auto-generated validation utilities
 // DO NOT EDIT MANUALLY - regenerate from source
 
 package controlplane
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 )
 
-// Validate checks if data can be unmarshaled into the target type
-func Validate(data []byte, target interface{}) error {
-	return json.Unmarshal(data, target)
+// ValidationError represents a validation error
+type ValidationError struct {
+	Field   string
+	Message string
 }
 
-// SafeValidate validates data and returns the error if validation fails
-func SafeValidate(data []byte, target interface{}) error {
-	if err := json.Unmarshal(data, target); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
-	return nil
+func (e ValidationError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
+
+// ValidationErrors collects multiple validation errors
+type ValidationErrors struct {
+	Errors []ValidationError
+}
+
+func (e ValidationErrors) Error() string {
+	if len(e.Errors) == 0 {
+		return "validation failed"
+	}
+	return e.Errors[0].Error()
+}
+
+// IsValid checks if there are no validation errors
+func (e ValidationErrors) IsValid() bool {
+	return len(e.Errors) == 0
+}
+
+// Add adds a validation error
+func (e *ValidationErrors) Add(field, message string) {
+	e.Errors = append(e.Errors, ValidationError{Field: field, Message: message})
+}
+`;
+}
+
+function generateGoSchemasFile(schemas: SchemaDefinition[]): string {
+  const lines: string[] = [];
+  lines.push('// Auto-generated schema validation functions');
+  lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
+  lines.push('');
+  lines.push('package controlplane');
+  lines.push('');
+  lines.push('import "fmt"');
+  lines.push('');
+  lines.push('// SchemaValidator is a function that validates a model');
+  lines.push('type SchemaValidator func(interface{}) error');
+  lines.push('');
+  lines.push('// SchemaRegistry maps schema names to their validators');
+  lines.push('var SchemaRegistry = map[string]SchemaValidator{');
+
+  for (const schema of schemas) {
+    const zodDef = schema.schema._def;
+    if (zodDef?.typeName === 'ZodObject') {
+      lines.push(`\t"${schema.name}": func(m interface{}) error {`);
+      lines.push(`\t\tif v, ok := m.(${schema.name}); ok {`);
+      lines.push(`\t\t\treturn validate${schema.name}(v)`);
+      lines.push(`\t\t}`);
+      lines.push(`\t\treturn fmt.Errorf("invalid type for ${schema.name}")`);
+      lines.push(`\t},`);
+    }
+  }
+
+  lines.push('}');
+  lines.push('');
+
+  for (const schema of schemas) {
+    const zodDef = schema.schema._def;
+    if (zodDef?.typeName === 'ZodObject') {
+      lines.push(...generateGoValidationFunction(schema, zodDef.shape()));
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function generateGoValidationFunction(
+  schema: SchemaDefinition,
+  shape: Record<string, any>
+): string[] {
+  const lines: string[] = [];
+  lines.push(`// validate${schema.name} validates a ${schema.name} instance`);
+  lines.push(`func validate${schema.name}(m ${schema.name}) error {`);
+  lines.push('\tvar errs ValidationErrors');
+  lines.push('');
+
+  for (const [key, val] of Object.entries(shape)) {
+    const fieldDef = val._def;
+    const isRequired = fieldDef?.typeName !== 'ZodOptional' && fieldDef?.typeName !== 'ZodDefault';
+    const capitalizedKey = capitalizeFirst(key);
+
+    if (isRequired) {
+      const goType = zodToGoType(val);
+      if (goType === 'string') {
+        lines.push(`\tif m.${capitalizedKey} == "" {`);
+        lines.push(`\t\terrs.Add("${key}", "is required")`);
+        lines.push(`\t}`);
+      } else if (goType === 'int' || goType === 'float64') {
+        lines.push(`\tif m.${capitalizedKey} == 0 {`);
+        lines.push(`\t\terrs.Add("${key}", "is required")`);
+        lines.push(`\t}`);
+      }
+    }
+  }
+
+  lines.push('');
+  lines.push('\tif !errs.IsValid() {');
+  lines.push('\t\treturn errs');
+  lines.push('\t}');
+  lines.push('\treturn nil');
+  lines.push('}');
+
+  return lines;
+}
+
+function generateGoMod(config: SDKGeneratorConfig): string {
+  return `module github.com/${config.organization}/sdk-go
+
+go 1.21
+
+require (
+	github.com/google/uuid v1.6.0
+)
 `;
 }
 
@@ -287,13 +448,55 @@ go get github.com/${config.organization}/sdk-go
 
 ## Usage
 
+### Struct Types
+
+\`\`\`go
+package main
+
+import (
+    "github.com/${config.organization}/sdk-go"
+)
+
+func main() {
+    // Models are fully typed Go structs
+    job := controlplane.JobRequest{
+        ID:   "550e8400-e29b-41d4-a716-446655440000",
+        Type: "process-data",
+        // ...
+    }
+}
+\`\`\`
+
+### Runtime Validation
+
+\`\`\`go
+package main
+
+import (
+    "fmt"
+    "github.com/${config.organization}/sdk-go"
+)
+
+func main() {
+    job := controlplane.JobRequest{
+        ID:   "550e8400-e29b-41d4-a716-446655440000",
+        Type: "process-data",
+    }
+
+    // Each model has a Validate() method
+    if err := job.Validate(); err != nil {
+        fmt.Printf("Validation failed: %v\\n", err)
+    }
+}
+\`\`\`
+
+### Client Usage
+
 \`\`\`go
 package main
 
 import (
     "context"
-    "log"
-    
     "github.com/${config.organization}/sdk-go"
 )
 
@@ -306,15 +509,21 @@ func main() {
     ctx := context.Background()
     resp, err := client.Request(ctx, "GET", "/health", nil)
     if err != nil {
-        log.Fatal(err)
+        panic(err)
     }
     defer resp.Body.Close()
 }
 \`\`\`
 
+## Features
+
+- ✅ **Strongly typed structs** - Full compile-time type safety
+- ✅ **Built-in validation** - Each model has a Validate() method
+- ✅ **Zero drift** - Auto-generated from canonical contracts
+- ✅ **Context support** - Full context.Context support for timeouts
+
 ## Versioning
 
-This SDK follows semantic versioning and tracks the ControlPlane contract version:
 - SDK version: ${config.sdkVersion}
 - Contract version: ${config.contractVersion}
 
@@ -322,5 +531,9 @@ This SDK follows semantic versioning and tracks the ControlPlane contract versio
 
 This SDK is auto-generated. Do not edit manually.
 To regenerate, run: \`sdk-gen --language go\`
+
+## License
+
+Apache-2.0
 `;
 }
