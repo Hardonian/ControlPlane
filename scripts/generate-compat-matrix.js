@@ -19,7 +19,7 @@ function getContractVersion() {
   return contractsPackage.version;
 }
 
-function scanComponents() {
+function scanComponents(contractVersion) {
   const components = [];
   const packagesDir = join(ROOT_DIR, 'packages');
 
@@ -37,7 +37,7 @@ function scanComponents() {
         components.push({
           name: packageJson.name,
           version: packageJson.version,
-          contractVersion: cpConfig.contractVersion || getContractVersion(),
+          contractVersion: cpConfig.contractVersion || contractVersion,
           contractCompatibility: cpConfig.contractCompatibility || {
             min: '1.0.0',
             max: '<2.0.0',
@@ -58,7 +58,7 @@ function scanComponents() {
   components.push({
     name: rootPackage.name,
     version: rootPackage.version,
-    contractVersion: rootCpConfig.contractVersion || getContractVersion(),
+    contractVersion: rootCpConfig.contractVersion || contractVersion,
     contractCompatibility: rootCpConfig.contractCompatibility || {
       min: '1.0.0',
       max: '<2.0.0',
@@ -83,9 +83,8 @@ function generateCompatibilityRanges(components) {
   return ranges;
 }
 
-function checkVersionDrift(components) {
+function checkVersionDrift(components, contractVersion) {
   const warnings = [];
-  const contractVersion = getContractVersion();
 
   for (const component of components) {
     const compat = component.contractCompatibility;
@@ -212,13 +211,15 @@ function main() {
       : 'docs/COMPATIBILITY.md';
 
   console.log('🔍 Scanning components...');
-  const components = scanComponents();
-  console.log(`📦 Found ${components.length} components`);
-
   const contractVersion = getContractVersion();
+  if (!contractVersion) {
+    throw new Error('Contract version could not be resolved.');
+  }
+  const components = scanComponents(contractVersion);
+  console.log(`📦 Found ${components.length} components`);
   console.log(`🔗 Contract version: ${contractVersion}`);
 
-  const warnings = checkVersionDrift(components);
+  const warnings = checkVersionDrift(components, contractVersion);
   if (warnings.length > 0) {
     console.log('⚠️  Warnings detected:');
     warnings.forEach((w) => console.log(`   ${w}`));

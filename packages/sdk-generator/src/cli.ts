@@ -129,7 +129,7 @@ async function validateSDK(language: string, sdkDir: string): Promise<void> {
   console.log(chalk.yellow(`🔍 Validating ${language} SDK...`));
 
   switch (language) {
-    case 'typescript':
+    case 'typescript': {
       const { execSync } = await import('child_process');
       try {
         execSync('npm install && npm run typecheck', { cwd: sdkDir, stdio: 'pipe' });
@@ -140,6 +140,7 @@ async function validateSDK(language: string, sdkDir: string): Promise<void> {
         );
       }
       break;
+    }
 
     case 'python':
       try {

@@ -80,6 +80,47 @@ function calculateOverallTrust(signals: TrustSignalSource): TrustStatus {
   return 'unverified';
 }
 
+function stableHash(seed: string): number {
+  let hash = 5381;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 33) ^ seed.charCodeAt(i);
+  }
+  return hash >>> 0;
+}
+
+function stableNumber(seed: string, min: number, max: number): number {
+  const range = max - min + 1;
+  const hashed = stableHash(seed);
+  return min + (hashed % range);
+}
+
+export function createDeterministicTrustSignal(
+  seed: string,
+  version: string,
+  timestamp: string
+): TrustSignalSource {
+  const downloads = stableNumber(`${seed}:downloads`, 25, 950);
+  const ratingCount = stableNumber(`${seed}:ratingCount`, 3, 80);
+  const averageRating =
+    Math.round((stableNumber(`${seed}:rating`, 36, 50) / 10) * 10) / 10;
+  const codeQualityScore = stableNumber(`${seed}:quality`, 75, 98);
+
+  return {
+    runnerId: seed,
+    contractTestStatus: 'passing',
+    lastContractTestAt: timestamp,
+    lastVerifiedVersion: version,
+    verificationMethod: 'automated_ci',
+    securityScanStatus: 'passed',
+    lastSecurityScanAt: timestamp,
+    codeQualityScore,
+    maintainerReputation: 'verified',
+    downloadCount: downloads,
+    averageRating,
+    ratingCount,
+  };
+}
+
 function buildTrustSignals(source: TrustSignalSource): MarketplaceTrustSignals {
   const overallTrust = calculateOverallTrust(source);
 
@@ -422,16 +463,16 @@ export function queryMarketplace(
       case 'updated':
         return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
       case 'rating':
-        return (b.trustSignals.rating.average || 0) - (a.trustSignals.rating.average || 0);
+        return (a.trustSignals.rating.average || 0) - (b.trustSignals.rating.average || 0);
       case 'downloads':
-        return b.trustSignals.downloadCount - a.trustSignals.downloadCount;
+        return a.trustSignals.downloadCount - b.trustSignals.downloadCount;
       case 'relevance':
       default:
         return 0;
     }
   });
 
-  if (query.sortOrder === 'asc') {
+  if (query.sortOrder === 'desc') {
     sortedItems.reverse();
   }
 

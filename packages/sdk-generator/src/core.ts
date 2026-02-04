@@ -1,6 +1,4 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import * as path from 'path';
 import chalk from 'chalk';
 
 export interface SchemaDefinition {
@@ -31,6 +29,124 @@ export const DEFAULT_CONFIG: SDKGeneratorConfig = {
   packagePrefix: '@controlplane',
   organization: 'controlplane',
 };
+
+type JsonSchema = Record<string, unknown>;
+
+function convertZodToJsonSchema(schema: z.ZodTypeAny, title?: string): JsonSchema {
+  const base = zodTypeToJsonSchema(schema);
+  if (title) {
+    return { ...base, title };
+  }
+  return base;
+}
+
+function zodTypeToJsonSchema(schema: z.ZodTypeAny): JsonSchema {
+  const def = schema._def as {
+    typeName?: string;
+    checks?: Array<{ kind: string; value?: number; inclusive?: boolean }>;
+    innerType?: z.ZodTypeAny;
+    defaultValue?: () => unknown;
+    type?: z.ZodTypeAny;
+    shape?: () => Record<string, z.ZodTypeAny>;
+    valueType?: z.ZodTypeAny;
+    values?: string[];
+    options?: z.ZodTypeAny[];
+    schema?: z.ZodTypeAny;
+    getter?: () => z.ZodTypeAny;
+    value?: unknown;
+  };
+
+  switch (def.typeName) {
+    case 'ZodString': {
+      const schemaObject: JsonSchema = { type: 'string' };
+      for (const check of def.checks || []) {
+        if (check.kind === 'min') {
+          schemaObject.minLength = check.value;
+        } else if (check.kind === 'max') {
+          schemaObject.maxLength = check.value;
+        } else if (check.kind === 'email') {
+          schemaObject.format = 'email';
+        } else if (check.kind === 'url') {
+          schemaObject.format = 'uri';
+        } else if (check.kind === 'uuid') {
+          schemaObject.format = 'uuid';
+        } else if (check.kind === 'datetime') {
+          schemaObject.format = 'date-time';
+        }
+      }
+      return schemaObject;
+    }
+    case 'ZodNumber': {
+      const schemaObject: JsonSchema = { type: 'number' };
+      for (const check of def.checks || []) {
+        if (check.kind === 'min') {
+          schemaObject.minimum = check.value;
+        } else if (check.kind === 'max') {
+          schemaObject.maximum = check.value;
+        } else if (check.kind === 'int') {
+          schemaObject.type = 'integer';
+        }
+      }
+      return schemaObject;
+    }
+    case 'ZodBoolean':
+      return { type: 'boolean' };
+    case 'ZodNull':
+      return { type: 'null' };
+    case 'ZodOptional':
+      return zodTypeToJsonSchema(def.innerType ?? z.any());
+    case 'ZodDefault': {
+      const inner = zodTypeToJsonSchema(def.innerType ?? z.any());
+      return { ...inner, default: def.defaultValue?.() };
+    }
+    case 'ZodArray':
+      return { type: 'array', items: zodTypeToJsonSchema(def.type ?? z.any()) };
+    case 'ZodObject': {
+      const shape = def.shape?.() ?? {};
+      const properties: Record<string, JsonSchema> = {};
+      const required: string[] = [];
+
+      for (const [key, value] of Object.entries(shape)) {
+        properties[key] = zodTypeToJsonSchema(value);
+        const valueDef = value._def as { typeName?: string };
+        if (valueDef.typeName !== 'ZodOptional' && valueDef.typeName !== 'ZodDefault') {
+          required.push(key);
+        }
+      }
+
+      const schemaObject: JsonSchema = { type: 'object', properties };
+      if (required.length > 0) {
+        schemaObject.required = required;
+      }
+      return schemaObject;
+    }
+    case 'ZodRecord':
+      return {
+        type: 'object',
+        additionalProperties: zodTypeToJsonSchema(def.valueType ?? z.any()),
+      };
+    case 'ZodEnum':
+      return { type: 'string', enum: def.values ?? [] };
+    case 'ZodUnion':
+    case 'ZodDiscriminatedUnion':
+      return { oneOf: (def.options ?? []).map((option) => zodTypeToJsonSchema(option)) };
+    case 'ZodLiteral': {
+      const literalValue = def.value;
+      return {
+        const: literalValue,
+        type: literalValue === null ? 'null' : typeof literalValue,
+      };
+    }
+    case 'ZodEffects':
+      return zodTypeToJsonSchema(def.schema ?? z.any());
+    case 'ZodLazy':
+      return zodTypeToJsonSchema(def.getter?.() ?? z.any());
+    case 'ZodUnknown':
+    case 'ZodAny':
+    default:
+      return {};
+  }
+}
 
 export async function extractSchemas(): Promise<SchemaDefinition[]> {
   const schemas: SchemaDefinition[] = [];
@@ -122,7 +238,7 @@ export async function extractSchemas(): Promise<SchemaDefinition[]> {
     if (schema instanceof z.ZodType) {
       try {
         // Cast to any to avoid deep type instantiation issues
-        const jsonSchema = zodToJsonSchema(schema as any, item.name);
+        const jsonSchema = convertZodToJsonSchema(schema as z.ZodTypeAny, item.name);
         schemas.push({
           name: item.name,
           schema: schema as z.ZodTypeAny,

@@ -156,16 +156,18 @@ function zodToGoType(schema: any): string {
     case 'ZodDefault':
       return zodToGoType(def.innerType);
 
-    case 'ZodArray':
+    case 'ZodArray': {
       const itemType = zodToGoType(def.type);
       return `[]${itemType}`;
+    }
 
     case 'ZodObject':
       return 'map[string]interface{}';
 
-    case 'ZodRecord':
+    case 'ZodRecord': {
       const valueType = zodToGoType(def.valueType);
       return `map[string]${valueType}`;
+    }
 
     case 'ZodEnum':
       return 'string';

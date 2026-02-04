@@ -1,4 +1,3 @@
-import type { Request, Response, NextFunction } from 'express';
 import { createLogger, LoggerOptions } from './logger.js';
 import { MetricsCollector, METRIC_NAMES } from './metrics.js';
 import { CorrelationManager } from './correlation.js';
@@ -9,6 +8,21 @@ export interface ObservabilityOptions {
   logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   prettyPrint?: boolean;
 }
+
+type RequestLike = {
+  method: string;
+  path: string;
+  headers: Record<string, string | string[]>;
+  route?: { path?: string };
+  [key: string]: unknown;
+};
+
+type ResponseLike = {
+  statusCode: number;
+  on: (event: 'finish', listener: () => void) => void;
+};
+
+type NextFunctionLike = () => void;
 
 export function observabilityMiddleware(options: ObservabilityOptions) {
   const logger = createLogger({
@@ -21,9 +35,9 @@ export function observabilityMiddleware(options: ObservabilityOptions) {
   const metrics = new MetricsCollector();
   const correlation = new CorrelationManager();
 
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: RequestLike, res: ResponseLike, next: NextFunctionLike) => {
     // Extract or generate correlation ID
-    const headers = req.headers as Record<string, string | string[]>;
+    const headers = req.headers;
     const existingContext = correlation.extractHeaders(headers);
 
     const runWithCorrelation = existingContext

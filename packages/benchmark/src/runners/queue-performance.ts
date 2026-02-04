@@ -119,7 +119,7 @@ export class QueuePerformanceRunner extends BenchmarkRunner {
       ...queueDepthStats,
     ];
 
-    let status: 'passed' | 'failed' | 'skipped' = 'passed';
+    const status: 'passed' | 'failed' | 'skipped' = 'passed';
     const lag = totalMessages - processedMessages;
     const lagRatio = totalMessages > 0 ? lag / totalMessages : 0;
 

@@ -99,7 +99,7 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
   const zodDef = schema.schema._def;
 
   lines.push(`class ${schema.name}(BaseModel):`);
-  lines.push(`    \"\"\"${schema.category} schema: ${schema.name}\"\"\"`);
+  lines.push(`    """${schema.category} schema: ${schema.name}"""`);
 
   if (zodDef?.typeName === 'ZodObject') {
     const shape = zodDef.shape();
@@ -187,31 +187,36 @@ function zodToPythonType(schema: any): string {
     case 'ZodNull':
       return 'None';
 
-    case 'ZodOptional':
+    case 'ZodOptional': {
       const innerType = zodToPythonType(def.innerType);
       return `Optional[${innerType}]`;
+    }
 
     case 'ZodDefault':
       return zodToPythonType(def.innerType);
 
-    case 'ZodArray':
+    case 'ZodArray': {
       const itemType = zodToPythonType(def.type);
       return `List[${itemType}]`;
+    }
 
     case 'ZodObject':
       return 'Dict[str, Any]';
 
-    case 'ZodRecord':
+    case 'ZodRecord': {
       const valueType = zodToPythonType(def.valueType);
       return `Dict[str, ${valueType}]`;
+    }
 
-    case 'ZodEnum':
+    case 'ZodEnum': {
       const values = def.values as string[];
       return `Literal[${values.map((v: string) => `'${v}'`).join(', ')}]`;
+    }
 
-    case 'ZodUnion':
+    case 'ZodUnion': {
       const types = def.options.map((opt: any) => zodToPythonType(opt));
       return `Union[${types.join(', ')}]`;
+    }
 
     case 'ZodUnknown':
     case 'ZodAny':
@@ -271,11 +276,11 @@ class ControlPlaneClient:
         return self.contract_version
 
     def validate(self, model_class: Type[T], data: Dict[str, Any]) -> T:
-        \"\"\"Validate data against a Pydantic model.\"\"\"
+        """Validate data against a Pydantic model."""
         return model_class.model_validate(data)
 
     def safe_validate(self, model_class: Type[T], data: Dict[str, Any]) -> Dict[str, Any]:
-        \"\"\"Safely validate data, returning result with success flag.\"\"\"
+        """Safely validate data, returning result with success flag."""
         try:
             validated = self.validate(model_class, data)
             return {"success": True, "data": validated}
@@ -327,7 +332,7 @@ from pydantic import BaseModel, ValidationError
 T = TypeVar('T', bound=BaseModel)
 
 def validate(model_class: Type[T], data: Dict[str, Any]) -> T:
-    \"\"\"Validate and parse data into a Pydantic model.
+    """Validate and parse data into a Pydantic model.
     
     Args:
         model_class: The Pydantic model class to validate against
@@ -338,11 +343,11 @@ def validate(model_class: Type[T], data: Dict[str, Any]) -> T:
         
     Raises:
         ValidationError: If validation fails
-    \"\"\"
+    """
     return model_class.model_validate(data)
 
 def safe_validate(model_class: Type[T], data: Dict[str, Any]) -> Dict[str, Any]:
-    \"\"\"Safely validate data without throwing exceptions.
+    """Safely validate data without throwing exceptions.
     
     Args:
         model_class: The Pydantic model class to validate against
@@ -351,7 +356,7 @@ def safe_validate(model_class: Type[T], data: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict with 'success' key. If successful, includes 'data' key.
         If failed, includes 'error' key with ValidationError.
-    \"\"\"
+    """
     try:
         validated = validate(model_class, data)
         return {"success": True, "data": validated}
@@ -359,11 +364,11 @@ def safe_validate(model_class: Type[T], data: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": e}
 
 def create_validator(model_class: Type[T]):
-    \"\"\"Create a reusable validator for a specific model.
+    """Create a reusable validator for a specific model.
     
     Returns an object with validate and safe_validate methods
     pre-configured for the given model class.
-    \"\"\"
+    """
     return {
         "validate": lambda data: validate(model_class, data),
         "safe_validate": lambda data: safe_validate(model_class, data),
@@ -393,13 +398,13 @@ function generatePythonSchemasFile(schemas: SchemaDefinition[]): string {
   lines.push('}');
   lines.push('');
   lines.push('def get_schema(name: str) -> Type[BaseModel]:');
-  lines.push('    \"\"\"Get a schema by name.\"\"\"');
+  lines.push('    """Get a schema by name."""');
   lines.push('    if name not in SCHEMA_REGISTRY:');
   lines.push('        raise KeyError(f"Unknown schema: {name}")');
   lines.push('    return SCHEMA_REGISTRY[name]');
   lines.push('');
   lines.push('def list_schemas() -> list[str]:');
-  lines.push('    \"\"\"List all available schema names.\"\"\"');
+  lines.push('    """List all available schema names."""');
   lines.push('    return list(SCHEMA_REGISTRY.keys())');
 
   return lines.join('\n');

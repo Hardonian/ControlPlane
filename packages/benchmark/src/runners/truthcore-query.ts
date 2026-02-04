@@ -264,7 +264,7 @@ export class TruthCoreQueryRunner extends BenchmarkRunner {
         let resultCount = 0;
 
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as { assertions?: unknown[] };
           resultCount = data.assertions?.length || 0;
         }
 

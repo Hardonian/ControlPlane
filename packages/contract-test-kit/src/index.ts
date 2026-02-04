@@ -40,6 +40,21 @@ export interface ContractTest {
   expectedValid: boolean;
 }
 
+export interface ContractTestResultDetail {
+  suiteName: string;
+  testName: string;
+  expectedValid: boolean;
+  actualValid: boolean;
+  errors: ValidationError[];
+}
+
+export interface ContractTestRunSummary {
+  passed: number;
+  failed: number;
+  details: string[];
+  results: ContractTestResultDetail[];
+}
+
 // Simple LRU cache for validation results to avoid re-validating identical data
 class ValidationCache {
   private cache = new Map<string, ValidationResult>();
@@ -399,20 +414,46 @@ export function createCachedValidator(): ContractValidator {
   return new ContractValidator(true);
 }
 
-export function runAllContractTests(): { passed: number; failed: number; details: string[] } {
+export function runAllContractTestsDetailed(): ContractTestRunSummary {
   const validator = createStandardValidator();
   let totalPassed = 0;
   let totalFailed = 0;
   const details: string[] = [];
+  const results: ContractTestResultDetail[] = [];
 
   for (const suite of PredefinedTestSuites) {
-    const { passed, failed } = validator.runTestSuite(suite);
-    totalPassed += passed;
-    totalFailed += failed;
-    details.push(`${suite.name}: ${passed} passed, ${failed} failed`);
+    let suitePassed = 0;
+    let suiteFailed = 0;
+
+    for (const test of suite.tests) {
+      const context = `${suite.name}.${test.name}`;
+      const validation = validator.validate(test.schema, test.testData, context);
+      const success = validation.valid === test.expectedValid;
+      if (success) {
+        suitePassed += 1;
+      } else {
+        suiteFailed += 1;
+      }
+      results.push({
+        suiteName: suite.name,
+        testName: test.name,
+        expectedValid: test.expectedValid,
+        actualValid: validation.valid,
+        errors: validation.errors,
+      });
+    }
+
+    totalPassed += suitePassed;
+    totalFailed += suiteFailed;
+    details.push(`${suite.name}: ${suitePassed} passed, ${suiteFailed} failed`);
   }
 
-  return { passed: totalPassed, failed: totalFailed, details };
+  return { passed: totalPassed, failed: totalFailed, details, results };
+}
+
+export function runAllContractTests(): { passed: number; failed: number; details: string[] } {
+  const { passed, failed, details } = runAllContractTestsDetailed();
+  return { passed, failed, details };
 }
 
 // Export discovery utilities
