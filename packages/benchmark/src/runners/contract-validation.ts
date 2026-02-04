@@ -17,6 +17,15 @@ interface ValidationMetrics {
   errors: Error[];
 }
 
+interface ValidationDataPool {
+  jobRequests: unknown[];
+  jobResponses: unknown[];
+  truthAssertions: unknown[];
+  truthQueries: unknown[];
+  errorEnvelopes: unknown[];
+  complexNested: unknown[];
+}
+
 export class ContractValidationRunner extends BenchmarkRunner {
   async run(config: BenchmarkConfig): Promise<BenchmarkResult> {
     const startTime = new Date().toISOString();
@@ -29,16 +38,23 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     this.log(`Warmup: ${warmupIterations} iterations, Test: ${iterationCount} iterations`);
 
-    await this.warmup(warmupIterations);
+    const poolSize = Math.max(1, Math.min(iterationCount, 100));
+    const dataPool = this.createValidationDataPool(poolSize);
+
+    await this.warmup(warmupIterations, dataPool.jobRequests);
 
     const metrics: ValidationMetrics[] = [];
 
-    metrics.push(await this.benchmarkJobRequestValidation(iterationCount));
-    metrics.push(await this.benchmarkJobResponseValidation(iterationCount));
-    metrics.push(await this.benchmarkTruthAssertionValidation(iterationCount));
-    metrics.push(await this.benchmarkTruthQueryValidation(iterationCount));
-    metrics.push(await this.benchmarkErrorEnvelopeValidation(iterationCount));
-    metrics.push(await this.benchmarkComplexNestedValidation(iterationCount));
+    metrics.push(await this.benchmarkJobRequestValidation(iterationCount, dataPool.jobRequests));
+    metrics.push(await this.benchmarkJobResponseValidation(iterationCount, dataPool.jobResponses));
+    metrics.push(
+      await this.benchmarkTruthAssertionValidation(iterationCount, dataPool.truthAssertions)
+    );
+    metrics.push(await this.benchmarkTruthQueryValidation(iterationCount, dataPool.truthQueries));
+    metrics.push(
+      await this.benchmarkErrorEnvelopeValidation(iterationCount, dataPool.errorEnvelopes)
+    );
+    metrics.push(await this.benchmarkComplexNestedValidation(iterationCount, dataPool.complexNested));
 
     const endTimestamp = Date.now();
     const endTime = new Date().toISOString();
@@ -125,13 +141,17 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return result;
   }
 
-  private async warmup(iterations: number): Promise<void> {
+  private async warmup(iterations: number, dataPool: unknown[]): Promise<void> {
+    const poolSize = dataPool.length;
     for (let i = 0; i < iterations; i++) {
-      JobRequest.safeParse(this.generateJobRequest());
+      JobRequest.safeParse(dataPool[i % poolSize]);
     }
   }
 
-  private async benchmarkJobRequestValidation(iterations: number): Promise<ValidationMetrics> {
+  private async benchmarkJobRequestValidation(
+    iterations: number,
+    dataPool: unknown[]
+  ): Promise<ValidationMetrics> {
     const metrics: ValidationMetrics = {
       schema: 'JobRequest',
       iterations: 0,
@@ -143,9 +163,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     const start = Date.now();
 
+    const poolSize = dataPool.length;
+
     for (let i = 0; i < iterations; i++) {
-      const data = this.generateJobRequest();
-      const result = JobRequest.safeParse(data);
+      const result = JobRequest.safeParse(dataPool[i % poolSize]);
 
       metrics.iterations++;
       if (result.success) {
@@ -159,7 +180,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return metrics;
   }
 
-  private async benchmarkJobResponseValidation(iterations: number): Promise<ValidationMetrics> {
+  private async benchmarkJobResponseValidation(
+    iterations: number,
+    dataPool: unknown[]
+  ): Promise<ValidationMetrics> {
     const metrics: ValidationMetrics = {
       schema: 'JobResponse',
       iterations: 0,
@@ -171,9 +195,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     const start = Date.now();
 
+    const poolSize = dataPool.length;
+
     for (let i = 0; i < iterations; i++) {
-      const data = this.generateJobResponse();
-      const result = JobResponse.safeParse(data);
+      const result = JobResponse.safeParse(dataPool[i % poolSize]);
 
       metrics.iterations++;
       if (result.success) {
@@ -187,7 +212,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return metrics;
   }
 
-  private async benchmarkTruthAssertionValidation(iterations: number): Promise<ValidationMetrics> {
+  private async benchmarkTruthAssertionValidation(
+    iterations: number,
+    dataPool: unknown[]
+  ): Promise<ValidationMetrics> {
     const metrics: ValidationMetrics = {
       schema: 'TruthAssertion',
       iterations: 0,
@@ -199,9 +227,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     const start = Date.now();
 
+    const poolSize = dataPool.length;
+
     for (let i = 0; i < iterations; i++) {
-      const data = this.generateTruthAssertion();
-      const result = TruthAssertion.safeParse(data);
+      const result = TruthAssertion.safeParse(dataPool[i % poolSize]);
 
       metrics.iterations++;
       if (result.success) {
@@ -215,7 +244,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return metrics;
   }
 
-  private async benchmarkTruthQueryValidation(iterations: number): Promise<ValidationMetrics> {
+  private async benchmarkTruthQueryValidation(
+    iterations: number,
+    dataPool: unknown[]
+  ): Promise<ValidationMetrics> {
     const metrics: ValidationMetrics = {
       schema: 'TruthQuery',
       iterations: 0,
@@ -227,9 +259,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     const start = Date.now();
 
+    const poolSize = dataPool.length;
+
     for (let i = 0; i < iterations; i++) {
-      const data = this.generateTruthQuery();
-      const result = TruthQuery.safeParse(data);
+      const result = TruthQuery.safeParse(dataPool[i % poolSize]);
 
       metrics.iterations++;
       if (result.success) {
@@ -243,7 +276,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return metrics;
   }
 
-  private async benchmarkErrorEnvelopeValidation(iterations: number): Promise<ValidationMetrics> {
+  private async benchmarkErrorEnvelopeValidation(
+    iterations: number,
+    dataPool: unknown[]
+  ): Promise<ValidationMetrics> {
     const metrics: ValidationMetrics = {
       schema: 'ErrorEnvelope',
       iterations: 0,
@@ -255,9 +291,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     const start = Date.now();
 
+    const poolSize = dataPool.length;
+
     for (let i = 0; i < iterations; i++) {
-      const data = this.generateErrorEnvelope();
-      const result = ErrorEnvelope.safeParse(data);
+      const result = ErrorEnvelope.safeParse(dataPool[i % poolSize]);
 
       metrics.iterations++;
       if (result.success) {
@@ -271,7 +308,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return metrics;
   }
 
-  private async benchmarkComplexNestedValidation(iterations: number): Promise<ValidationMetrics> {
+  private async benchmarkComplexNestedValidation(
+    iterations: number,
+    dataPool: unknown[]
+  ): Promise<ValidationMetrics> {
     const metrics: ValidationMetrics = {
       schema: 'ComplexNested',
       iterations: 0,
@@ -283,9 +323,10 @@ export class ContractValidationRunner extends BenchmarkRunner {
 
     const start = Date.now();
 
+    const poolSize = dataPool.length;
+
     for (let i = 0; i < iterations; i++) {
-      const data = this.generateComplexNested();
-      const result = JobRequest.safeParse(data);
+      const result = JobRequest.safeParse(dataPool[i % poolSize]);
 
       metrics.iterations++;
       if (result.success) {
@@ -299,21 +340,63 @@ export class ContractValidationRunner extends BenchmarkRunner {
     return metrics;
   }
 
-  private generateJobRequest() {
+  private createValidationDataPool(poolSize: number): ValidationDataPool {
+    const baseTimestamp = Date.now();
+    const ids = this.buildDataPool(poolSize, () => crypto.randomUUID());
+    const timestamps = this.buildDataPool(poolSize, (index) =>
+      new Date(baseTimestamp + index * 1000).toISOString()
+    );
+
+    const jobRequests = this.buildDataPool(poolSize, (index) =>
+      this.generateJobRequest(index, ids[index], timestamps[index])
+    );
+    const jobResponses = this.buildDataPool(poolSize, (index) =>
+      this.generateJobResponse(index, jobRequests[index], ids[index], timestamps[index])
+    );
+    const truthAssertions = this.buildDataPool(poolSize, (index) =>
+      this.generateTruthAssertion(index, ids[index], timestamps[index])
+    );
+    const truthQueries = this.buildDataPool(poolSize, (index) => this.generateTruthQuery(index));
+    const errorEnvelopes = this.buildDataPool(poolSize, (index) =>
+      this.generateErrorEnvelope(index, ids[index], timestamps[index])
+    );
+    const complexNested = this.buildDataPool(poolSize, (index) =>
+      this.generateComplexNested(jobRequests[index], timestamps[index], index)
+    );
+
     return {
-      id: crypto.randomUUID(),
+      jobRequests,
+      jobResponses,
+      truthAssertions,
+      truthQueries,
+      errorEnvelopes,
+      complexNested,
+    };
+  }
+
+  private buildDataPool<T>(poolSize: number, factory: (index: number) => T): T[] {
+    const pool = new Array<T>(poolSize);
+    for (let i = 0; i < poolSize; i++) {
+      pool[i] = factory(i);
+    }
+    return pool;
+  }
+
+  private generateJobRequest(index: number, id: string, timestamp: string) {
+    return {
+      id,
       type: 'benchmark.job',
       priority: 50,
       payload: {
         type: 'benchmark',
         version: '1.0.0',
-        data: { test: true, index: Math.floor(Math.random() * 1000) },
+        data: { test: true, index: index % 1000 },
         options: {},
       },
       metadata: {
         source: 'benchmark',
         tags: ['test', 'benchmark'],
-        createdAt: new Date().toISOString(),
+        createdAt: timestamp,
       },
       retryPolicy: {
         maxRetries: 3,
@@ -327,42 +410,47 @@ export class ContractValidationRunner extends BenchmarkRunner {
     };
   }
 
-  private generateJobResponse() {
+  private generateJobResponse(
+    index: number,
+    request: ReturnType<typeof this.generateJobRequest>,
+    id: string,
+    timestamp: string
+  ) {
     return {
-      id: crypto.randomUUID(),
+      id,
       status: 'completed',
-      request: this.generateJobRequest(),
+      request,
       result: {
         success: true,
         data: { result: 'success' },
         metadata: {
-          completedAt: new Date().toISOString(),
-          durationMs: 1234,
-          attempts: 1,
+          completedAt: timestamp,
+          durationMs: 1200 + (index % 250),
+          attempts: 1 + (index % 2),
         },
       },
-      updatedAt: new Date().toISOString(),
+      updatedAt: timestamp,
     };
   }
 
-  private generateTruthAssertion() {
+  private generateTruthAssertion(index: number, id: string, timestamp: string) {
     return {
-      id: crypto.randomUUID(),
-      subject: `benchmark-${Math.floor(Math.random() * 100)}`,
+      id,
+      subject: `benchmark-${index % 100}`,
       predicate: 'benchmark.test',
-      object: { data: 'test', index: Math.floor(Math.random() * 1000) },
+      object: { data: 'test', index: index % 1000 },
       confidence: 1.0,
-      timestamp: new Date().toISOString(),
+      timestamp,
       source: 'benchmark',
       metadata: {},
     };
   }
 
-  private generateTruthQuery() {
+  private generateTruthQuery(index: number) {
     return {
-      id: crypto.randomUUID(),
+      id: `benchmark-query-${index}`,
       pattern: {
-        subject: `benchmark-${Math.floor(Math.random() * 100)}`,
+        subject: `benchmark-${index % 100}`,
         predicate: 'benchmark.test',
       },
       filters: {},
@@ -371,14 +459,14 @@ export class ContractValidationRunner extends BenchmarkRunner {
     };
   }
 
-  private generateErrorEnvelope() {
+  private generateErrorEnvelope(index: number, id: string, timestamp: string) {
     return {
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
+      id,
+      timestamp,
       category: 'RUNTIME_ERROR',
       severity: 'error',
       code: 'BENCHMARK_ERROR',
-      message: 'Benchmark test error',
+      message: `Benchmark test error ${index}`,
       details: [],
       service: 'benchmark',
       retryable: true,
@@ -386,9 +474,13 @@ export class ContractValidationRunner extends BenchmarkRunner {
     };
   }
 
-  private generateComplexNested() {
+  private generateComplexNested(
+    baseRequest: ReturnType<typeof this.generateJobRequest>,
+    timestamp: string,
+    index: number
+  ) {
     return {
-      ...this.generateJobRequest(),
+      ...baseRequest,
       payload: {
         type: 'complex',
         version: '1.0.0',
@@ -398,9 +490,9 @@ export class ContractValidationRunner extends BenchmarkRunner {
               nested: {
                 data: Array.from({ length: 10 }, (_, i) => ({
                   id: i,
-                  value: `item-${i}`,
+                  value: `item-${index}-${i}`,
                   metadata: {
-                    created: new Date().toISOString(),
+                    created: timestamp,
                     tags: ['tag1', 'tag2', 'tag3'],
                   },
                 })),
