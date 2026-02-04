@@ -38,21 +38,34 @@ describe('SDK Generator', () => {
       const sdk = generateTypeScriptSDK(schemas, DEFAULT_CONFIG);
 
       expect(sdk.language).toBe('typescript');
+      expect(sdk.files.has('src/schemas.ts')).toBe(true);
       expect(sdk.files.has('src/types.ts')).toBe(true);
       expect(sdk.files.has('src/client.ts')).toBe(true);
       expect(sdk.files.has('src/index.ts')).toBe(true);
+      expect(sdk.files.has('src/validation.ts')).toBe(true);
       expect(sdk.files.has('README.md')).toBe(true);
       expect(sdk.packageConfig.name).toBe('@controlplane/sdk');
     });
 
-    it('should generate valid TypeScript types', async () => {
+    it('should generate valid TypeScript schemas with Zod', async () => {
       const schemas = await extractSchemas();
       const sdk = generateTypeScriptSDK(schemas, DEFAULT_CONFIG);
-      const typesContent = sdk.files.get('src/types.ts');
+      const schemasContent = sdk.files.get('src/schemas.ts');
 
-      expect(typesContent).toContain('export interface');
-      expect(typesContent).toContain('export type');
-      expect(typesContent).toContain('Auto-generated from ControlPlane contracts');
+      expect(schemasContent).toContain('export const');
+      expect(schemasContent).toContain('z.');
+      expect(schemasContent).toContain('export type');
+      expect(schemasContent).toContain('Auto-generated Zod schemas from ControlPlane contracts');
+    });
+
+    it('should generate validation utilities', async () => {
+      const schemas = await extractSchemas();
+      const sdk = generateTypeScriptSDK(schemas, DEFAULT_CONFIG);
+      const validationContent = sdk.files.get('src/validation.ts');
+
+      expect(validationContent).toContain('export function validate');
+      expect(validationContent).toContain('export function safeValidate');
+      expect(validationContent).toContain('export function createValidator');
     });
   });
 
@@ -62,20 +75,23 @@ describe('SDK Generator', () => {
       const sdk = generatePythonSDK(schemas, DEFAULT_CONFIG);
 
       expect(sdk.language).toBe('python');
-      expect(sdk.files.has('controlplane_sdk/types.py')).toBe(true);
+      expect(sdk.files.has('controlplane_sdk/models.py')).toBe(true);
       expect(sdk.files.has('controlplane_sdk/client.py')).toBe(true);
       expect(sdk.files.has('controlplane_sdk/__init__.py')).toBe(true);
+      expect(sdk.files.has('controlplane_sdk/validation.py')).toBe(true);
+      expect(sdk.files.has('controlplane_sdk/schemas.py')).toBe(true);
+      expect(sdk.files.has('pyproject.toml')).toBe(true);
       expect(sdk.packageConfig.name).toBe('controlplane-sdk');
     });
 
-    it('should generate valid Python code', async () => {
+    it('should generate valid Python Pydantic models', async () => {
       const schemas = await extractSchemas();
       const sdk = generatePythonSDK(schemas, DEFAULT_CONFIG);
-      const typesContent = sdk.files.get('controlplane_sdk/types.py');
+      const modelsContent = sdk.files.get('controlplane_sdk/models.py');
 
-      expect(typesContent).toContain('class');
-      expect(typesContent).toContain('BaseModel');
-      expect(typesContent).toContain('Auto-generated from ControlPlane contracts');
+      expect(modelsContent).toContain('class');
+      expect(modelsContent).toContain('BaseModel');
+      expect(modelsContent).toContain('Auto-generated Pydantic models from ControlPlane contracts');
     });
   });
 
@@ -87,17 +103,29 @@ describe('SDK Generator', () => {
       expect(sdk.language).toBe('go');
       expect(sdk.files.has('types.go')).toBe(true);
       expect(sdk.files.has('client.go')).toBe(true);
+      expect(sdk.files.has('validation.go')).toBe(true);
+      expect(sdk.files.has('schemas.go')).toBe(true);
+      expect(sdk.files.has('go.mod')).toBe(true);
       expect(sdk.files.has('README.md')).toBe(true);
     });
 
-    it('should generate valid Go code', async () => {
+    it('should generate valid Go structs', async () => {
       const schemas = await extractSchemas();
       const sdk = generateGoSDK(schemas, DEFAULT_CONFIG);
       const typesContent = sdk.files.get('types.go');
 
       expect(typesContent).toContain('package controlplane');
       expect(typesContent).toContain('type');
-      expect(typesContent).toContain('Auto-generated from ControlPlane contracts');
+      expect(typesContent).toContain('struct');
+      expect(typesContent).toContain('Auto-generated Go types from ControlPlane contracts');
+    });
+
+    it('should generate validation methods', async () => {
+      const schemas = await extractSchemas();
+      const sdk = generateGoSDK(schemas, DEFAULT_CONFIG);
+      const typesContent = sdk.files.get('types.go');
+
+      expect(typesContent).toContain('Validate() error');
     });
   });
 });

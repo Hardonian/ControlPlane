@@ -2,12 +2,21 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import * as fs from 'fs-extra';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import { extractSchemas, validateSchemas, DEFAULT_CONFIG, type SDKGeneratorConfig } from './core';
-import { generateTypeScriptSDK } from './generators/typescript';
-import { generatePythonSDK } from './generators/python';
-import { generateGoSDK } from './generators/go';
+import { fileURLToPath } from 'url';
+import {
+  extractSchemas,
+  validateSchemas,
+  DEFAULT_CONFIG,
+  type SDKGeneratorConfig,
+} from './core.js';
+import { generateTypeScriptSDK } from './generators/typescript.js';
+import { generatePythonSDK } from './generators/python.js';
+import { generateGoSDK } from './generators/go.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const program = new Command();
 
@@ -70,12 +79,12 @@ program
         }
 
         const sdkDir = path.join(config.outputDir, lang);
-        await fs.ensureDir(sdkDir);
+        await fs.mkdir(sdkDir, { recursive: true });
 
         // Write generated files
         for (const [filePath, content] of sdk.files) {
           const fullPath = path.join(sdkDir, filePath);
-          await fs.ensureDir(path.dirname(fullPath));
+          await fs.mkdir(path.dirname(fullPath), { recursive: true });
           await fs.writeFile(fullPath, content, 'utf-8');
         }
 
@@ -87,12 +96,18 @@ program
           configContent = JSON.stringify(sdk.packageConfig, null, 2);
         } else if (lang === 'python') {
           configFile = 'pyproject.toml';
-          configContent = generatePyprojectToml(sdk.packageConfig);
+          // pyproject.toml is already generated as a file
+          configContent = '';
         } else {
           configFile = 'go.mod';
-          configContent = generateGoMod(sdk.packageConfig);
+          configContent = sdk.packageConfig.module
+            ? `module ${sdk.packageConfig.module}\n\ngo ${sdk.packageConfig.goVersion}\n`
+            : '';
         }
-        await fs.writeFile(path.join(sdkDir, configFile), configContent, 'utf-8');
+
+        if (configContent) {
+          await fs.writeFile(path.join(sdkDir, configFile), configContent, 'utf-8');
+        }
 
         console.log(chalk.green(`✓ Generated ${lang} SDK (${sdk.files.size} files)`));
 
@@ -115,18 +130,18 @@ async function validateSDK(language: string, sdkDir: string): Promise<void> {
 
   switch (language) {
     case 'typescript':
-      // Check TypeScript compilation
       const { execSync } = await import('child_process');
       try {
-        execSync('npm run typecheck', { cwd: sdkDir, stdio: 'pipe' });
+        execSync('npm install && npm run typecheck', { cwd: sdkDir, stdio: 'pipe' });
         console.log(chalk.green('✓ TypeScript compilation successful'));
       } catch {
-        console.log(chalk.yellow('⚠ TypeScript validation skipped (no build script)'));
+        console.log(
+          chalk.yellow('⚠ TypeScript validation skipped (build may fail without dependencies)')
+        );
       }
       break;
 
     case 'python':
-      // Check Python syntax
       try {
         const files = await fs.readdir(path.join(sdkDir, 'controlplane_sdk'));
         console.log(chalk.green(`✓ Python SDK structure valid (${files.length} modules)`));
@@ -136,7 +151,6 @@ async function validateSDK(language: string, sdkDir: string): Promise<void> {
       break;
 
     case 'go':
-      // Check Go module
       try {
         const files = await fs.readdir(sdkDir);
         const hasGoFiles = files.some((f) => f.endsWith('.go'));
@@ -148,42 +162,6 @@ async function validateSDK(language: string, sdkDir: string): Promise<void> {
       }
       break;
   }
-}
-
-function generatePyprojectToml(config: any): string {
-  return `[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
-name = "${config.name}"
-version = "${config.version}"
-description = "${config.description}"
-readme = "README.md"
-license = "Apache-2.0"
-requires-python = ">=3.8"
-classifiers = [
-${config.classifiers.map((c: string) => `    "${c}",`).join('\n')}
-]
-dependencies = [
-${config.install_requires.map((d: string) => `    "${d}",`).join('\n')}
-]
-
-[project.optional-dependencies]
-dev = [
-${config.extras_require.dev.map((d: string) => `    "${d}",`).join('\n')}
-]
-
-[tool.hatch.build.targets.wheel]
-packages = ["controlplane_sdk"]
-`;
-}
-
-function generateGoMod(config: any): string {
-  return `module ${config.module}
-
-go ${config.goVersion}
-`;
 }
 
 program.parse();
