@@ -1,6 +1,6 @@
 # ControlPlane Project Dashboard
 
-> Last updated: 2026-02-04
+> Last updated: 2026-02-05
 
 ## Overview
 
@@ -18,6 +18,7 @@ This dashboard tracks the status of all ControlPlane packages, tooling, and docu
 | `@controlplane/observability` | 1.0.0 | ✅ | ✅ | - | - | ✅ Complete |
 | `@controlplane/sdk-generator` | 1.0.0 | ✅ | ✅ | ✅ | ✅ | ✅ Complete |
 | `@controlplane/benchmark` | 1.0.0 | ✅ | ✅ | ✅ | - | ✅ Complete |
+| `@controlplane/optimization-utils` | 1.0.0 | ✅ | ✅ | - | - | ✅ Complete |
 
 **Legend:** ✅ Complete | 🔄 In Progress | ⏳ Pending | ❌ Blocked
 
@@ -147,6 +148,27 @@ This dashboard tracks the status of all ControlPlane packages, tooling, and docu
 
 ---
 
+## Optimization Utils (@controlplane/optimization-utils)
+
+Frontend optimization and feature hardening utilities.
+
+### Caching
+- **LRUCache**: Least Recently Used cache with TTL support
+- **TTLCache**: Time-based expiration with automatic cleanup
+- **@Memoize**: Decorator for automatic method memoization
+
+### Hardening Patterns
+- **CircuitBreaker**: Prevents cascading failures (CLOSED/OPEN/HALF-OPEN states)
+- **RateLimiter**: Token bucket rate limiting with burst support
+- **RetryPolicy**: Exponential backoff with jitter
+- **Bulkhead**: Concurrency limiting with queue management
+
+### Monitoring
+- **PerformanceMonitor**: Track operation metrics with optimization suggestions
+- **HotPathTracker**: Identify resource-intensive code paths
+
+---
+
 ## Pending Work
 
 ### High Priority
@@ -159,7 +181,11 @@ This dashboard tracks the status of all ControlPlane packages, tooling, and docu
 
 - [ ] **Additional Templates**: Add WebSocket runner template
 - [ ] **Connector Library**: Expand marketplace with more connector examples
-- [ ] **Performance Optimization**: Profile and optimize contract validation
+- [x] **Performance Optimization**: Profile and optimize contract validation
+  - [x] LRU/TTL caching utilities
+  - [x] Circuit breaker, rate limiter, retry policies
+  - [x] Performance monitoring and hot path tracking
+  - [x] Optimization suggestions engine
 
 ### Low Priority
 
