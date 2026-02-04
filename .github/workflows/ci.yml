@@ -52,13 +52,19 @@ jobs:
         run: pnpm run capability:registry -- --format=json > capability-registry.json
 
       - name: Upload capability registry artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           name: capability-registry
           path: capability-registry.json
 
       - name: Type check
         run: pnpm run typecheck
+
+      - name: Generate compatibility matrix
+        run: pnpm run compat:generate
+
+      - name: Check version compatibility
+        run: pnpm run compat:check
 
   # Lint and format checks
   lint:
