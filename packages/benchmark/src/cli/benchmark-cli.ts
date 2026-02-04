@@ -39,7 +39,11 @@ program
       console.log(chalk.bold.blue('\n🏃 ControlPlane Benchmark Suite\n'));
 
       const config = createBenchmarkConfig(options);
-      const suite = createBenchmarkSuite(options.suite, config);
+      const suite = createBenchmarkSuite(options.suite, config, {
+        truthcore: options.truthcore,
+        jobforge: options.jobforge,
+        runner: options.runner,
+      });
 
       const engine = new BenchmarkEngine({
         truthcoreUrl: options.truthcore,
@@ -96,7 +100,11 @@ function createBenchmarkConfig(options: any): BenchmarkConfig {
   };
 }
 
-function createBenchmarkSuite(suiteType: string, baseConfig: BenchmarkConfig): BenchmarkSuite {
+function createBenchmarkSuite(
+  suiteType: string,
+  baseConfig: BenchmarkConfig,
+  urls: { truthcore: string; jobforge: string; runner: string }
+): BenchmarkSuite {
   const configs: BenchmarkConfig[] = [];
 
   const suiteDescriptions: Record<string, { name: string; desc: string }> = {
@@ -172,9 +180,9 @@ function createBenchmarkSuite(suiteType: string, baseConfig: BenchmarkConfig): B
     description: desc.desc,
     configs,
     globalConfig: {
-      truthcoreUrl: baseConfig.thresholds?.truthcoreUrl || 'http://localhost:3001',
-      jobforgeUrl: baseConfig.thresholds?.jobforgeUrl || 'http://localhost:3002',
-      runnerUrl: baseConfig.thresholds?.runnerUrl || 'http://localhost:3003',
+      truthcoreUrl: urls.truthcore,
+      jobforgeUrl: urls.jobforge,
+      runnerUrl: urls.runner,
       outputFormat: 'table',
       verbose: false,
     },

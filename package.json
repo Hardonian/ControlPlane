@@ -51,7 +51,18 @@
     "sdk:validate": "pnpm --filter @controlplane/sdk-generator validate",
     "sdk:check": "node scripts/check-sdk-drift.js",
     "sdk:build": "pnpm --filter @controlplane/sdk-generator build",
-    "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator build"
+    "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator build",
+    "build:benchmark": "pnpm --filter @controlplane/benchmark build",
+    "benchmark": "pnpm --filter @controlplane/benchmark benchmark",
+    "benchmark:throughput": "pnpm --filter @controlplane/benchmark benchmark:throughput",
+    "benchmark:latency": "pnpm --filter @controlplane/benchmark benchmark:latency",
+    "benchmark:truthcore": "pnpm --filter @controlplane/benchmark benchmark:truthcore",
+    "benchmark:runner": "pnpm --filter @controlplane/benchmark benchmark:runner",
+    "benchmark:contract": "pnpm --filter @controlplane/benchmark benchmark:contract",
+    "benchmark:queue": "pnpm --filter @controlplane/benchmark benchmark:queue",
+    "benchmark:health": "pnpm --filter @controlplane/benchmark benchmark:health",
+    "benchmark:all": "pnpm --filter @controlplane/benchmark benchmark:all",
+    "test:benchmark": "playwright test tests/e2e/benchmark.api.spec.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",

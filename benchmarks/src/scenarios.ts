@@ -19,7 +19,7 @@ export interface BenchmarkScenario {
   config: Record<string, unknown>;
 }
 
-export interface LatencyConfig {
+export interface LatencyConfig extends Record<string, unknown> {
   concurrentJobs: number;
   jobType: string;
   jobPayload: Record<string, unknown>;
@@ -27,18 +27,18 @@ export interface LatencyConfig {
   maxPollAttempts: number;
 }
 
-export interface DegradedConfig {
+export interface DegradedConfig extends Record<string, unknown> {
   failureType: 'runner-down' | 'truthcore-down' | 'network-partition' | 'slow-runner';
   failureDuration: number; // seconds
   jobRate: number; // jobs per second
   expectedBehavior: string;
 }
 
-export interface ScaleConfig {
+export interface ScaleConfig extends Record<string, unknown> {
   runnerCounts: number[];
   jobTypes: string[];
   jobsPerRunner: number;
-  jobComplexity: 'light' | 'medium' | 'heavy';
+  jobComplexity: 'light' | 'medium' | 'heavy' | 'mixed';
 }
 
 // Orchestration Latency Scenarios
