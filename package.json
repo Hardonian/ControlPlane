@@ -29,6 +29,7 @@
     "ci": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run test:e2e",
     "contract:validate": "pnpm --filter @controlplane/contract-test-kit exec contract-test",
     "contract:validate:json": "pnpm --filter @controlplane/contract-test-kit exec contract-test --json",
+    "contract:lint": "pnpm --filter @controlplane/contracts lint",
     "contract:sync": "pnpm --filter @controlplane/contract-test-kit exec contract-sync",
     "contract:sync:check": "pnpm --filter @controlplane/contract-test-kit exec contract-sync",
     "contract:sync:fix": "pnpm --filter @controlplane/contract-test-kit exec contract-sync --fix",

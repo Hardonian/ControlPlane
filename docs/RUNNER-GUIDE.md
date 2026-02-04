@@ -428,6 +428,14 @@ curl -X POST http://localhost:3002/jobs \
 pnpm run contract:validate
 ```
 
+### CI Guardrails for Runner Changes
+
+CI runs contract checks before builds/tests to catch breaking changes early. To match CI locally:
+
+```bash
+pnpm run runner:ci:check
+```
+
 ## Troubleshooting
 
 ### Registration Fails

@@ -42,6 +42,9 @@ pnpm run test:smoke
 # Run contract validation
 pnpm run contract:validate
 
+# Runner guardrails (mirrors CI contract checks for runner changes)
+pnpm run runner:ci:check
+
 # Run unit tests
 pnpm run test
 
@@ -90,6 +93,7 @@ ControlPlane/
 | `pnpm run test:e2e` | Run E2E tests |
 | `pnpm run test:smoke` | Run smoke tests |
 | `pnpm run contract:validate` | Validate contracts |
+| `pnpm run runner:ci:check` | Runner CI contract guardrails |
 | `pnpm run lint` | Run linter |
 | `pnpm run typecheck` | Run TypeScript checks |
 | `pnpm run ci` | Full CI pipeline locally |

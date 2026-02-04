@@ -2,6 +2,31 @@
 
 Thank you for your interest in contributing!
 
+## Where to Start
+
+- **Docs fixes:** Start in `docs/` or `README.md` and open a small PR.
+- **Runner work:** Use the quickstart to scaffold a runner, then run contract checks locally.
+- **Connector work:** Follow the marketplace guide to align on connector types and metadata.
+- **Contracts:** Read the contract versioning guide before proposing schema changes.
+
+Helpful entry points:
+
+- [Runner quickstart](./docs/CREATE-RUNNER-QUICKSTART.md)
+- [Runner guide](./docs/RUNNER-GUIDE.md)
+- [Marketplace submission guide](./docs/MARKETPLACE-SUBMISSION-GUIDE.md)
+- [Contract upgrade guide](./docs/CONTRACT-UPGRADE.md)
+
+## Contribution Lanes
+
+We keep changes safe by clearly separating contribution areas. Pick a lane and follow its guardrails:
+
+| Lane | Typical changes | Start here | Local checks |
+| --- | --- | --- | --- |
+| docs | Guides, READMEs, release notes | `docs/` | `pnpm run format:check` |
+| runner | New or updated runners | Runner quickstart + guide | `pnpm run runner:ci:check` |
+| connector | New connectors or templates | Marketplace guide | `pnpm run build:contracts && pnpm run contract:validate` |
+| contracts | Schema, types, versioning | Contract upgrade guide | `pnpm run build:contracts && pnpm run contract:lint && pnpm run contract:validate` |
+
 ## Development Setup
 
 1. Fork and clone the repository
@@ -20,6 +45,17 @@ pnpm run test:watch
 
 # Make changes, tests run automatically
 ```
+
+## How CI Protects You
+
+CI is intentionally strict to prevent accidental contract breakage:
+
+- **Contract linting:** validates contracts compile and pass lint checks.
+- **Contract tests & sync:** validates schemas and keeps generated artifacts in sync.
+- **Compatibility matrix:** ensures version compatibility across the ecosystem.
+- **Semantic checks:** enforces conventional commits for predictable releases.
+
+If you add a runner, the contract checks run before tests or builds, so you get fast feedback without breaking the pipeline.
 
 ## Commit Convention
 
