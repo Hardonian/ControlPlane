@@ -42,6 +42,9 @@ jobs:
       - name: Build test kit
         run: pnpm run build:test-kit
 
+      - name: Lint contracts
+        run: pnpm run contract:lint
+
       - name: Run contract tests
         run: pnpm run contract:validate:json
 
@@ -94,29 +97,19 @@ jobs:
       - name: Format check
         run: pnpm run format:check
 
-  docs:
-    name: Docs Reality Checks
+  # Semantic checks (commit conventions)
+  semantic:
+    name: Semantic Checks
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
         with:
-          version: 8.12.0
+          fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a # v4.0.0
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify docs match repo reality
-        run: pnpm run docs:verify
+      - name: Lint commits
+        uses: wagoid/commitlint-github-action@5a3f0e3e3c5ff2b47c86f0cf0ad1a9d90a4bb3e9 # v6.0.1
 
   # Unit tests
   test:

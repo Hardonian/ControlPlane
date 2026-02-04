@@ -5,46 +5,63 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve ControlPlane contracts and tooling.
+        Thanks for helping improve ControlPlane! Please include as much detail as you can so we can reproduce quickly.
+  - type: input
+    id: area
+    attributes:
+      label: Contribution lane
+      description: "Which area is affected? (docs / runner / connector / contracts / other)"
+      placeholder: "runner"
+    validations:
+      required: true
   - type: textarea
     id: summary
     attributes:
       label: Summary
-      description: What happened and what did you expect?
-      placeholder: "Contract validation fails when ..."
+      description: "What broke?"
+      placeholder: "Contract sync fails when ..."
     validations:
       required: true
   - type: textarea
-    id: repro
+    id: steps
     attributes:
-      label: Reproduction steps
-      description: Provide exact commands and inputs.
+      label: Steps to reproduce
+      description: "Include exact commands, inputs, and config."
       placeholder: |
-        1. pnpm run contract:validate
-        2. ...
+        1. pnpm install
+        2. pnpm run build:contracts
+        3. pnpm run contract:validate
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: "Contract validation passes."
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: "Validation fails with ..."
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Logs or error output
-      description: Paste relevant logs or stack traces.
+      label: Logs or screenshots
+      description: "Paste relevant logs or screenshots."
       render: shell
-    validations:
-      required: true
   - type: input
     id: version
     attributes:
-      label: Version
-      description: Which package(s) are affected?
-      placeholder: "@controlplane/contracts@1.0.0"
-    validations:
-      required: true
-  - type: input
+      label: Version or commit
+      description: "Which version or commit are you on?"
+      placeholder: "git rev-parse HEAD"
+  - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Node version, pnpm version, OS.
-      placeholder: "Node 20.11, pnpm 8.12, macOS 14"
-    validations:
-      required: true
+      description: "OS, Node, pnpm, Docker, etc."
+      placeholder: "macOS 14, node 20.10.0, pnpm 8.12.0"

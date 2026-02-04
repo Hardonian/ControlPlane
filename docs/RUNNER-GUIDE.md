@@ -35,7 +35,15 @@ pnpm add @controlplane/contracts @controlplane/contract-test-kit
 pnpm exec contract-test
 ```
 
-`contract-test` validates that your payloads and error envelopes match the canonical schemas.
+### CI Guardrails for Runner Changes
+
+CI runs contract checks before builds/tests to catch breaking changes early. To match CI locally:
+
+```bash
+pnpm run runner:ci:check
+```
+
+## Troubleshooting
 
 ## Common Integration Patterns
 

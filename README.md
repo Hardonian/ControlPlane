@@ -87,9 +87,11 @@ The contracts package is the root authority. Tooling in this repo reads those sc
 
 ## Extending the Project
 
-- **Add or update contracts** in `packages/contracts/src` and run `pnpm run contract:validate`.
-- **Extend validation tooling** in `packages/contract-test-kit/src` and cover changes with tests.
-- **Add scaffolding templates** in `packages/create-runner/templates`.
+# Runner guardrails (mirrors CI contract checks for runner changes)
+pnpm run runner:ci:check
+
+# Run unit tests
+pnpm run test
 
 Invariants to respect:
 - Contract schemas must remain backwards compatible within a major version.
@@ -108,9 +110,21 @@ These failures are designed to stop releases before incompatible changes ship.
 
 ## Security & Safety Considerations
 
-- No runtime services are shipped here; secrets are not expected.
-- Consuming services should treat the contracts as an untrusted boundary and validate inputs at runtime.
-- Security reporting lives in [SECURITY.md](./SECURITY.md).
+| Command | Description |
+|---------|-------------|
+| `pnpm install` | Install all dependencies |
+| `pnpm run build` | Build all packages |
+| `pnpm run dev:stack` | Start local stack (detached) |
+| `pnpm run dev:stack:logs` | Start local stack (with logs) |
+| `pnpm run dev:stack:down` | Stop local stack |
+| `pnpm run test` | Run unit tests |
+| `pnpm run test:e2e` | Run E2E tests |
+| `pnpm run test:smoke` | Run smoke tests |
+| `pnpm run contract:validate` | Validate contracts |
+| `pnpm run runner:ci:check` | Runner CI contract guardrails |
+| `pnpm run lint` | Run linter |
+| `pnpm run typecheck` | Run TypeScript checks |
+| `pnpm run ci` | Full CI pipeline locally |
 
 ## Contributing
 
