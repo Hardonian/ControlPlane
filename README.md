@@ -64,6 +64,16 @@ pnpm run build:test-kit
 pnpm run contract:validate
 ```
 
+**Registry Configuration (required)**
+
+Create or update `.npmrc` with:
+
+```ini
+registry=https://registry.npmjs.org/
+@Hardonian:registry=https://registry.npmjs.org/
+always-auth=false
+```
+
 ### Verify Integrations (CLI + SDK)
 
 ```bash
