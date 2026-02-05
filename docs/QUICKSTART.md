@@ -6,6 +6,7 @@ Get the ControlPlane contracts and tooling running locally. This tooling is desi
 
 - Node.js 18+
 - pnpm 8+
+- npmjs registry for all scopes
 
 ## Setup
 
@@ -13,6 +14,16 @@ Get the ControlPlane contracts and tooling running locally. This tooling is desi
 pnpm install
 pnpm run build:contracts
 pnpm run build:test-kit
+```
+
+### Registry Configuration (required)
+
+Create or update `.npmrc` with:
+
+```ini
+registry=https://registry.npmjs.org/
+@Hardonian:registry=https://registry.npmjs.org/
+always-auth=false
 ```
 
 ## Validate Contracts

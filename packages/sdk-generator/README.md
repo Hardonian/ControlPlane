@@ -61,7 +61,7 @@ from controlplane_sdk import ControlPlaneClient, ClientConfig
 client = ControlPlaneClient(
     ClientConfig(
         base_url='https://api.controlplane.io',
-        api_key='your-api-key'
+        api_key=os.getenv('CONTROLPLANE_API_KEY')
     )
 )
 ```
@@ -73,7 +73,7 @@ import "github.com/controlplane/sdk-go"
 
 client := controlplane.NewClient(controlplane.ClientConfig{
     BaseURL: "https://api.controlplane.io",
-    APIKey:  "your-api-key",
+    APIKey:  os.Getenv("CONTROLPLANE_API_KEY"),
 })
 ```
 
