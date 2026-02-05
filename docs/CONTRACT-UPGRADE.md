@@ -1,6 +1,6 @@
 # Contract Upgrade Guide
 
-This guide explains how to adopt `@controlplane/contracts` and keep your implementation compatible.
+This guide explains how to adopt `@controlplane/contracts` and keep your implementation compatible. Organizations should evaluate contract changes against their own change management and approval processes before adoption.
 
 ## Overview
 

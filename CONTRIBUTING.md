@@ -1,6 +1,6 @@
 # Contributing to ControlPlane
 
-Thanks for contributing! This repository provides the contracts and tooling that power ControlPlane-compatible services and runners.
+Thanks for contributing! This repository provides the contracts and tooling that power ControlPlane-compatible services and runners. All contributions are reviewed against compatibility and governance standards.
 
 ## Who Should Contribute
 
@@ -63,14 +63,14 @@ pnpm run compat:generate
 
 ## How CI Protects You
 
-CI is intentionally strict to prevent accidental contract breakage:
+CI is intentionally strict to prevent accidental contract breakage and maintain ecosystem compatibility:
 
 - **Contract linting:** validates contracts compile and pass lint checks.
 - **Contract tests & sync:** validates schemas and keeps generated artifacts in sync.
 - **Compatibility matrix:** ensures version compatibility across the ecosystem.
 - **Semantic checks:** enforces conventional commits for predictable releases.
 
-If you add a runner, the contract checks run before tests or builds, so you get fast feedback without breaking the pipeline.
+If you add a runner, the contract checks run before tests or builds, so you get fast feedback without breaking the pipeline. All checks require human review before merge.
 
 ## Commit Convention
 

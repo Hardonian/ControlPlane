@@ -14,3 +14,7 @@ Please use the private reporting instructions in [SECURITY.md](./SECURITY.md). D
 ## Maintainer Response
 
 Maintainers respond on a best-effort basis. For urgent issues, include as much detail as possible to speed up triage.
+
+## Organizational Responsibility
+
+Organizations implementing these contracts and tools are responsible for their own deployment governance, change management, and operational oversight.

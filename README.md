@@ -30,10 +30,11 @@ This repository centralizes the contracts and tooling so every implementation ca
 - It is **not** a running orchestration service.
 - It does **not** include implementations of TruthCore, JobForge, or production runners.
 - It is **not** a hosted ControlPlane service.
+- It does **not** retain ownership of artifacts or data processed by consuming services.
 
 ## Where This Fits
 
-ControlPlane-compatible services and runners should depend on `@controlplane/contracts` and validate with `@controlplane/contract-test-kit` as part of CI. This repository provides the shared contract authority and tooling, while service implementations live elsewhere.
+ControlPlane-compatible services and runners should depend on `@controlplane/contracts` and validate with `@controlplane/contract-test-kit` as part of CI. This repository provides the shared contract authority and tooling, while service implementations live elsewhere. All artifacts, schemas, and configurations remain under the control of implementing organizations.
 
 ## Core Capabilities
 
@@ -100,13 +101,13 @@ Invariants to respect:
 
 ## Failure & Degradation Model
 
-This repository is tooling-only. Failure modes are primarily validation-time:
+This repository is tooling-only. Failure modes are primarily validation-time, designed to surface issues before deployment:
 
-- **Schema validation failures**: Zod errors with field-level diagnostics.
+- **Schema validation failures**: Zod errors with field-level diagnostics for human review.
 - **Contract drift**: `compat:check` fails when package versions drift out of range.
 - **Distribution mismatches**: `distribution:verify` fails when OSS/cloud flags are inconsistent.
 
-These failures are designed to stop releases before incompatible changes ship.
+These failures are designed to stop releases before incompatible changes ship. All validation outputs require human review before deployment decisions.
 
 ## Security & Safety Considerations
 

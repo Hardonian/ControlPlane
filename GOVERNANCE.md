@@ -1,6 +1,6 @@
 # Governance
 
-ControlPlane contracts and tooling are maintained by the core maintainers of this repository.
+ControlPlane contracts and tooling are maintained by the core maintainers of this repository. Organizations consuming these contracts are responsible for establishing their own governance structures for implementation and deployment decisions.
 
 ## Decision-Making
 

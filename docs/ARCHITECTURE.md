@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This repository defines the contracts and tooling that ControlPlane-compatible services and runners rely on. It does **not** ship runtime services.
+This repository defines the contracts and tooling that ControlPlane-compatible services and runners rely on. It does **not** ship runtime services and does not retain ownership of data or artifacts processed by consuming implementations.
 
 ## Core Packages
 
@@ -49,8 +49,8 @@ The contracts package is the root authority. Tooling in this repo consumes those
 
 ## Failure Modes
 
-- Schema validation errors with explicit field paths.
+- Schema validation errors with explicit field paths for human review.
 - Compatibility checks failing when versions drift out of range.
 - Distribution checks failing on invalid OSS/cloud config.
 
-These failures intentionally stop releases when contracts diverge.
+These failures intentionally stop releases when contracts diverge. All validation results require human review before deployment decisions.

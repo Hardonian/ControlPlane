@@ -1,6 +1,6 @@
 # Logging + Metrics Contract
 
-This document defines the observability contract for the ControlPlane ecosystem. It applies to services and runners that consume the contracts in this repository; no runtime services are shipped here.
+This document defines the observability contract for the ControlPlane ecosystem. It applies to services and runners that consume the contracts in this repository; no runtime services are shipped here. Organizations implementing these contracts are responsible for configuring observability tooling according to their own governance and retention policies.
 
 ## Design Principles
 

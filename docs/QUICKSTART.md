@@ -1,6 +1,6 @@
 # Quickstart
 
-Get the ControlPlane contracts and tooling running locally in minutes.
+Get the ControlPlane contracts and tooling running locally. This tooling is designed to integrate into existing operating models and change management processes.
 
 ## Prerequisites
 

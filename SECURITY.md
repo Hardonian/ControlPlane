@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-We support the latest release on the default branch. Security fixes are applied to supported releases when possible.
+We support the latest release on the default branch. Security fixes are applied to supported releases when possible. Organizations should evaluate releases against their own security and compliance requirements.
 
 ## Reporting a Vulnerability
 
@@ -21,6 +21,8 @@ If private reporting is not available, contact the maintainers via the preferred
 - **Acknowledgement**: within 72 hours
 - **Initial assessment**: within 7 days
 - **Resolution plan**: shared once impact is confirmed
+
+Organizations should apply their own incident response procedures when deploying these contracts and tooling in production environments.
 
 ## Security Scope
 

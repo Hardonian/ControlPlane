@@ -1,6 +1,6 @@
 # Implementation Summary
 
-This repository provides the ControlPlane contracts and supporting tooling. It contains no runtime services.
+This repository provides the ControlPlane contracts and supporting tooling. It contains no runtime services, retains no customer data, and makes no claims about downstream implementation outcomes.
 
 ## Highlights
 

@@ -1,6 +1,6 @@
 # Runner Guide (Contracts & Tooling)
 
-This guide explains how to build a ControlPlane-compatible runner using the contracts and tooling in this repository. The runtime services that consume these runners live in separate repositories.
+This guide explains how to build a ControlPlane-compatible runner using the contracts and tooling in this repository. The runtime services that consume these runners live in separate repositories. Organizations retain full control over runner implementations and their operational governance.
 
 ## What a Runner Is
 

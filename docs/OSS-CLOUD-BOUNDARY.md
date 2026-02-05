@@ -1,6 +1,6 @@
 # OSS vs Cloud Boundary
 
-This repository ships contracts and tooling for the ControlPlane ecosystem. It does not ship hosted services. The OSS/cloud boundary is expressed through distribution configuration and validation scripts so downstream services can make explicit decisions.
+This repository ships contracts and tooling for the ControlPlane ecosystem. It does not ship hosted services. The OSS/cloud boundary is expressed through distribution configuration and validation scripts so downstream services can make explicit decisions. All schemas, tools, and configurations remain under the control of implementing organizations.
 
 ## Principles
 
@@ -19,7 +19,7 @@ OSS artifacts include:
 
 ## Cloud Distribution
 
-Hosted features (dashboards, SLAs, managed hosting) are **out of scope** for this repository. Downstream service implementations should use the distribution config to expose cloud-only features explicitly.
+Hosted features (dashboards, SLAs, managed hosting) are **out of scope** for this repository. Downstream service implementations should use the distribution config to expose cloud-only features explicitly. Implementing organizations retain full control over feature decisions and deployment configurations.
 
 ## Distribution Config
 

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A contracts-and-tooling repository that provides the canonical ControlPlane schemas, validation utilities, compatibility reporting, and scaffolding for runners.
+A contracts-and-tooling repository that provides the canonical ControlPlane schemas, validation utilities, compatibility reporting, and scaffolding for runners. It ships no runtime services and does not retain ownership of artifacts processed by consuming implementations.
 
 ## Repository Layout
 
@@ -42,4 +42,4 @@ pnpm run verify
 
 ## Notes
 
-This repository does not ship runtime services. Service implementations should consume the contracts and validation tools from here.
+This repository does not ship runtime services. Service implementations should consume the contracts and validation tools from here. All schemas, configurations, and artifacts remain under the control of implementing organizations.

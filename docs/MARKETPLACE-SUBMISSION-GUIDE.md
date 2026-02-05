@@ -1,6 +1,6 @@
 # Marketplace Submission Guide
 
-This repository provides tooling and metadata schemas for a ControlPlane marketplace registry. The registry itself is external to this repo.
+This repository provides tooling and metadata schemas for a ControlPlane marketplace registry. The registry itself is external to this repo. Submissions remain under the control of the submitting organization.
 
 ## What This Guide Covers
 

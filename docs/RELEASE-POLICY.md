@@ -1,6 +1,6 @@
 # Release Policy
 
-This repository ships contracts and tooling packages. Releases must protect compatibility across the ecosystem.
+This repository ships contracts and tooling packages. Releases must protect compatibility across the ecosystem. Implementing organizations should evaluate releases against their own change management and approval processes.
 
 ## Versioning
 
