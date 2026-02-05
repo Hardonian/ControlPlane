@@ -53,6 +53,7 @@ ControlPlane-compatible services and runners should depend on `@controlplane/con
 
 - Node.js 18+
 - pnpm 8+
+- npmjs registry for all scopes (see [CONTRIBUTING.md](./CONTRIBUTING.md))
 
 ### Install + Validate Contracts
 
