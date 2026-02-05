@@ -56,6 +56,7 @@
     "sdk:check": "node scripts/check-sdk-drift.js",
     "sdk:build": "pnpm --filter @controlplane/sdk-generator build",
     "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator build",
+    "secret-scan": "node scripts/secret-scan.js",
     "benchmark:contract": "pnpm --filter @controlplane/benchmark benchmark:contract",
     "benchmark:queue": "pnpm --filter @controlplane/benchmark benchmark:queue",
     "benchmark:health": "pnpm --filter @controlplane/benchmark benchmark:health",
