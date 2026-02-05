@@ -1,5 +1,7 @@
 # ControlPlane Contracts & Tooling
 
+![Integration Verified](https://github.com/Hardonian/ControlPlane/actions/workflows/verify-integrations.yml/badge.svg)
+
 - **Contract-first ecosystem**: canonical Zod schemas and versioning rules for ControlPlane-compatible services and runners.
 - **Validation tooling**: CLI utilities to validate implementations against contracts and publish compatibility matrices.
 - **Scaffolding utilities**: a runner generator to bootstrap new integrations.
@@ -23,6 +25,7 @@ This repository centralizes the contracts and tooling so every implementation ca
 - A **contracts package** (`@controlplane/contracts`) with Zod schemas, types, and error envelopes.
 - A **contract test kit** (`@controlplane/contract-test-kit`) with CLI validators and registries.
 - A **runner scaffolding tool** (`@controlplane/create-runner`) to generate compatible runners.
+- A **ControlPlane orchestrator** (`@controlplane/controlplane`) that provides CLI + SDK integration.
 - Supporting tooling for compatibility matrices, distribution configuration, and SDK generation.
 
 ## What This Project Is NOT
@@ -60,6 +63,14 @@ pnpm run build:test-kit
 pnpm run contract:validate
 ```
 
+### Verify Integrations (CLI + SDK)
+
+```bash
+pnpm run build
+pnpm run test:integration
+pnpm run verify-integrations
+```
+
 ### Generate Compatibility Matrix
 
 ```bash
@@ -75,18 +86,44 @@ Success indicators:
 ```
 packages/
   contracts/          # Canonical schemas + error envelopes
+  contract-kit/       # JSON schema validation helpers
   contract-test-kit/  # CLI validation + registry tooling
+  controlplane/       # ControlPlane CLI + SDK integration
   create-runner/      # Runner scaffolding generator
   observability/      # Observability contract helpers
   sdk-generator/      # SDK generation utilities
   benchmark/          # Benchmark harnesses for contracts
 scripts/              # Repo-wide validation + release utilities
 config/               # OSS/Cloud distribution flags
+runners/              # Runner manifests + adapters
 ```
 
 The contracts package is the root authority. Tooling in this repo reads those schemas to validate implementations, generate registries, and enforce version compatibility.
 
+### Integration Architecture (ASCII)
+
+```
+ControlPlane CLI/SDK
+   |--> Runner Registry (manifests)
+   |--> Invocation Layer (CLI adapters)
+   |--> Report Validation (contracts)
+          |-> truthcore
+          |-> JobForge
+          |-> autopilot-suite
+          |-> finops-autopilot
+          |-> ops-autopilot
+          |-> growth-autopilot
+          |-> support-autopilot
+```
+
 ## Extending the Project
+
+### Add a New Autopilot Repo
+
+1. Add a runner manifest in `runners/<repo>/runner.manifest.json`.
+2. Implement a compatible CLI entrypoint that accepts `--input`, `--out`, and `--format json`.
+3. Update `docs/reality/EXECUTION_GRAPH.md` and `docs/reality/REPO_SCAN_MATRIX.md`.
+4. Run `pnpm run verify-integrations` to validate the new runner.
 
 # Runner guardrails (mirrors CI contract checks for runner changes)
 pnpm run runner:ci:check

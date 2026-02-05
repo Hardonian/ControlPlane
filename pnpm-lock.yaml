@@ -113,6 +113,21 @@ importers:
         specifier: ^1.1.0
         version: 1.6.1(@types/node@20.19.31)
 
+  packages/contract-kit:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.31
+      eslint:
+        specifier: ^8.55.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.1.0
+        version: 1.6.1(@types/node@20.19.31)
+
   packages/contracts:
     dependencies:
       zod:
@@ -128,6 +143,25 @@ importers:
       tsup:
         specifier: ^8.0.1
         version: 8.5.1(typescript@5.9.3)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.1.0
+        version: 1.6.1(@types/node@20.19.31)
+
+  packages/controlplane:
+    dependencies:
+      '@controlplane/contract-kit':
+        specifier: workspace:*
+        version: link:../contract-kit
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.31
+      eslint:
+        specifier: ^8.55.0
+        version: 8.57.1
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
@@ -156,6 +190,28 @@ importers:
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.9
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.31
+      eslint:
+        specifier: ^8.55.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.1.0
+        version: 1.6.1(@types/node@20.19.31)
+
+  packages/integration-tests:
+    dependencies:
+      '@controlplane/contract-kit':
+        specifier: workspace:*
+        version: link:../contract-kit
+      '@controlplane/controlplane':
+        specifier: workspace:*
+        version: link:../controlplane
+    devDependencies:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.31

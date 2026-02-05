@@ -65,7 +65,7 @@ import (
 func main() {
     client := controlplane.NewClient(controlplane.ClientConfig{
         BaseURL: "https://api.controlplane.io",
-        APIKey:  "your-api-key",
+        APIKey:  os.Getenv("CONTROLPLANE_API_KEY"),
     })
 
     ctx := context.Background()
