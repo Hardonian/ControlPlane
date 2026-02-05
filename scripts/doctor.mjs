@@ -91,6 +91,7 @@ const schemas = [
   'contracts/cli.schema.json',
   'contracts/evidence.schema.json',
   'contracts/module.manifest.schema.json',
+  'contracts/audit-trail.schema.json',
 ];
 
 let schemaCount = 0;

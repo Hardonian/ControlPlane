@@ -67,44 +67,74 @@ const validateEvidence = (evidence) => {
   return errors;
 };
 
-// Test each fixture against connectors
+const validateAuditTrail = (auditTrail) => {
+  const errors = [];
+  if (!isRecord(auditTrail)) return ['audit trail must be an object'];
+  if (!isString(auditTrail.id)) errors.push('auditTrail.id is required');
+  if (!isString(auditTrail.runner)) errors.push('auditTrail.runner is required');
+  if (!isString(auditTrail.timestamp)) errors.push('auditTrail.timestamp is required');
+  if (!Array.isArray(auditTrail.entries)) {
+    errors.push('auditTrail.entries must be an array');
+  } else {
+    const validActions = ['create', 'read', 'update', 'delete', 'evaluate', 'approve', 'reject'];
+    for (let i = 0; i < auditTrail.entries.length; i++) {
+      const entry = auditTrail.entries[i];
+      if (!isRecord(entry)) { errors.push(`entries[${i}] must be an object`); continue; }
+      if (!isString(entry.entryId)) errors.push(`entries[${i}].entryId is required`);
+      if (!isString(entry.action) || !validActions.includes(entry.action)) errors.push(`entries[${i}].action is invalid`);
+      if (!isString(entry.actor)) errors.push(`entries[${i}].actor is required`);
+      if (!isString(entry.resource)) errors.push(`entries[${i}].resource is required`);
+    }
+  }
+  return errors;
+};
+
+// Connectors to test: each fixture runs against each connector
+const connectors = ['JobForge', 'aias'];
 const fixtures = readdirSync(fixturesDir).filter((f) => f.endsWith('.json'));
 
 for (const fixture of fixtures) {
   const inputPath = path.join(fixturesDir, fixture);
   const testName = path.basename(fixture, '.json');
 
-  // Test against JobForge connector
-  const outputPath = path.join(resultsDir, `${testName}-JobForge-report.json`);
-  const adapterResult = runAdapter('JobForge', inputPath, outputPath);
+  for (const connectorName of connectors) {
+    const outputPath = path.join(resultsDir, `${testName}-${connectorName}-report.json`);
+    const adapterResult = runAdapter(connectorName, inputPath, outputPath);
 
-  if (!adapterResult.ok) {
-    results.push({ fixture: testName, runner: 'JobForge', valid: false, errors: [adapterResult.error] });
-    continue;
-  }
-
-  try {
-    const report = JSON.parse(readFileSync(outputPath, 'utf-8'));
-    const reportErrors = validateReportStructure(report);
-    const evidenceErrors = report.data?.evidence ? validateEvidence(report.data.evidence) : ['No evidence packet in report'];
-    const allErrors = [...reportErrors, ...evidenceErrors];
-
-    // Check redaction: ensure no sensitive fields leak
-    const reportStr = JSON.stringify(report);
-    const leakPatterns = ['should-be-redacted'];
-    const leaks = leakPatterns.filter((p) => reportStr.includes(p));
-    if (leaks.length > 0) {
-      allErrors.push(`Secret leak detected: ${leaks.join(', ')}`);
+    if (!adapterResult.ok) {
+      results.push({ fixture: testName, runner: connectorName, valid: false, errors: [adapterResult.error] });
+      continue;
     }
 
-    results.push({
-      fixture: testName,
-      runner: 'JobForge',
-      valid: allErrors.length === 0,
-      errors: allErrors.length > 0 ? allErrors : undefined,
-    });
-  } catch (err) {
-    results.push({ fixture: testName, runner: 'JobForge', valid: false, errors: [err.message] });
+    try {
+      const report = JSON.parse(readFileSync(outputPath, 'utf-8'));
+      const reportErrors = validateReportStructure(report);
+      const evidenceErrors = report.data?.evidence ? validateEvidence(report.data.evidence) : ['No evidence packet in report'];
+      const allErrors = [...reportErrors, ...evidenceErrors];
+
+      // For aias, also validate audit trail structure
+      if (connectorName === 'aias' && report.data?.auditTrail) {
+        const auditErrors = validateAuditTrail(report.data.auditTrail);
+        allErrors.push(...auditErrors);
+      }
+
+      // Check redaction: ensure no sensitive fields leak
+      const reportStr = JSON.stringify(report);
+      const leakPatterns = ['should-be-redacted', 'should-not-appear-in-output'];
+      const leaks = leakPatterns.filter((p) => reportStr.includes(p));
+      if (leaks.length > 0) {
+        allErrors.push(`Secret leak detected: ${leaks.join(', ')}`);
+      }
+
+      results.push({
+        fixture: testName,
+        runner: connectorName,
+        valid: allErrors.length === 0,
+        errors: allErrors.length > 0 ? allErrors : undefined,
+      });
+    } catch (err) {
+      results.push({ fixture: testName, runner: connectorName, valid: false, errors: [err.message] });
+    }
   }
 }
 

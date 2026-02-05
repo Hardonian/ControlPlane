@@ -160,3 +160,49 @@ export const validateModuleManifest = (payload: unknown): ValidationResult => {
   }
   return { valid: errors.length === 0, errors };
 };
+
+export const validateAuditTrail = (payload: unknown): ValidationResult => {
+  const errors: string[] = [];
+  if (!isRecord(payload)) {
+    return { valid: false, errors: ['payload must be an object'] };
+  }
+  if (!hasString(payload, 'id')) pushError(errors, 'id is required');
+  if (!hasString(payload, 'runner')) pushError(errors, 'runner is required');
+  if (!hasString(payload, 'timestamp')) pushError(errors, 'timestamp is required');
+  if (!hasArray(payload, 'entries')) {
+    pushError(errors, 'entries must be an array');
+  } else {
+    const entries = payload.entries as unknown[];
+    const validActions = ['create', 'read', 'update', 'delete', 'evaluate', 'approve', 'reject'];
+    const validOutcomes = ['success', 'failure', 'denied', 'skipped'];
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (!isRecord(entry)) {
+        pushError(errors, `entries[${i}] must be an object`);
+        continue;
+      }
+      if (!hasString(entry, 'entryId')) pushError(errors, `entries[${i}].entryId is required`);
+      if (!hasString(entry, 'action')) {
+        pushError(errors, `entries[${i}].action is required`);
+      } else if (!validActions.includes(entry.action as string)) {
+        pushError(errors, `entries[${i}].action must be one of: ${validActions.join(', ')}`);
+      }
+      if (!hasString(entry, 'actor')) pushError(errors, `entries[${i}].actor is required`);
+      if (!hasString(entry, 'timestamp')) pushError(errors, `entries[${i}].timestamp is required`);
+      if (!hasString(entry, 'resource')) pushError(errors, `entries[${i}].resource is required`);
+      if (hasString(entry, 'outcome') && !validOutcomes.includes(entry.outcome as string)) {
+        pushError(errors, `entries[${i}].outcome must be one of: ${validOutcomes.join(', ')}`);
+      }
+    }
+  }
+  if (payload.summary !== undefined) {
+    if (!isRecord(payload.summary)) {
+      pushError(errors, 'summary must be an object');
+    } else {
+      if (payload.summary.totalEntries !== undefined && !isNumber(payload.summary.totalEntries)) {
+        pushError(errors, 'summary.totalEntries must be a number');
+      }
+    }
+  }
+  return { valid: errors.length === 0, errors };
+};

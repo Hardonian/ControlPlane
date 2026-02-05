@@ -43,7 +43,10 @@ User
          ├─ validateReport(report) → ValidationResult
          ├─ validateEvent(event) → ValidationResult
          ├─ validateRunnerManifest(manifest) → ValidationResult
-         └─ validateCliSurface(surface) → ValidationResult
+         ├─ validateCliSurface(surface) → ValidationResult
+         ├─ validateEvidencePacket(evidence) → ValidationResult
+         ├─ validateModuleManifest(module) → ValidationResult
+         └─ validateAuditTrail(auditTrail) → ValidationResult
 ```
 
 ## Registered Runners
@@ -57,6 +60,7 @@ User
 | growth-autopilot | 0.1.0 | adapter, dry-run | `node scripts/adapters/runner-adapter.mjs --runner growth-autopilot` |
 | support-autopilot | 0.1.0 | adapter, dry-run | `node scripts/adapters/runner-adapter.mjs --runner support-autopilot` |
 | autopilot-suite | 0.1.0 | adapter, dry-run | `node scripts/adapters/runner-adapter.mjs --runner autopilot-suite` |
+| aias | 0.1.0 | adapter, dry-run, audit-trail | `node scripts/adapters/runner-adapter.mjs --runner aias` |
 
 ## Evidence / Artifact Paths
 
@@ -86,6 +90,7 @@ User
 | CLI Surface | `contracts/cli.schema.json` | Validate CLI command surface |
 | Evidence Packet | `contracts/evidence.schema.json` | Validate evidence/artifact bundles |
 | Module Manifest | `contracts/module.manifest.schema.json` | Validate module discovery manifests |
+| Audit Trail | `contracts/audit-trail.schema.json` | Validate audit trail entries from compliance runners |
 
 ## Environment Variables
 

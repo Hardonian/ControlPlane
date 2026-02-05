@@ -97,22 +97,71 @@ try {
 
 const startedAt = new Date().toISOString();
 
+/** Count total fields in an object recursively. */
+const countFields = (obj) => {
+  if (typeof obj !== 'object' || obj === null) return 0;
+  if (Array.isArray(obj)) return obj.reduce((sum, v) => sum + countFields(v), 0);
+  let count = 0;
+  for (const value of Object.values(obj)) {
+    count += 1 + countFields(value);
+  }
+  return count;
+};
+
+/** Measure max nesting depth of an object. */
+const maxDepth = (obj, depth = 0) => {
+  if (typeof obj !== 'object' || obj === null) return depth;
+  if (Array.isArray(obj)) return Math.max(depth, ...obj.map((v) => maxDepth(v, depth + 1)));
+  return Math.max(depth, ...Object.values(obj).map((v) => maxDepth(v, depth + 1)));
+};
+
 // Runner-specific logic
 const runnerLogic = {
-  truthcore: () => ({
-    decision: {
-      outcome: 'pass',
-      reasons: [
-        { ruleId: 'TC-001', message: 'Input payload structure validated', evidenceRefs: ['input-structure'] },
-        { ruleId: 'TC-002', message: 'No anomalies detected in payload', evidenceRefs: ['input-hash'] },
+  truthcore: () => {
+    const fieldCount = countFields(input);
+    const depth = maxDepth(input);
+    const hasTimestamp = typeof input === 'object' && input !== null && 'timestamp' in input;
+    let timestampFresh = false;
+    if (hasTimestamp && typeof input.timestamp === 'string') {
+      const tsAge = Date.now() - new Date(input.timestamp).getTime();
+      timestampFresh = tsAge < 365 * 24 * 60 * 60 * 1000; // < 1 year
+    }
+
+    const reasons = [
+      { ruleId: 'TC-001', message: 'Input payload structure validated', evidenceRefs: ['input-structure'] },
+      { ruleId: 'TC-002', message: 'No anomalies detected in payload', evidenceRefs: ['input-hash'] },
+      { ruleId: 'TC-003', message: `Field count check: ${fieldCount} fields found`, evidenceRefs: ['field-count'] },
+      { ruleId: 'TC-004', message: depth <= 10 ? `Nesting depth ${depth} within limit` : `Nesting depth ${depth} exceeds recommended limit of 10`, evidenceRefs: ['nesting-depth'] },
+    ];
+
+    if (hasTimestamp) {
+      reasons.push({
+        ruleId: 'TC-005',
+        message: timestampFresh
+          ? 'Timestamp is within acceptable freshness window'
+          : 'Timestamp is stale (older than 1 year)',
+        evidenceRefs: ['timestamp-freshness'],
+        ...(timestampFresh ? {} : { uncertainty: 'Stale timestamp may indicate outdated data' }),
+      });
+    }
+
+    const allPassed = depth <= 10 && (hasTimestamp ? timestampFresh : true);
+
+    return {
+      decision: {
+        outcome: allPassed ? 'pass' : 'uncertain',
+        reasons,
+        confidence: allPassed ? 0.95 : 0.7,
+      },
+      evaluationItems: [
+        { key: 'field-count', value: fieldCount, source: 'truthcore-field-counter' },
+        { key: 'input-hash', value: stableHash(input), source: 'truthcore-hasher' },
+        { key: 'input-structure', value: typeof input === 'object' ? 'valid-object' : 'primitive', source: 'truthcore-validator' },
+        { key: 'nesting-depth', value: depth, source: 'truthcore-depth-analyzer' },
+        ...(hasTimestamp ? [{ key: 'timestamp-freshness', value: timestampFresh ? 'fresh' : 'stale', source: 'truthcore-freshness-checker' }] : []),
       ],
-      confidence: 0.95,
-    },
-    evaluationItems: [
-      { key: 'input-hash', value: stableHash(input), source: 'truthcore-hasher' },
-      { key: 'input-structure', value: typeof input === 'object' ? 'valid-object' : 'primitive', source: 'truthcore-validator' },
-    ],
-  }),
+    };
+  },
   JobForge: () => ({
     connectorResult: { ok: true, data: { jobsProcessed: 1 }, error: null },
     evaluationItems: [
@@ -151,6 +200,67 @@ const runnerLogic = {
       { key: 'suite-complete', value: true, source: 'autopilot-suite' },
     ],
   }),
+  aias: () => {
+    const policies = (typeof input === 'object' && input !== null && input.payload?.policies) || [];
+    const resources = (typeof input === 'object' && input !== null && input.payload?.resources) || [];
+    const now = new Date().toISOString();
+
+    const auditEntries = resources.map((resource, idx) => ({
+      entryId: `audit-${idx + 1}`,
+      action: 'evaluate',
+      actor: 'aias-engine',
+      timestamp: now,
+      resource,
+      outcome: 'success',
+      details: { policiesApplied: policies.length },
+      policyRef: policies[0] || 'default-policy',
+    }));
+
+    const auditTrail = {
+      id: `at-aias-${Date.now()}`,
+      runner: 'aias',
+      timestamp: now,
+      contractVersion: '1.0.0',
+      scope: resources.length > 0 ? 'full' : 'partial',
+      entries: auditEntries,
+      summary: {
+        totalEntries: auditEntries.length,
+        passed: auditEntries.length,
+        failed: 0,
+        skipped: 0,
+      },
+      metadata: {
+        correlationId: `corr-${Date.now()}`,
+        durationMs: 0,
+      },
+    };
+
+    return {
+      auditTrail,
+      decision: {
+        outcome: auditEntries.length > 0 ? 'pass' : 'uncertain',
+        reasons: [
+          {
+            ruleId: 'AIAS-001',
+            message: `Audited ${resources.length} resource(s) against ${policies.length} policy/policies`,
+            evidenceRefs: ['audit-resources', 'audit-policies'],
+          },
+          {
+            ruleId: 'AIAS-002',
+            message: auditEntries.length > 0 ? 'All audit entries passed' : 'No resources to audit',
+            evidenceRefs: ['audit-summary'],
+            ...(auditEntries.length === 0 ? { uncertainty: 'Empty resource list may indicate misconfiguration' } : {}),
+          },
+        ],
+        confidence: auditEntries.length > 0 ? 0.9 : 0.5,
+      },
+      evaluationItems: [
+        { key: 'audit-policies', value: policies.length, source: 'aias-policy-engine' },
+        { key: 'audit-resources', value: resources.length, source: 'aias-resource-scanner' },
+        { key: 'audit-summary', value: `${auditEntries.length} entries, ${auditEntries.length} passed`, source: 'aias-auditor' },
+      ],
+    };
+  },
 };
 
 const logic = runnerLogic[runner] || (() => ({
@@ -216,6 +326,7 @@ const report = {
     ...(result.growthMetrics ? { growthMetrics: result.growthMetrics } : {}),
     ...(result.supportMetrics ? { supportMetrics: result.supportMetrics } : {}),
     ...(result.suiteResult ? { suiteResult: result.suiteResult } : {}),
+    ...(result.auditTrail ? { auditTrail: result.auditTrail } : {}),
   },
 };
 

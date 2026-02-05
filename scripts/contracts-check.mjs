@@ -61,6 +61,7 @@ const schemaFiles = [
   'contracts/cli.schema.json',
   'contracts/evidence.schema.json',
   'contracts/module.manifest.schema.json',
+  'contracts/audit-trail.schema.json',
 ];
 
 for (const file of schemaFiles) {
