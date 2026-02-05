@@ -69,7 +69,18 @@
     "benchmark:report": "pnpm --filter @controlplane/benchmarks benchmark:report",
     "benchmark:list": "pnpm --filter @controlplane/benchmarks tsx src/runner.ts --list",
     "test:integration": "pnpm --filter @controlplane/integration-tests test",
-    "verify-integrations": "node packages/controlplane/dist/cli.js verify-integrations"
+    "test:golden": "node tests/golden/truthcore-determinism.test.mjs",
+    "verify-integrations": "node packages/controlplane/dist/cli.js verify-integrations",
+    "contracts:check": "node scripts/contracts-check.mjs",
+    "contracts:check:json": "node scripts/contracts-check.mjs --json",
+    "doctor": "node scripts/doctor.mjs",
+    "doctor:json": "node scripts/doctor.mjs --json",
+    "controlplane": "node packages/controlplane/dist/cli.js",
+    "controlplane:plan": "node packages/controlplane/dist/cli.js plan",
+    "controlplane:run:smoke": "node packages/controlplane/dist/cli.js run --smoke",
+    "controlplane:doctor": "node packages/controlplane/dist/cli.js doctor",
+    "connectors:test": "node scripts/connectors-test.mjs",
+    "connectors:test:json": "node scripts/connectors-test.mjs --json"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",
