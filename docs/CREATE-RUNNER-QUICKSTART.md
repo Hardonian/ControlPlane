@@ -6,6 +6,17 @@ Use the scaffolding tool in this repository to bootstrap a ControlPlane-compatib
 
 - Node.js 18+
 - pnpm 8+
+- npmjs registry for all scopes
+
+### Registry Configuration (required)
+
+Create or update `.npmrc` with:
+
+```ini
+registry=https://registry.npmjs.org/
+@Hardonian:registry=https://registry.npmjs.org/
+always-auth=false
+```
 
 ## Build the Scaffold Tool
 

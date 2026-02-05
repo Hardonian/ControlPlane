@@ -56,6 +56,7 @@
     "sdk:check": "node scripts/check-sdk-drift.js",
     "sdk:build": "pnpm --filter @controlplane/sdk-generator build",
     "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator build",
+    "secret-scan": "node scripts/secret-scan.js",
     "benchmark:contract": "pnpm --filter @controlplane/benchmark benchmark:contract",
     "benchmark:queue": "pnpm --filter @controlplane/benchmark benchmark:queue",
     "benchmark:health": "pnpm --filter @controlplane/benchmark benchmark:health",
@@ -66,7 +67,9 @@
     "benchmark:degraded": "pnpm --filter @controlplane/benchmarks benchmark:degraded",
     "benchmark:scale": "pnpm --filter @controlplane/benchmarks benchmark:scale",
     "benchmark:report": "pnpm --filter @controlplane/benchmarks benchmark:report",
-    "benchmark:list": "pnpm --filter @controlplane/benchmarks tsx src/runner.ts --list"
+    "benchmark:list": "pnpm --filter @controlplane/benchmarks tsx src/runner.ts --list",
+    "test:integration": "pnpm --filter @controlplane/integration-tests test",
+    "verify-integrations": "node packages/controlplane/dist/cli.js verify-integrations"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",

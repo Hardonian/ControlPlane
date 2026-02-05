@@ -10,3 +10,4 @@ test-results/
 smoke-report.json
 .DS_Store
 *.tgz
+.cache/
