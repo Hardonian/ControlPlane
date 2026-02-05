@@ -41,6 +41,18 @@ pnpm run build:contracts
 pnpm run build:test-kit
 ```
 
+### Registry Configuration
+
+To avoid scoped registry misconfigurations, ensure `.npmrc` points to the public npm registry:
+
+```ini
+registry=https://registry.npmjs.org/
+@Hardonian:registry=https://registry.npmjs.org/
+always-auth=false
+```
+
+This repo does not require private registries for install.
+
 ## Common Tasks
 
 ```bash
