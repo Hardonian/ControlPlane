@@ -12,7 +12,7 @@
     "build": "tsup src/index.ts src/cli.ts --format esm",
     "dev": "tsup src/index.ts src/cli.ts --format esm --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint --max-warnings=0 src --ext .ts",
     "test": "vitest run",
     "generate": "node ./dist/cli.js",
     "validate": "node ./dist/cli.js --validate",

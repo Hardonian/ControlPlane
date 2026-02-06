@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
 
 export function generateTypeScriptSDK(
@@ -121,18 +122,31 @@ function generateZodSchemaCode(schema: SchemaDefinition): string[] {
   return lines;
 }
 
-function generateZodDefinition(schema: any, depth = 0): string {
+function generateZodDefinition(schema: z.ZodTypeAny, depth = 0): string {
   if (!schema) return 'z.any()';
 
   // Handle Zod types
   if (schema._def) {
-    const typeName = schema._def.typeName;
+    const def = schema._def as {
+      typeName?: string;
+      checks?: Array<{ kind: string; value?: number; inclusive?: boolean }>;
+      innerType?: z.ZodTypeAny;
+      type?: z.ZodTypeAny;
+      shape?: () => Record<string, z.ZodTypeAny>;
+      valueType?: z.ZodTypeAny;
+      values?: string[];
+      options?: z.ZodTypeAny[];
+      schema?: z.ZodTypeAny;
+      getter?: () => z.ZodTypeAny;
+      defaultValue?: () => unknown;
+    };
+    const typeName = def.typeName;
 
     switch (typeName) {
       case 'ZodString': {
         let str = 'z.string()';
-        if (schema._def.checks) {
-          for (const check of schema._def.checks) {
+        if (def.checks) {
+          for (const check of def.checks) {
             switch (check.kind) {
               case 'min':
                 str += `.min(${check.value})`;
@@ -160,8 +174,8 @@ function generateZodDefinition(schema: any, depth = 0): string {
 
       case 'ZodNumber': {
         let num = 'z.number()';
-        if (schema._def.checks) {
-          for (const check of schema._def.checks) {
+        if (def.checks) {
+          for (const check of def.checks) {
             switch (check.kind) {
               case 'min':
                 if (check.inclusive) num += `.min(${check.value})`;
@@ -185,19 +199,19 @@ function generateZodDefinition(schema: any, depth = 0): string {
         return 'z.null()';
 
       case 'ZodOptional':
-        return `${generateZodDefinition(schema._def.innerType, depth)}.optional()`;
+        return `${generateZodDefinition(def.innerType ?? schema, depth)}.optional()`;
 
       case 'ZodDefault': {
-        const inner = generateZodDefinition(schema._def.innerType, depth);
-        const defaultValue = JSON.stringify(schema._def.defaultValue());
+        const inner = generateZodDefinition(def.innerType ?? schema, depth);
+        const defaultValue = JSON.stringify(def.defaultValue?.());
         return `${inner}.default(${defaultValue})`;
       }
 
       case 'ZodArray':
-        return `z.array(${generateZodDefinition(schema._def.type, depth)})`;
+        return `z.array(${generateZodDefinition(def.type ?? schema, depth)})`;
 
       case 'ZodObject': {
-        const shape = schema._def.shape();
+        const shape = def.shape?.() ?? {};
         const entries = Object.entries(shape)
           .map(([key, val]) => `  ${key}: ${generateZodDefinition(val, depth + 1)}`)
           .join(',\n');
@@ -205,26 +219,26 @@ function generateZodDefinition(schema: any, depth = 0): string {
       }
 
       case 'ZodRecord':
-        return `z.record(${generateZodDefinition(schema._def.valueType, depth)})`;
+        return `z.record(${generateZodDefinition(def.valueType ?? schema, depth)})`;
 
       case 'ZodEnum': {
-        const values = schema._def.values.map((v: string) => `'${v}'`).join(', ');
+        const values = (def.values ?? []).map((v) => `'${v}'`).join(', ');
         return `z.enum([${values}])`;
       }
 
       case 'ZodUnion':
       case 'ZodDiscriminatedUnion': {
-        const options = schema._def.options
-          .map((opt: any) => generateZodDefinition(opt, depth))
+        const options = (def.options ?? [])
+          .map((opt) => generateZodDefinition(opt, depth))
           .join(', ');
         return `z.union([${options}])`;
       }
 
       case 'ZodEffects':
-        return generateZodDefinition(schema._def.schema, depth);
+        return generateZodDefinition(def.schema ?? schema, depth);
 
       case 'ZodLazy':
-        return generateZodDefinition(schema._def.getter(), depth);
+        return generateZodDefinition(def.getter?.() ?? schema, depth);
 
       case 'ZodUnknown':
         return 'z.unknown()';

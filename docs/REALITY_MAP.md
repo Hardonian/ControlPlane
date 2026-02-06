@@ -100,3 +100,8 @@ User
 | `CONTROLPLANE_OFFLINE` | No | Skip external repo cloning |
 | `CP_SMOKE_ALLOW_MISSING` | No | Allow missing services in smoke tests |
 | `GITHUB_TOKEN` | No | GitHub access for workflow automation |
+| `TRUTHCORE_URL` | No | TruthCore base URL for e2e tests |
+| `JOBFORGE_URL` | No | JobForge base URL for e2e tests |
+| `RUNNER_URL` | No | Runner base URL for e2e tests |
+| `RATE_LIMIT_WINDOW_MS` | No | Template runner rate-limit window (ms) |
+| `RATE_LIMIT_MAX` | No | Template runner max requests per window |

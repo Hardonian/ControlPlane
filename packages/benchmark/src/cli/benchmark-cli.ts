@@ -9,6 +9,41 @@ import { writeFileSync } from 'fs';
 
 const program = new Command();
 
+const SUITE_OPTIONS: BenchmarkConfig['suite'][] = [
+  'throughput',
+  'latency',
+  'truthcore',
+  'runner',
+  'contract',
+  'queue',
+  'health',
+  'all',
+];
+const FORMAT_OPTIONS = ['json', 'table', 'markdown'] as const;
+
+type BenchmarkCliOptions = {
+  suite: string;
+  duration: string;
+  concurrency: string;
+  warmup: string;
+  truthcore: string;
+  jobforge: string;
+  runner: string;
+  format: string;
+  output?: string;
+  verbose: boolean;
+  targetRps?: string;
+  iterations?: string;
+  percentileMode?: string;
+  percentileThreshold?: string;
+  percentileBins?: string;
+  httpConcurrency?: string;
+  httpBatchSize?: string;
+  thresholdErrorRate?: string;
+  thresholdMaxLatency?: string;
+  thresholdMinThroughput?: string;
+};
+
 program
   .name('cp-benchmark')
   .description('ControlPlane Performance Benchmark Suite')
@@ -45,12 +80,19 @@ program
   .option('--threshold-error-rate <rate>', 'Maximum acceptable error rate (0-1)', '0.05')
   .option('--threshold-max-latency <ms>', 'Maximum acceptable latency in ms')
   .option('--threshold-min-throughput <rps>', 'Minimum acceptable throughput')
-  .action(async (options) => {
+  .action(async (options: BenchmarkCliOptions) => {
     try {
       console.log(chalk.bold.blue('\n🏃 ControlPlane Benchmark Suite\n'));
 
+      const suite = SUITE_OPTIONS.includes(options.suite as BenchmarkConfig['suite'])
+        ? (options.suite as BenchmarkConfig['suite'])
+        : 'all';
+      const format = FORMAT_OPTIONS.includes(options.format as (typeof FORMAT_OPTIONS)[number])
+        ? (options.format as (typeof FORMAT_OPTIONS)[number])
+        : 'table';
+
       const config = createBenchmarkConfig(options);
-      const suite = createBenchmarkSuite(options.suite, config, {
+      const suiteConfig = createBenchmarkSuite(suite, config, {
         truthcore: options.truthcore,
         jobforge: options.jobforge,
         runner: options.runner,
@@ -63,9 +105,9 @@ program
         verbose: options.verbose,
       });
 
-      const report = await engine.runSuite(suite);
+      const report = await engine.runSuite(suiteConfig);
 
-      const reporter = new BenchmarkReporter(options.format);
+      const reporter = new BenchmarkReporter(format);
       const output = reporter.report(report);
 
       console.log(output);
@@ -83,8 +125,8 @@ program
     }
   });
 
-function createBenchmarkConfig(options: any): BenchmarkConfig {
-  const thresholds: any = {};
+function createBenchmarkConfig(options: BenchmarkCliOptions): BenchmarkConfig {
+  const thresholds: BenchmarkConfig['thresholds'] = {};
 
   if (options.thresholdErrorRate !== undefined) {
     thresholds.maxErrorRate = parseFloat(options.thresholdErrorRate);
@@ -101,7 +143,9 @@ function createBenchmarkConfig(options: any): BenchmarkConfig {
   return {
     name: 'benchmark',
     description: 'ControlPlane performance benchmark',
-    suite: options.suite,
+    suite: SUITE_OPTIONS.includes(options.suite as BenchmarkConfig['suite'])
+      ? (options.suite as BenchmarkConfig['suite'])
+      : 'all',
     durationMs: parseInt(options.duration),
     warmupMs: parseInt(options.warmup),
     concurrency: parseInt(options.concurrency),
