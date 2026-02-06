@@ -87,6 +87,13 @@ export const listRunnerManifests = () => listRunners();
 
 export const validateReportPayload = validateReport;
 
+export { discoverSiblings, findMissingSiblings } from './discovery.js';
+export type { SiblingRepo, SiblingManifest } from './discovery.js';
+export { validateCompatibility } from './compatibility.js';
+export type { CompatCheck, CompatReport } from './compatibility.js';
+export { ControlPlaneError, Errors, formatError } from './errors.js';
+export type { ErrorCode } from './errors.js';
+
 export class ControlPlaneClient {
   listRunners() {
     return listRunnerManifests();
