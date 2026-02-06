@@ -56,6 +56,7 @@ const client = new ControlPlaneClient({
 ### Python SDK
 
 ```python
+import os
 from controlplane_sdk import ControlPlaneClient, ClientConfig
 
 client = ControlPlaneClient(
@@ -69,7 +70,10 @@ client = ControlPlaneClient(
 ### Go SDK
 
 ```go
-import "github.com/controlplane/sdk-go"
+import (
+    "os"
+    "github.com/controlplane/sdk-go"
+)
 
 client := controlplane.NewClient(controlplane.ClientConfig{
     BaseURL: "https://api.controlplane.io",
