@@ -11,21 +11,17 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./schemas": {
-      "types": "./dist/schemas/index.d.ts",
-      "import": "./dist/schemas/index.js"
-    },
     "./errors": {
-      "types": "./dist/errors/index.d.ts",
-      "import": "./dist/errors/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./versioning": {
-      "types": "./dist/versioning/index.d.ts",
-      "import": "./dist/versioning/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
