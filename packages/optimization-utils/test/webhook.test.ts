@@ -97,7 +97,7 @@ describe('WebhookSecurity', () => {
       const result = webhookSecurity.verifyTimestamp(oldTimestamp);
 
       expect(result.valid).toBe(false);
-      expect(result.error).toContain('too old');
+      expect(result.error).toContain('tolerance');
     });
 
     it('should reject future timestamp', () => {

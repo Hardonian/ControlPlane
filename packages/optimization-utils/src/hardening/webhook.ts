@@ -174,9 +174,11 @@ export class WebhookSecurity {
       return { valid: true, age: undefined };
     }
 
-    const timestampMs = parseInt(timestamp, 10);
-    if (isNaN(timestampMs)) {
-      // Try parsing as ISO string
+    // Check if timestamp looks like an ISO string (contains T, -, :, etc.)
+    const looksLikeIsoDate = /[T:\-]/.test(timestamp);
+
+    if (looksLikeIsoDate) {
+      // Parse as ISO string
       const date = new Date(timestamp);
       if (isNaN(date.getTime())) {
         return { valid: false, error: 'Invalid timestamp format' };
@@ -185,7 +187,17 @@ export class WebhookSecurity {
       if (age > this.config.replayToleranceSeconds * 1000) {
         return { valid: false, error: 'Timestamp too old', age };
       }
+      // Reject future timestamps (allow 60 seconds clock skew)
+      if (age < -60000) {
+        return { valid: false, error: 'Timestamp is in the future', age };
+      }
       return { valid: true, age };
+    }
+
+    // Parse as numeric timestamp (milliseconds)
+    const timestampMs = parseInt(timestamp, 10);
+    if (isNaN(timestampMs)) {
+      return { valid: false, error: 'Invalid timestamp format' };
     }
 
     const age = Date.now() - timestampMs;
