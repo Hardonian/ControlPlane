@@ -26,32 +26,43 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: "Include exact commands, inputs, and config."
+      description: |
+        Include exact commands and their output.
+        Start from a clean checkout so others can follow along.
       placeholder: |
-        1. pnpm install
-        2. pnpm run build:contracts
-        3. pnpm run contract:validate
+        1. git clone https://github.com/Hardonian/ControlPlane.git
+        2. cd ControlPlane
+        3. pnpm install
+        4. pnpm run build
+        5. pnpm run contracts:check
+        6. Observe: [what happens]
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
       label: Expected behavior
-      placeholder: "Contract validation passes."
+      placeholder: "Contract validation passes with 18 checks, 0 failures."
     validations:
       required: true
   - type: textarea
     id: actual
     attributes:
       label: Actual behavior
-      placeholder: "Validation fails with ..."
+      placeholder: "Validation fails with: [FAIL] runner-manifest:my-runner ..."
     validations:
       required: true
+  - type: textarea
+    id: contract_impact
+    attributes:
+      label: Contract impact
+      description: "Does this bug affect contract validation, schema integrity, or downstream consumers?"
+      placeholder: "This causes false positives in contract validation, which could allow breaking changes through CI."
   - type: textarea
     id: logs
     attributes:
       label: Logs or screenshots
-      description: "Paste relevant logs or screenshots."
+      description: "Paste relevant command output. Use `--json` flags where available for structured output."
       render: shell
   - type: input
     id: version
