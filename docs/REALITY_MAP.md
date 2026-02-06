@@ -16,6 +16,16 @@
 | `contract-sync` | `@controlplane/contract-test-kit` | Sync schemas to implementations |
 | `capability-registry` | `@controlplane/contract-test-kit` | Generate capability registry |
 
+## Demo Mode (Deterministic, Offline)
+
+Demo mode uses the local runner adapter with a fixed timestamp for deterministic output. It does not call external services.
+
+| Script | Purpose |
+|--------|---------|
+| `pnpm run demo:reset` | Reset demo state and regenerate `demo/input.json` |
+| `pnpm run demo:setup` | Generate demo report + evidence artifacts |
+| `pnpm run demo:start` | Run demo setup and print locations |
+
 ## Module Discovery Logic
 
 1. **Primary path**: `<repoRoot>/runners/*/runner.manifest.json`
@@ -69,6 +79,7 @@ User
 - **Integration results**: `<repoRoot>/test-results/<runner>-report.json`
 - **Evidence packets**: `<repoRoot>/artifacts/<runner>/<timestamp>/evidence.json`
 - **Logs**: Structured JSON to stdout/stderr with secret redaction
+- **Demo artifacts**: `<repoRoot>/demo/report.json`, `<repoRoot>/demo/evidence.json`, `<repoRoot>/demo/manifest.json`
 
 ## Package Dependency Graph
 
@@ -100,3 +111,6 @@ User
 | `CONTROLPLANE_OFFLINE` | No | Skip external repo cloning |
 | `CP_SMOKE_ALLOW_MISSING` | No | Allow missing services in smoke tests |
 | `GITHUB_TOKEN` | No | GitHub access for workflow automation |
+| `CONTROLPLANE_DEMO_TIME` | No | Fixed timestamp for deterministic demo runs |
+| `CONTROLPLANE_PROFILE` | No | Emit profile timing logs when `1` |
+| `CONTROLPLANE_REQUEST_ID` | No | Correlation ID for profile logs |

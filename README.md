@@ -92,6 +92,15 @@ Success indicators:
 - `contract:validate` exits with code 0
 - `docs/COMPATIBILITY.md` is updated
 
+### Demo Mode (Deterministic, Offline)
+
+```bash
+pnpm run demo:reset
+pnpm run demo:start
+```
+
+Artifacts are written to `demo/` with a fixed timestamp (override via `CONTROLPLANE_DEMO_TIME`).
+
 ## Architecture Overview
 
 ```

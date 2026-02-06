@@ -47,9 +47,9 @@ benchmarks/               # Benchmark definitions and results
 ```
 
 **Sources of Truth:**
-- Contracts: `packages/contracts/src/schemas/`
+- Contracts (JSON Schema): `contracts/`
+- Zod types: `packages/contracts/src/types/`
 - Error envelopes: `packages/contracts/src/errors/`
-- Types: `packages/contracts/src/types/`
 - Distribution config: `config/distribution.*.json`
 - Compatibility: `docs/COMPATIBILITY.md`
 
@@ -68,8 +68,8 @@ benchmarks/               # Benchmark definitions and results
 ### 1. Discover
 - Read the task description and linked issues/PRs
 - Identify the contribution lane (docs, runner, connector, contracts)
-- Check existing schemas in `packages/contracts/src/schemas/`
-- Review `docs/COMTRACT-UPGRADE.md` for breaking change protocols
+- Check existing schemas in `contracts/` and Zod types in `packages/contracts/src/types/`
+- Review `docs/CONTRACT-UPGRADE.md` for breaking change protocols
 
 ### 2. Diagnose
 - Gather evidence before proposing changes:
@@ -139,7 +139,27 @@ pnpm run release:validate
 
 # Smoke test
 pnpm run test:smoke
+
+# Demo mode (deterministic, offline)
+pnpm run demo:reset
+pnpm run demo:setup
+pnpm run demo:start
 ```
+
+## Safe-to-Edit Map
+
+- ✅ **Docs & metadata**: `docs/`, `.github/workflows/`, `SECURITY.md`, `AGENTS.md`, `.env.example`
+- ✅ **Contracts tooling**: `packages/contract-kit/`, `packages/contract-test-kit/`
+- ✅ **CLI & adapters**: `packages/controlplane/`, `scripts/adapters/`, `scripts/demo-*.mjs`
+- ⚠️ **Runner manifests**: `runners/*/runner.manifest.json` (validate with contract tests)
+- ⚠️ **Distribution config**: `config/distribution.*.json` (verify with `pnpm run distribution:verify`)
+
+## Invariants & Guardrails
+
+- Contract changes must remain backwards compatible within the same major version.
+- Runner reports must validate against `contracts/reports.schema.json`.
+- Demo mode must remain deterministic (fixed timestamp, no external calls).
+- No secrets in repo; `.env.example` is the authoritative template.
 
 ## Change Safety Checklist
 

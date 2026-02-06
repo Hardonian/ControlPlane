@@ -48,6 +48,9 @@ jobs:
       - name: Run contract tests
         run: pnpm run contract:validate:json
 
+      - name: Run contracts check
+        run: pnpm run contracts:check
+
       - name: Run contract sync check
         run: pnpm run contract:sync:check
 
@@ -97,6 +100,33 @@ jobs:
       - name: Format check
         run: pnpm run format:check
 
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
+        with:
+          version: 8.12.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a # v4.0.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Secret scan
+        run: pnpm run secret-scan
+
+      - name: Dependency audit (high severity)
+        run: pnpm audit --prod --audit-level=high
+
   # Semantic checks (commit conventions)
   semantic:
     name: Semantic Checks
@@ -139,6 +169,38 @@ jobs:
 
       - name: Run tests
         run: pnpm run test
+
+  e2e:
+    name: E2E Demo Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
+        with:
+          version: 8.12.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a # v4.0.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run demo E2E tests
+        run: pnpm run test:e2e:demo
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          name: playwright-report
+          path: playwright-report
 
   # Build verification
   build:
