@@ -80,7 +80,9 @@
     "controlplane:run:smoke": "node packages/controlplane/dist/cli.js run --smoke",
     "controlplane:doctor": "node packages/controlplane/dist/cli.js doctor",
     "connectors:test": "node scripts/connectors-test.mjs",
-    "connectors:test:json": "node scripts/connectors-test.mjs --json"
+    "connectors:test:json": "node scripts/connectors-test.mjs --json",
+    "reality:check": "node scripts/reality-map-check.ts",
+    "reality:check:ci": "node scripts/reality-map-check.ts --ci"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",
