@@ -59,6 +59,8 @@ package main
 
 import (
     "context"
+    "os"
+
     "github.com/controlplane/sdk-go"
 )
 
