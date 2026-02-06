@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
 
 export function generateGoSDK(
@@ -78,18 +79,22 @@ function generateGoTypesFile(schemas: SchemaDefinition[]): string {
 
 function generateGoStructCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const zodDef = schema.schema._def;
+  const zodDef = schema.schema._def as {
+    typeName?: string;
+    shape?: () => Record<string, z.ZodTypeAny>;
+    values?: string[];
+  };
 
   // Generate doc comment
   lines.push(`// ${schema.name} represents a ${schema.category} schema`);
   lines.push(`type ${schema.name} struct {`);
 
   if (zodDef?.typeName === 'ZodObject') {
-    const shape = zodDef.shape();
+    const shape = zodDef.shape?.() ?? {};
 
     for (const [key, val] of Object.entries(shape)) {
-      const fieldDef = (val as any)._def;
-      const goType = zodToGoType(val as any);
+      const fieldDef = (val as z.ZodTypeAny)._def as { typeName?: string };
+      const goType = zodToGoType(val as z.ZodTypeAny);
       const isOptional =
         fieldDef?.typeName === 'ZodOptional' || fieldDef?.typeName === 'ZodDefault';
       const jsonTag = isOptional ? `json:"${key},omitempty"` : `json:"${key}"`;
@@ -125,10 +130,16 @@ function generateGoStructCode(schema: SchemaDefinition): string[] {
   return lines;
 }
 
-function zodToGoType(schema: any): string {
+function zodToGoType(schema: z.ZodTypeAny): string {
   if (!schema || !schema._def) return 'interface{}';
 
-  const def = schema._def;
+  const def = schema._def as {
+    typeName?: string;
+    checks?: Array<{ kind: string }>;
+    innerType?: z.ZodTypeAny;
+    type?: z.ZodTypeAny;
+    valueType?: z.ZodTypeAny;
+  };
 
   switch (def.typeName) {
     case 'ZodString':
@@ -142,7 +153,7 @@ function zodToGoType(schema: any): string {
       return 'string';
 
     case 'ZodNumber':
-      if (def.checks?.some((c: any) => c.kind === 'int')) {
+      if (def.checks?.some((c) => c.kind === 'int')) {
         return 'int';
       }
       return 'float64';
@@ -151,13 +162,13 @@ function zodToGoType(schema: any): string {
       return 'bool';
 
     case 'ZodOptional':
-      return zodToGoType(def.innerType);
+      return zodToGoType(def.innerType ?? schema);
 
     case 'ZodDefault':
-      return zodToGoType(def.innerType);
+      return zodToGoType(def.innerType ?? schema);
 
     case 'ZodArray': {
-      const itemType = zodToGoType(def.type);
+      const itemType = zodToGoType(def.type ?? schema);
       return `[]${itemType}`;
     }
 
@@ -165,7 +176,7 @@ function zodToGoType(schema: any): string {
       return 'map[string]interface{}';
 
     case 'ZodRecord': {
-      const valueType = zodToGoType(def.valueType);
+      const valueType = zodToGoType(def.valueType ?? schema);
       return `map[string]${valueType}`;
     }
 
@@ -362,7 +373,9 @@ function generateGoSchemasFile(schemas: SchemaDefinition[]): string {
   lines.push('var SchemaRegistry = map[string]SchemaValidator{');
 
   for (const schema of schemas) {
-    const zodDef = schema.schema._def;
+    const zodDef = schema.schema._def as {
+      typeName?: string;
+    };
     if (zodDef?.typeName === 'ZodObject') {
       lines.push(`\t"${schema.name}": func(m interface{}) error {`);
       lines.push(`\t\tif v, ok := m.(${schema.name}); ok {`);
@@ -377,9 +390,12 @@ function generateGoSchemasFile(schemas: SchemaDefinition[]): string {
   lines.push('');
 
   for (const schema of schemas) {
-    const zodDef = schema.schema._def;
+    const zodDef = schema.schema._def as {
+      typeName?: string;
+      shape?: () => Record<string, z.ZodTypeAny>;
+    };
     if (zodDef?.typeName === 'ZodObject') {
-      lines.push(...generateGoValidationFunction(schema, zodDef.shape()));
+      lines.push(...generateGoValidationFunction(schema, zodDef.shape?.() ?? {}));
       lines.push('');
     }
   }
@@ -389,7 +405,7 @@ function generateGoSchemasFile(schemas: SchemaDefinition[]): string {
 
 function generateGoValidationFunction(
   schema: SchemaDefinition,
-  shape: Record<string, any>
+  shape: Record<string, z.ZodTypeAny>
 ): string[] {
   const lines: string[] = [];
   lines.push(`// validate${schema.name} validates a ${schema.name} instance`);

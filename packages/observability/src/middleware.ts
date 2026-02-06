@@ -1,4 +1,4 @@
-import { createLogger, LoggerOptions } from './logger.js';
+import { createLogger, LoggerOptions, type Logger } from './logger.js';
 import { MetricsCollector, METRIC_NAMES } from './metrics.js';
 import { CorrelationManager } from './correlation.js';
 
@@ -14,6 +14,9 @@ type RequestLike = {
   path: string;
   headers: Record<string, string | string[]>;
   route?: { path?: string };
+  correlationId?: string;
+  logger?: Logger;
+  metrics?: MetricsCollector;
   [key: string]: unknown;
 };
 
@@ -46,11 +49,11 @@ export function observabilityMiddleware(options: ObservabilityOptions) {
 
     runWithCorrelation(() => {
       // Attach to request
-      (req as any).correlationId = correlation.getId();
-      (req as any).logger = logger.child({
+      req.correlationId = correlation.getId();
+      req.logger = logger.child({
         correlationId: correlation.getId(),
       });
-      (req as any).metrics = metrics;
+      req.metrics = metrics;
 
       // Log request
       const startTime = Date.now();

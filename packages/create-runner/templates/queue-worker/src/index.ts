@@ -1,4 +1,5 @@
 import express from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import Redis from 'ioredis';
 import {
   JobRequest,
@@ -10,7 +11,59 @@ import {
 } from '@controlplane/contracts';
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+type RequestWithId = Request & { requestId: string };
+
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX || '120', 10);
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function requestContext(req: Request, res: Response, next: NextFunction) {
+  const requestId = req.header('x-request-id') ?? crypto.randomUUID();
+  (req as RequestWithId).requestId = requestId;
+  res.setHeader('x-request-id', requestId);
+  const start = Date.now();
+  res.on('finish', () => {
+    const durationMs = Date.now() - start;
+    console.log(
+      JSON.stringify({
+        level: 'info',
+        msg: 'request.completed',
+        requestId,
+        method: req.method,
+        path: req.path,
+        statusCode: res.statusCode,
+        durationMs,
+      })
+    );
+  });
+  next();
+}
+
+function rateLimit(req: Request, res: Response, next: NextFunction) {
+  const key = req.ip || 'unknown';
+  const now = Date.now();
+  const entry = rateLimitStore.get(key);
+  if (!entry || entry.resetAt <= now) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+  entry.count += 1;
+  if (entry.count > RATE_LIMIT_MAX) {
+    const errorEnvelope = createErrorEnvelope({
+      category: 'RATE_LIMIT',
+      message: 'Too many requests',
+      code: 'RATE_LIMIT_EXCEEDED',
+    });
+    res.status(429).json(errorEnvelope);
+    return;
+  }
+  return next();
+}
+
+app.use(requestContext);
+app.use(rateLimit);
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 const RUNNER_ID = process.env.RUNNER_ID || crypto.randomUUID();
@@ -21,7 +74,7 @@ const JOBFORGE_URL = process.env.JOBFORGE_URL || 'http://localhost:8080';
 const QUEUE_NAME = process.env.QUEUE_NAME || 'jobs';
 
 // Active jobs tracking
-const activeJobs = new Map();
+const activeJobs = new Map<string, { startedAt: number; job: JobRequest }>();
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -53,7 +106,9 @@ app.post('/execute', async (req, res) => {
   try {
     const job = JobRequest.parse(req.body);
 
-    console.log(`[Job ${job.jobId}] Starting execution`);
+    console.log(`[Job ${job.jobId}] Starting execution`, {
+      requestId: (req as RequestWithId).requestId,
+    });
 
     // Execute job
     const result = await executeJob(job);
@@ -67,10 +122,14 @@ app.post('/execute', async (req, res) => {
       contractVersion: CONTRACT_VERSION_CURRENT,
     });
 
-    console.log(`[Job ${job.jobId}] Completed successfully`);
+    console.log(`[Job ${job.jobId}] Completed successfully`, {
+      requestId: (req as RequestWithId).requestId,
+    });
     res.json(response);
   } catch (error) {
-    console.error(`[Job ${req.body.jobId}] Execution failed:`, error);
+    console.error(`[Job ${req.body.jobId}] Execution failed:`, error, {
+      requestId: (req as RequestWithId).requestId,
+    });
 
     const errorEnvelope = createErrorEnvelope({
       category: 'RUNTIME_ERROR',
@@ -159,6 +218,19 @@ async function processQueue() {
     }
   }
 }
+
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err);
+  const errorEnvelope = createErrorEnvelope({
+    category: 'RUNTIME_ERROR',
+    message: err instanceof Error ? err.message : 'Unexpected error',
+    code: 'UNHANDLED_EXCEPTION',
+  });
+  res.status(500).json({
+    error: errorEnvelope,
+    requestId: (req as RequestWithId).requestId,
+  });
+});
 
 // Start server
 app.listen(PORT, () => {
