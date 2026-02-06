@@ -36,6 +36,25 @@ body:
     validations:
       required: true
   - type: textarea
+    id: contract_impact
+    attributes:
+      label: Contract impact
+      description: |
+        Does this change affect existing contracts or schemas?
+        - Which schemas are affected?
+        - Is the change additive (new optional fields) or breaking (removing/narrowing fields)?
+        - Are existing consumers impacted?
+        - Does the compatibility matrix need updating?
+      placeholder: |
+        No contract impact — this is a tooling-only change.
+
+        OR
+
+        Adds optional `tags` field to reports.schema.json.
+        Additive change, no impact on existing consumers.
+    validations:
+      required: true
+  - type: textarea
     id: scope
     attributes:
       label: Scope and impact
