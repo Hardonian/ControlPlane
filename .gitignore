@@ -11,3 +11,6 @@ smoke-report.json
 .DS_Store
 *.tgz
 .cache/
+artifacts/
+controlplane-input-*.json
+compatibility-matrix.json
