@@ -72,17 +72,6 @@ export const runRunner = async (
     redactEnvKeys: runner.requiredEnv ?? []
   });
 
-  if (invocation.exitCode !== 0) {
-    const errorMessage = [
-      `Runner "${runner.name}" failed with exit code ${invocation.exitCode}`,
-      invocation.stderr ? `stderr: ${invocation.stderr}` : null,
-      invocation.stdout ? `stdout: ${invocation.stdout}` : null
-    ]
-      .filter(Boolean)
-      .join('\n');
-    throw new Error(errorMessage);
-  }
-
   const report = readJsonFile(outputPath);
   const validation = validateReport(report);
 
