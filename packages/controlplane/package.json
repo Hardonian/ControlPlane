@@ -21,7 +21,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint --max-warnings=0 src --ext .ts",
     "test": "../sdk-generator/node_modules/.bin/vitest run"
   },
   "dependencies": {

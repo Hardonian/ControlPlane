@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
 
 export function generatePythonSDK(
@@ -96,18 +97,22 @@ function generatePydanticModelsFile(schemas: SchemaDefinition[]): string {
 
 function generatePydanticModelCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const zodDef = schema.schema._def;
+  const zodDef = schema.schema._def as {
+    typeName?: string;
+    shape?: () => Record<string, z.ZodTypeAny>;
+    values?: string[];
+  };
 
   lines.push(`class ${schema.name}(BaseModel):`);
   lines.push(`    """${schema.category} schema: ${schema.name}"""`);
 
   if (zodDef?.typeName === 'ZodObject') {
-    const shape = zodDef.shape();
+    const shape = zodDef.shape?.() ?? {};
     const requiredFields: string[] = [];
 
     // First pass: collect required fields
     for (const [key, val] of Object.entries(shape)) {
-      const fieldDef = (val as any)._def;
+      const fieldDef = (val as z.ZodTypeAny)._def as { typeName?: string };
       if (fieldDef?.typeName !== 'ZodOptional' && fieldDef?.typeName !== 'ZodDefault') {
         requiredFields.push(key);
       }
@@ -127,8 +132,11 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
 
     // Generate fields
     for (const [key, val] of Object.entries(shape)) {
-      const fieldType = zodToPythonType(val as any);
-      const fieldDef = (val as any)._def;
+      const fieldType = zodToPythonType(val as z.ZodTypeAny);
+      const fieldDef = (val as z.ZodTypeAny)._def as {
+        typeName?: string;
+        defaultValue?: () => unknown;
+      };
       const isOptional =
         fieldDef?.typeName === 'ZodOptional' || fieldDef?.typeName === 'ZodDefault';
       const hasDefault = fieldDef?.typeName === 'ZodDefault';
@@ -136,7 +144,7 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
       let fieldLine = `    ${key}: ${fieldType}`;
 
       if (hasDefault) {
-        const defaultValue = JSON.stringify(fieldDef.defaultValue());
+        const defaultValue = JSON.stringify(fieldDef.defaultValue?.());
         fieldLine += ` = Field(default=${defaultValue})`;
       } else if (isOptional) {
         fieldLine += ' = None';
@@ -155,10 +163,18 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
   return lines;
 }
 
-function zodToPythonType(schema: any): string {
+function zodToPythonType(schema: z.ZodTypeAny): string {
   if (!schema || !schema._def) return 'Any';
 
-  const def = schema._def;
+  const def = schema._def as {
+    typeName?: string;
+    checks?: Array<{ kind: string }>;
+    innerType?: z.ZodTypeAny;
+    type?: z.ZodTypeAny;
+    valueType?: z.ZodTypeAny;
+    values?: string[];
+    options?: z.ZodTypeAny[];
+  };
 
   switch (def.typeName) {
     case 'ZodString':
@@ -176,7 +192,7 @@ function zodToPythonType(schema: any): string {
       return 'str';
 
     case 'ZodNumber':
-      if (def.checks?.some((c: any) => c.kind === 'int')) {
+      if (def.checks?.some((c) => c.kind === 'int')) {
         return 'int';
       }
       return 'float';
@@ -188,15 +204,15 @@ function zodToPythonType(schema: any): string {
       return 'None';
 
     case 'ZodOptional': {
-      const innerType = zodToPythonType(def.innerType);
+      const innerType = zodToPythonType(def.innerType ?? schema);
       return `Optional[${innerType}]`;
     }
 
     case 'ZodDefault':
-      return zodToPythonType(def.innerType);
+      return zodToPythonType(def.innerType ?? schema);
 
     case 'ZodArray': {
-      const itemType = zodToPythonType(def.type);
+      const itemType = zodToPythonType(def.type ?? schema);
       return `List[${itemType}]`;
     }
 
@@ -204,7 +220,7 @@ function zodToPythonType(schema: any): string {
       return 'Dict[str, Any]';
 
     case 'ZodRecord': {
-      const valueType = zodToPythonType(def.valueType);
+      const valueType = zodToPythonType(def.valueType ?? schema);
       return `Dict[str, ${valueType}]`;
     }
 
@@ -214,7 +230,7 @@ function zodToPythonType(schema: any): string {
     }
 
     case 'ZodUnion': {
-      const types = def.options.map((opt: any) => zodToPythonType(opt));
+      const types = (def.options ?? []).map((opt) => zodToPythonType(opt));
       return `Union[${types.join(', ')}]`;
     }
 

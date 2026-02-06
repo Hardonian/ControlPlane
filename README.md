@@ -92,6 +92,10 @@ Success indicators:
 - `contract:validate` exits with code 0
 - `docs/COMPATIBILITY.md` is updated
 
+## Environment Variables
+
+Use `.env.example` as the canonical list of environment variables for local workflows and templates. For deployment guidance, see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md). Security posture is documented in [docs/SECURITY.md](./docs/SECURITY.md).
+
 ## Architecture Overview
 
 ```

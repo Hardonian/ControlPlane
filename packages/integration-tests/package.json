@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ../../tests/integration --ext .ts",
+    "lint": "eslint --max-warnings=0 ../../tests/integration --ext .ts",
     "test": "../sdk-generator/node_modules/.bin/vitest run --config ./vitest.config.ts"
   },
   "dependencies": {

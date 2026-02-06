@@ -29,7 +29,7 @@
     "build": "tsup src/index.ts src/cli.ts src/contract-sync.ts src/registry-cli.ts src/marketplace.ts src/marketplace-cli.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts src/cli.ts --format esm,cjs --dts --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint --max-warnings=0 src --ext .ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"

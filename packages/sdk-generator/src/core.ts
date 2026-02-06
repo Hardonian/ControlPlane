@@ -4,14 +4,14 @@ import chalk from 'chalk';
 export interface SchemaDefinition {
   name: string;
   schema: z.ZodTypeAny;
-  jsonSchema: any;
+  jsonSchema: Record<string, unknown>;
   category: 'types' | 'errors' | 'versioning';
 }
 
 export interface GeneratedSDK {
   language: string;
   files: Map<string, string>;
-  packageConfig: any;
+  packageConfig: Record<string, unknown>;
 }
 
 export interface SDKGeneratorConfig {
