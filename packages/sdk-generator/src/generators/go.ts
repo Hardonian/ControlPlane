@@ -499,6 +499,7 @@ package main
 
 import (
     "context"
+    "os"
     "github.com/${config.organization}/sdk-go"
 )
 

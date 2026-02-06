@@ -42,6 +42,7 @@ else:
 ### Client Usage
 
 ```python
+import os
 from controlplane_sdk import ControlPlaneClient, ClientConfig
 
 client = ControlPlaneClient(
