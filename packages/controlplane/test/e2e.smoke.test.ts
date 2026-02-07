@@ -156,8 +156,7 @@ describe('ControlPlane E2E Smoke Tests', () => {
         return;
       }
 
-      const { validateManifest, DEFAULT_DISCOVERY_CONFIG } =
-        await import('../src/registry/hardened.js');
+      const { validateRunnerManifest } = await import('@controlplane/contract-kit');
       const { readdirSync } = await import('node:fs');
 
       const entries = readdirSync(runnersDir, { withFileTypes: true });
@@ -174,7 +173,7 @@ describe('ControlPlane E2E Smoke Tests', () => {
         const content = readFileSync(manifestPath, 'utf-8');
         const manifest = JSON.parse(content);
 
-        const result = validateManifest(manifest, DEFAULT_DISCOVERY_CONFIG.validation);
+        const result = validateRunnerManifest(manifest);
 
         expect(result.valid).toBe(true);
         expect(result.errors).toHaveLength(0);
