@@ -1,6 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import type { DiscoveredModule, RegistryState } from '../registry/hardened.js';
+import { readFileSync, writeFileSync } from 'node:fs';
+import type { RegistryState } from '../registry/hardened.js';
 import {
   discoverModules,
   buildRegistryState,

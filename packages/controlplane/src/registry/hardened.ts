@@ -1,5 +1,4 @@
-import { writeFileSync } from 'node:fs';
-import { mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -473,7 +472,7 @@ function generateTextReport(state: RegistryState, options: RegistryReportOptions
   return lines.join('\n');
 }
 
-function generateMarkdownReport(state: RegistryState, options: RegistryReportOptions): string {
+function generateMarkdownReport(state: RegistryState, _options: RegistryReportOptions): string {
   const lines: string[] = [];
 
   lines.push('# Module Registry Report');
