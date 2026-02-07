@@ -202,6 +202,32 @@ jobs:
             test-results
             playwright-report
 
+  # Contract drift guard
+  contract-guard:
+    name: Contract Guard
+    runs-on: ubuntu-latest
+    needs: [contracts]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
+        with:
+          version: 8.12.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a # v4.0.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run contract guard
+        run: node scripts/contract-guard.mjs --json
+
   # Integration smoke test
   smoke-test:
     name: Integration Smoke Test

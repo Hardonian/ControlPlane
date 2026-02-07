@@ -42,6 +42,8 @@
     "capability:registry": "pnpm --filter @controlplane/contract-test-kit exec capability-registry",
     "capability:registry:json": "pnpm --filter @controlplane/contract-test-kit exec capability-registry --format=json",
     "contract:test": "pnpm run contract:validate",
+    "contract:guard": "node scripts/contract-guard.mjs",
+    "contract:guard:json": "node scripts/contract-guard.mjs --json",
     "marketplace:build": "pnpm --filter @controlplane/contract-test-kit exec marketplace build",
     "marketplace:serve": "pnpm --filter @controlplane/contract-test-kit exec marketplace serve",
     "marketplace:query": "pnpm --filter @controlplane/contract-test-kit exec marketplace query",
