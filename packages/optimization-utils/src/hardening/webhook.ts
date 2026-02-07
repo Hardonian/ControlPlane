@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { createHash } from 'node:crypto';
 
 /**
  * Webhook Security Configuration
@@ -175,7 +174,7 @@ export class WebhookSecurity {
     }
 
     // Check if timestamp looks like an ISO string (contains T, -, :, etc.)
-    const looksLikeIsoDate = /[T:\-]/.test(timestamp);
+    const looksLikeIsoDate = /[T: -]/.test(timestamp);
 
     if (looksLikeIsoDate) {
       // Parse as ISO string
@@ -635,7 +634,7 @@ export function webhookSecurityMiddleware(security: WebhookSecurity) {
     req: { body: unknown; headers: Record<string, string> },
     res: {
       setHeader: (name: string, value: string) => void;
-      status: (code: number) => any;
+      status: (code: number) => void;
       json: (data: unknown) => void;
     },
     next: () => void
