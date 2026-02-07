@@ -87,7 +87,7 @@ function verifyCommands(blocks, scripts) {
 
       if (line.startsWith('pnpm ')) {
         const command = line.split(' ')[1];
-        const allowed = new Set(['install', 'exec']);
+        const allowed = new Set(['install', 'exec', 'controlplane']);
         if (!allowed.has(command)) {
           fail(`README command uses unsupported pnpm command: ${line}`);
         }
