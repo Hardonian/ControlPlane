@@ -1,6 +1,7 @@
-import { z } from 'zod';
-import type { VersionedRunnerManifest, RegistryState } from '@controlplane/contracts';
-import { VersionedRunnerManifest as VersionedRunnerManifestSchema } from '@controlplane/contracts';
+import { writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Deterministic Module Discovery and Registry
@@ -12,9 +13,59 @@ import { VersionedRunnerManifest as VersionedRunnerManifestSchema } from '@contr
  * - JSON/text registry reports
  */
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 // ============================================================================
 // Types and Interfaces
 // ============================================================================
+
+export interface VersionedManifest {
+  name: string;
+  version: string;
+  description: string;
+  entrypoint: {
+    command: string;
+    args: string[];
+    env?: Record<string, string>;
+    workingDir?: string;
+  };
+  contractVersion?: string;
+  capabilities?: string[];
+  requiredEnv?: string[];
+  outputs?: string[];
+}
+
+export interface DiscoveredModule {
+  manifest: VersionedManifest;
+  source: {
+    path: string;
+    type: 'runners' | 'cache' | 'sibling' | 'custom';
+    discoveredAt: string;
+  };
+  status: 'valid' | 'invalid' | 'incompatible' | 'unreachable' | 'disabled';
+  validation: {
+    schemaValid: boolean;
+    versionCompatible: boolean;
+    entrypointExists: boolean;
+    requiredEnvPresent: boolean;
+    errors: string[];
+  };
+  lastValidatedAt: string;
+}
+
+export interface RegistryState {
+  version: string;
+  generatedAt: string;
+  modules: DiscoveredModule[];
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+    incompatible: number;
+    unreachable: number;
+    disabled: number;
+  };
+}
 
 export interface DiscoveryConfig {
   /** Explicit search paths (in priority order) */
@@ -57,22 +108,11 @@ export interface DiscoveryConfig {
   };
 }
 
-export interface DiscoveredModule {
-  manifest: VersionedRunnerManifest;
-  source: {
-    path: string;
-    type: 'runners' | 'cache' | 'sibling' | 'custom';
-    discoveredAt: string;
-  };
-  status: 'valid' | 'invalid' | 'incompatible' | 'unreachable' | 'disabled';
-  validation: {
-    schemaValid: boolean;
-    versionCompatible: boolean;
-    entrypointExists: boolean;
-    requiredEnvPresent: boolean;
-    errors: string[];
-  };
-  lastValidatedAt: string;
+export interface RegistryReportOptions {
+  format: 'json' | 'text' | 'markdown';
+  includeErrors: boolean;
+  includeWarnings: boolean;
+  verbose: boolean;
 }
 
 // ============================================================================
@@ -81,21 +121,11 @@ export interface DiscoveredModule {
 
 export const DEFAULT_DISCOVERY_CONFIG: DiscoveryConfig = {
   paths: [
-    // Primary: runners directory
+    // Primary: runners directory (relative to repo root)
     './runners',
 
     // Secondary: cached repositories
     './.cache/repos',
-
-    // Tertiary: sibling directories
-    '../truthcore',
-    '../JobForge',
-    '../autopilot-suite',
-    '../finops-autopilot',
-    '../ops-autopilot',
-    '../growth-autopilot',
-    '../support-autopilot',
-    '../aias',
   ],
 
   options: {
@@ -125,44 +155,79 @@ export const DEFAULT_DISCOVERY_CONFIG: DiscoveryConfig = {
 export function validateManifest(
   data: unknown,
   config: DiscoveryConfig['validation']
-): { valid: boolean; errors: string[]; manifest?: VersionedRunnerManifest } {
+): { valid: boolean; errors: string[]; manifest?: VersionedManifest } {
   const errors: string[] = [];
 
-  // Schema validation
-  const result = VersionedRunnerManifestSchema.safeParse(data);
+  if (!data || typeof data !== 'object') {
+    errors.push('Manifest must be an object');
+    return { valid: false, errors };
+  }
 
-  if (!result.success) {
-    errors.push(...result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`));
+  const manifest = data as Record<string, unknown>;
 
-    if (config.strict) {
-      return { valid: false, errors };
+  // Required fields
+  if (!manifest.name || typeof manifest.name !== 'string') {
+    errors.push('name is required and must be a string');
+  } else if (!/^[a-z0-9-]+$/.test(manifest.name)) {
+    errors.push('name must be lowercase alphanumeric with hyphens only');
+  }
+
+  if (!manifest.version || typeof manifest.version !== 'string') {
+    errors.push('version is required and must be a string');
+  } else if (!isValidSemver(manifest.version)) {
+    errors.push('version must be valid semver (e.g., "1.0.0")');
+  }
+
+  if (!manifest.description || typeof manifest.description !== 'string') {
+    errors.push('description is required and must be a string');
+  }
+
+  if (!manifest.entrypoint || typeof manifest.entrypoint !== 'object') {
+    errors.push('entrypoint is required and must be an object');
+  } else {
+    const entrypoint = manifest.entrypoint as Record<string, unknown>;
+    if (!entrypoint.command || typeof entrypoint.command !== 'string') {
+      errors.push('entrypoint.command is required');
     }
   }
 
-  const manifest = result.data;
-
-  if (!manifest) {
+  if (errors.length > 0 && config.strict) {
     return { valid: false, errors };
   }
 
   // Version compatibility check
   if (config.minimumContractVersion && config.validateSchema) {
-    const minVersion = config.minimumContractVersion;
-    const moduleVersion = manifest.contractVersion;
-
-    if (!isVersionCompatible(moduleVersion, minVersion)) {
+    const contractVersion = (manifest.contractVersion as string) || '1.0.0';
+    if (!isVersionCompatible(contractVersion, config.minimumContractVersion)) {
       errors.push(
-        `Contract version ${moduleVersion} is not compatible ` +
-          `with minimum required ${minVersion}`
+        `Contract version ${contractVersion} is not compatible ` +
+          `with minimum required ${config.minimumContractVersion}`
       );
     }
+  }
+
+  // Validate capabilities if present
+  if (manifest.capabilities && !Array.isArray(manifest.capabilities)) {
+    errors.push('capabilities must be an array');
+  }
+
+  // Validate requiredEnv if present
+  if (manifest.requiredEnv && !Array.isArray(manifest.requiredEnv)) {
+    errors.push('requiredEnv must be an array');
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    manifest,
+    manifest: validation.manifest || (data as VersionedManifest),
   };
+}
+
+/**
+ * Validate semantic version format
+ */
+function isValidSemver(version: string): boolean {
+  return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[\w.-]+)?(?:\+[\w.-]+)?$/.test(version);
 }
 
 /**
@@ -199,15 +264,134 @@ export function checkRequiredEnv(required: string[]): {
 }
 
 // ============================================================================
-// Registry Report Generation
+// Deterministic Discovery
 // ============================================================================
 
-export interface RegistryReportOptions {
-  format: 'json' | 'text' | 'markdown';
-  includeErrors: boolean;
-  includeWarnings: boolean;
-  verbose: boolean;
+/**
+ * Discover modules from configured paths with deterministic ordering
+ */
+export function discoverModules(
+  repoRoot: string,
+  config: DiscoveryConfig = DEFAULT_DISCOVERY_CONFIG
+): DiscoveredModule[] {
+  const modules: DiscoveredModule[] = [];
+  const seen = new Set<string>();
+
+  for (const searchPath of config.paths) {
+    const fullPath = resolve(repoRoot, searchPath);
+
+    try {
+      const entries = readdirSync(fullPath, { withFileTypes: true });
+
+      // Sort entries for deterministic ordering
+      const sortedEntries = entries
+        .filter((entry) => config.options.includeHidden || !entry.name.startsWith('.'))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      for (const entry of sortedEntries) {
+        if (!entry.isDirectory()) continue;
+
+        const manifestPath = join(fullPath, entry.name, 'runner.manifest.json');
+
+        try {
+          const stat = statSync(manifestPath);
+          if (!stat.isFile()) continue;
+
+          // Prevent duplicates
+          if (seen.has(entry.name)) continue;
+          seen.add(entry.name);
+
+          // Load and validate manifest
+          const content = readFileSync(manifestPath, 'utf-8');
+          const data = JSON.parse(content);
+
+          const validation = validateManifest(data, config.validation);
+
+          // Check entrypoint exists
+          let entrypointExists = false;
+          if (validation.manifest?.entrypoint?.command) {
+            // Simple check - just verify it's not empty
+            entrypointExists = validation.manifest.entrypoint.command.length > 0;
+          }
+
+          // Check required env
+          const envCheck = validation.manifest?.requiredEnv
+            ? checkRequiredEnv(validation.manifest.requiredEnv)
+            : { present: true, missing: [] };
+
+          const status: DiscoveredModule['status'] = validation.valid
+            ? 'valid'
+            : config.validation.strict
+              ? 'invalid'
+              : validation.errors.some((e) => e.includes('version'))
+                ? 'incompatible'
+                : 'invalid';
+
+          const module: DiscoveredModule = {
+            manifest: validation.manifest || (data as VersionedManifest),
+            source: {
+              path: manifestPath,
+              type: searchPath.includes('cache')
+                ? 'cache'
+                : searchPath.includes('runners')
+                  ? 'runners'
+                  : 'custom',
+              discoveredAt: new Date().toISOString(),
+            },
+            status,
+            validation: {
+              schemaValid: validation.errors.length === 0,
+              versionCompatible: !validation.errors.some((e) => e.includes('version')),
+              entrypointExists,
+              requiredEnvPresent: envCheck.present,
+              errors: validation.errors,
+            },
+            lastValidatedAt: new Date().toISOString(),
+          };
+
+          modules.push(module);
+        } catch {
+          // Manifest doesn't exist or is invalid
+          continue;
+        }
+      }
+    } catch {
+      // Path doesn't exist or isn't readable
+      continue;
+    }
+  }
+
+  return modules;
 }
+
+// ============================================================================
+// Registry State Management
+// ============================================================================
+
+/**
+ * Build complete registry state from discovered modules
+ */
+export function buildRegistryState(modules: DiscoveredModule[]): RegistryState {
+  const summary = {
+    total: modules.length,
+    valid: modules.filter((m) => m.status === 'valid').length,
+    invalid: modules.filter((m) => m.status === 'invalid').length,
+    incompatible: modules.filter((m) => m.status === 'incompatible').length,
+    unreachable: modules.filter((m) => m.status === 'unreachable').length,
+    disabled: modules.filter((m) => m.status === 'disabled').length,
+  };
+
+  return {
+    version: '1.0.0',
+    generatedAt: new Date().toISOString(),
+    modules,
+    summary,
+  };
+}
+
+// ============================================================================
+// Registry Report Generation
+// ============================================================================
 
 export function generateRegistryReport(
   state: RegistryState,
@@ -229,7 +413,7 @@ function generateJsonReport(state: RegistryState, options: RegistryReportOptions
   const report = {
     generatedAt: new Date().toISOString(),
     summary: state.summary,
-    modules: state.modules.map((m) => ({
+    modules: state.modules.map((m: DiscoveredModule) => ({
       name: m.manifest.name,
       version: m.manifest.version,
       status: m.status,
@@ -238,7 +422,7 @@ function generateJsonReport(state: RegistryState, options: RegistryReportOptions
         ? { errors: m.validation.errors }
         : {}),
     })),
-    ...(options.verbose ? { discovery: state.discovery, validation: state.validation } : {}),
+    ...(options.verbose ? { version: state.version, generatedAt: state.generatedAt } : {}),
   };
 
   return JSON.stringify(report, null, 2);
@@ -274,7 +458,7 @@ function generateTextReport(state: RegistryState, options: RegistryReportOptions
 
     if (options.verbose) {
       lines.push(`   Source: ${module.source.type} (${module.source.path})`);
-      lines.push(`   Capabilities: ${module.manifest.capabilities.join(', ') || 'none'}`);
+      lines.push(`   Capabilities: ${module.manifest.capabilities?.join(', ') || 'none'}`);
     }
 
     if (options.includeErrors && module.validation.errors.length > 0) {
@@ -329,7 +513,7 @@ function generateMarkdownReport(state: RegistryState, options: RegistryReportOpt
   return lines.join('\n');
 }
 
-function getStatusIcon(status: string): string {
+function getStatusIcon(status: DiscoveredModule['status']): string {
   switch (status) {
     case 'valid':
       return '✅';
