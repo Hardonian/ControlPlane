@@ -58,21 +58,25 @@ Use this guide to route tasks to the right agent/model/tooling. Match your task 
 - **Note**: Refer to `packages/optimization-utils` for hardening utilities
 
 ### Integration Boundaries
-- **Examples**: SDK generation, contract sync, registry generation
-- **Tooling**: `packages/contract-test-kit/src/`
+- **Examples**: SDK generation, contract sync, registry generation, module discovery
+- **Tooling**: `packages/contract-test-kit/src/`, `packages/controlplane/src/registry/`
 - **Commands**:
   - `pnpm run contract:sync` - Sync schemas to implementations
   - `pnpm run sdk:generate` - Generate SDKs
   - `pnpm run capability:registry` - Generate capability registry
+  - `pnpm controlplane list` - List discovered modules
+  - `pnpm controlplane run demo` - Execute integration pipeline
 
 ### QA & Release
-- **Examples**: Contract validation, compatibility checks, smoke tests
-- **Tooling**: `scripts/` directory
+- **Examples**: Contract validation, compatibility checks, smoke tests, integration testing
+- **Tooling**: `scripts/` directory, `packages/controlplane/src/cli.ts`
 - **Commands**:
   - `pnpm run contract:validate` - Validate contracts
   - `pnpm run compat:check` - Check compatibility matrix
   - `pnpm run test:smoke` - Smoke test local services
   - `pnpm run distribution:verify` - Verify OSS/cloud boundaries
+  - `pnpm controlplane run demo` - Execute full pipeline integration test
+  - `pnpm controlplane verify:ecosystem` - Detect ecosystem drift
 
 ## Which Agent for Which Task
 
