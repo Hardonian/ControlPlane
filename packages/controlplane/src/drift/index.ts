@@ -5,6 +5,15 @@ import {
   buildRegistryState,
   DEFAULT_DISCOVERY_CONFIG,
 } from '../registry/hardened.js';
+import { createLogger, CorrelationManager } from '@controlplane/observability';
+
+// Initialize observability for drift detection
+const correlation = new CorrelationManager();
+const logger = createLogger({
+  service: 'controlplane-drift',
+  version: '1.0.0',
+  level: 'info',
+});
 
 /**
  * Ecosystem Drift Detector
@@ -621,45 +630,79 @@ export interface RunDriftDetectionOptions {
 export async function runDriftDetection(
   options: RunDriftDetectionOptions
 ): Promise<{ report: DriftReport; exitCode: number }> {
-  const config: DriftConfig = {
-    ...DEFAULT_DRIFT_CONFIG,
-    ...options.config,
-  };
+  // Run with correlation context for tracing
+  return correlation.runWithNew(async () => {
+    const runId = correlation.getId();
+    const childLogger = logger.child({ correlationId: runId });
 
-  // Load baseline if specified
-  let baseline: RegistryState | undefined;
-  if (options.baselinePath) {
-    config.baseline = {
-      path: options.baselinePath,
-      version: '1.0.0',
+    const startTime = Date.now();
+
+    childLogger.info('Drift detection started', {
+      repoRoot: options.repoRoot,
+      hasBaseline: !!options.baselinePath,
+      format: options.format || 'text',
+    });
+
+    const config: DriftConfig = {
+      ...DEFAULT_DRIFT_CONFIG,
+      ...options.config,
     };
-    baseline = loadBaseline(options.baselinePath);
-  }
 
-  // Discover current state
-  const modules = discoverModules(options.repoRoot, DEFAULT_DISCOVERY_CONFIG);
-  const current = buildRegistryState(modules);
+    // Load baseline if specified
+    let baseline: RegistryState | undefined;
+    if (options.baselinePath) {
+      config.baseline = {
+        path: options.baselinePath,
+        version: '1.0.0',
+      };
+      baseline = loadBaseline(options.baselinePath);
+      childLogger.debug('Baseline loaded', { baselinePath: options.baselinePath });
+    }
 
-  // Detect drifts
-  const drifts = detectDrifts(current, baseline, config);
+    // Discover current state
+    const modules = discoverModules(options.repoRoot, DEFAULT_DISCOVERY_CONFIG);
+    const current = buildRegistryState(modules);
 
-  // Generate report
-  const report = generateDriftReport(current, drifts, baseline, config);
+    childLogger.debug('Modules discovered', { moduleCount: modules.length });
 
-  // Format output
-  const format = options.format || 'text';
-  const output = formatDriftReport(report, format);
+    // Detect drifts
+    const drifts = detectDrifts(current, baseline, config);
 
-  // Write to file or stdout
-  if (options.outputPath) {
-    writeFileSync(options.outputPath, output);
-    console.log(`Drift report written to: ${options.outputPath}`);
-  } else {
-    console.log(output);
-  }
+    // Generate report
+    const report = generateDriftReport(current, drifts, baseline, config);
 
-  // Determine exit code
-  const exitCode = report.status === 'healthy' ? 0 : report.status === 'warning' ? 1 : 2;
+    const duration = Date.now() - startTime;
 
-  return { report, exitCode };
+    // Format output
+    const format = options.format || 'text';
+    const output = formatDriftReport(report, format);
+
+    // Write to file or stdout
+    if (options.outputPath) {
+      writeFileSync(options.outputPath, output);
+      childLogger.info('Drift report written to file', {
+        outputPath: options.outputPath,
+        duration,
+      });
+    } else {
+      // For console output in text/markdown mode, we still print to stdout
+      // for CLI usability, but we also log structured
+      console.log(output);
+    }
+
+    childLogger.info('Drift detection completed', {
+      status: report.status,
+      totalDrifts: report.summary.totalDrifts,
+      fatalCount: report.summary.bySeverity.fatal,
+      errorCount: report.summary.bySeverity.error,
+      warningCount: report.summary.bySeverity.warning,
+      duration,
+      runId,
+    });
+
+    // Determine exit code
+    const exitCode = report.status === 'healthy' ? 0 : report.status === 'warning' ? 1 : 2;
+
+    return { report, exitCode };
+  });
 }

@@ -25,7 +25,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@controlplane/contract-kit": "workspace:*"
+    "@controlplane/contract-kit": "workspace:*",
+    "@controlplane/observability": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
