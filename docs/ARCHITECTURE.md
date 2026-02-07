@@ -140,6 +140,94 @@ graph TD
 - **Playwright** runs E2E tests against the local Docker stack.
 - Build order respects workspace dependencies (`^build` in turbo.json).
 
+## Security Boundaries
+
+### Authentication & Authorization
+
+This repository implements contracts only. Authentication/authorization logic is delegated to downstream implementations. Generated runners should enforce authN/authZ at the API gateway or inside the runner, depending on platform requirements.
+
+### Secrets Hygiene
+
+- Use `.env.example` as the reference list of environment variables
+- Run `pnpm run secret-scan` before committing changes
+- No API keys, tokens, passwords, or credentials committed to repository
+
+### Input Validation
+
+All contracts are validated using Zod schemas:
+
+```typescript
+import { JobRequest, RunnerCapability, HealthCheck } from '@controlplane/contracts';
+
+// Validation example
+const result = JobRequest.safeParse(input);
+if (!result.success) {
+  // Handle validation errors
+}
+```
+
+### Error Security
+
+Errors use `ErrorEnvelope` with standardized fields to prevent information leakage:
+
+| Field | Security Consideration |
+|-------|------------------------|
+| `id` | UUID prevents information leakage |
+| `category` | Categorizes error type |
+| `severity` | Helps with alerting |
+| `message` | Should not expose internals |
+| `details` | Structured debugging info |
+| `correlationId` | Request tracing |
+
+## Integration Patterns
+
+### Runner Discovery
+
+ControlPlane detects runners in three locations (priority order):
+
+1. **Primary path**: `<repoRoot>/runners/*/runner.manifest.json`
+2. **Fallback path**: `<repoRoot>/.cache/repos/*/runner.manifest.json`
+3. **Cached clones**: `.cache/repos/<name>` within the repo
+
+### Command Invocation Flow
+
+```
+controlplane run <runner> --input <file> --out <path>
+  │
+  ├─ Load runner manifest
+  ├─ Validate manifest schema
+  ├─ Write input JSON to temp file
+  ├─ Spawn runner process (node scripts/adapters/runner-adapter.mjs)
+  ├─ Read output report JSON
+  ├─ Validate report against schema
+  └─ Validate evidence packet against schema
+```
+
+### Correlation ID Propagation
+
+All operations propagate correlation IDs through the request lifecycle:
+
+1. Extract from incoming request headers (`X-Correlation-Id`)
+2. Generate new UUID if not present
+3. Propagate through all async operations
+4. Include in all logs and metrics
+
+### Error Handling Patterns
+
+All CLI errors are typed with:
+- **Error code**: Machine-readable identifier
+- **Message**: Human-readable description
+- **Hint**: Actionable remediation step
+
+Example:
+```json
+{
+  "error": "RUNNER_NOT_FOUND",
+  "message": "Runner 'foo' was not found in any manifest directory.",
+  "hint": "Ensure a runner.manifest.json for 'foo' exists under runners/."
+}
+```
+
 ## Extension Points
 
 See [EXTENSION-GUIDE.md](./EXTENSION-GUIDE.md) for step-by-step instructions on:
