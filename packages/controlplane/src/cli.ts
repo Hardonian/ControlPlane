@@ -3,7 +3,15 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listRunnerManifests, runRunner, resolveModule } from './index.js';
+import {
+  listRunnerManifests,
+  runRunner,
+  resolveModule,
+  executeRunner,
+  buildExecutionRegistry,
+  validateRunnerInput,
+} from './index.js';
+import { createHash } from 'node:crypto';
 import { validateEvidencePacket } from '@controlplane/contract-kit';
 import { discoverSiblings, findMissingSiblings } from './discovery.js';
 import { validateCompatibility } from './compatibility.js';
@@ -60,6 +68,8 @@ Commands:
   controlplane run <runner> --input <file|json> --out <path>  Execute a runner
   controlplane run --smoke                             Smoke-test all runners
   controlplane run demo                                Execute full pipeline demo
+  controlplane execute <runner> --input <file|json>    Full orchestrated execution with contract enforcement
+  controlplane registry                                Show execution registry with pre-flight status
   controlplane verify-integrations                     Full integration verification
   controlplane verify:ecosystem                        Detect ecosystem drift
     --baseline <path>                                  Path to baseline registry state
@@ -351,130 +361,147 @@ const run = async () => {
       }> = [];
 
       // Step 2: Run TruthCore for validation
-      try {
-        log('info', 'pipeline', 'Running TruthCore validation', 'truthcore');
-        const truthcoreModule = resolveModule('truthcore', 'runner');
-        if (!truthcoreModule.available) {
-          log('warn', 'pipeline', `TruthCore not available: ${truthcoreModule.error}`, 'truthcore');
-        } else {
-          const outputPath = path.join(demoDir, 'truthcore-report.json');
-          const result = await runRunner({
-            runner: 'truthcore',
-            input,
-            outputPath,
-            timeoutMs: 30_000,
-          });
+      {
+        const startMs = Date.now();
+        try {
+          log('info', 'pipeline', 'Running TruthCore validation', 'truthcore');
+          const truthcoreModule = resolveModule('truthcore', 'runner');
+          if (!truthcoreModule.available) {
+            log('warn', 'pipeline', `TruthCore not available: ${truthcoreModule.error}`, 'truthcore');
+          } else {
+            const outputPath = path.join(demoDir, 'truthcore-report.json');
+            const result = await runRunner({
+              runner: 'truthcore',
+              input,
+              outputPath,
+              timeoutMs: 30_000,
+            });
+            results.push({
+              stage: 'validation',
+              runner: 'truthcore',
+              success: result.validation.valid,
+              durationMs: Date.now() - startMs,
+              outputPath,
+            });
+            log('info', 'pipeline', 'TruthCore validation completed', 'truthcore');
+          }
+        } catch (error) {
+          log(
+            'error',
+            'pipeline',
+            `TruthCore failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'truthcore'
+          );
           results.push({
             stage: 'validation',
             runner: 'truthcore',
-            success: result.validation.valid,
-            durationMs: Date.now() - Date.now(), // Would need to track properly
-            outputPath,
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
-          log('info', 'pipeline', 'TruthCore validation completed', 'truthcore');
         }
-      } catch (error) {
-        log(
-          'error',
-          'pipeline',
-          `TruthCore failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'truthcore'
-        );
-        results.push({
-          stage: 'validation',
-          runner: 'truthcore',
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
       }
 
       // Step 3: Run JobForge connector
-      try {
-        log('info', 'pipeline', 'Running JobForge connector', 'JobForge');
-        const jobforgeModule = resolveModule('JobForge', 'runner');
-        if (!jobforgeModule.available) {
-          log('warn', 'pipeline', `JobForge not available: ${jobforgeModule.error}`, 'JobForge');
-        } else {
-          const outputPath = path.join(demoDir, 'jobforge-report.json');
-          const result = await runRunner({
-            runner: 'JobForge',
-            input,
-            outputPath,
-            timeoutMs: 30_000,
-          });
+      {
+        const startMs = Date.now();
+        try {
+          log('info', 'pipeline', 'Running JobForge connector', 'JobForge');
+          const jobforgeModule = resolveModule('JobForge', 'runner');
+          if (!jobforgeModule.available) {
+            log('warn', 'pipeline', `JobForge not available: ${jobforgeModule.error}`, 'JobForge');
+          } else {
+            const outputPath = path.join(demoDir, 'jobforge-report.json');
+            const result = await runRunner({
+              runner: 'JobForge',
+              input,
+              outputPath,
+              timeoutMs: 30_000,
+            });
+            results.push({
+              stage: 'connector',
+              runner: 'JobForge',
+              success: result.validation.valid,
+              durationMs: Date.now() - startMs,
+              outputPath,
+            });
+            log('info', 'pipeline', 'JobForge connector completed', 'JobForge');
+          }
+        } catch (error) {
+          log(
+            'error',
+            'pipeline',
+            `JobForge failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'JobForge'
+          );
           results.push({
             stage: 'connector',
             runner: 'JobForge',
-            success: result.validation.valid,
-            durationMs: Date.now() - Date.now(),
-            outputPath,
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
-          log('info', 'pipeline', 'JobForge connector completed', 'JobForge');
         }
-      } catch (error) {
-        log(
-          'error',
-          'pipeline',
-          `JobForge failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'JobForge'
-        );
-        results.push({
-          stage: 'connector',
-          runner: 'JobForge',
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
       }
 
       // Step 4: Run one autopilot runner (ops-autopilot as example)
-      try {
-        log('info', 'pipeline', 'Running ops-autopilot', 'ops-autopilot');
-        const opsModule = resolveModule('ops-autopilot', 'runner');
-        if (!opsModule.available) {
+      {
+        const startMs = Date.now();
+        try {
+          log('info', 'pipeline', 'Running ops-autopilot', 'ops-autopilot');
+          const opsModule = resolveModule('ops-autopilot', 'runner');
+          if (!opsModule.available) {
+            log(
+              'warn',
+              'pipeline',
+              `ops-autopilot not available: ${opsModule.error}`,
+              'ops-autopilot'
+            );
+          } else {
+            const outputPath = path.join(demoDir, 'ops-autopilot-report.json');
+            const result = await runRunner({
+              runner: 'ops-autopilot',
+              input,
+              outputPath,
+              timeoutMs: 30_000,
+            });
+            results.push({
+              stage: 'automation',
+              runner: 'ops-autopilot',
+              success: result.validation.valid,
+              durationMs: Date.now() - startMs,
+              outputPath,
+            });
+            log('info', 'pipeline', 'ops-autopilot completed', 'ops-autopilot');
+          }
+        } catch (error) {
           log(
-            'warn',
+            'error',
             'pipeline',
-            `ops-autopilot not available: ${opsModule.error}`,
+            `ops-autopilot failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
             'ops-autopilot'
           );
-        } else {
-          const outputPath = path.join(demoDir, 'ops-autopilot-report.json');
-          const result = await runRunner({
-            runner: 'ops-autopilot',
-            input,
-            outputPath,
-            timeoutMs: 30_000,
-          });
           results.push({
             stage: 'automation',
             runner: 'ops-autopilot',
-            success: result.validation.valid,
-            durationMs: Date.now() - Date.now(),
-            outputPath,
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
-          log('info', 'pipeline', 'ops-autopilot completed', 'ops-autopilot');
         }
-      } catch (error) {
-        log(
-          'error',
-          'pipeline',
-          `ops-autopilot failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'ops-autopilot'
-        );
-        results.push({
-          stage: 'automation',
-          runner: 'ops-autopilot',
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
       }
 
       // Step 5: Generate evidence packet and summary
+      const evidencePayload = JSON.stringify(
+        results.map((r) => ({ stage: r.stage, runner: r.runner, success: r.success }))
+      );
+      const evidenceHash = createHash('sha256').update(evidencePayload).digest('hex');
+
       const evidencePacket = {
         id: `demo-${Date.now()}`,
         runner: 'controlplane-demo',
         timestamp: new Date().toISOString(),
-        hash: 'demo-hash', // Would compute properly
+        hash: evidenceHash,
         contractVersion: '1.0.0',
         items: results.map((r, i) => ({
           key: `stage-${i}`,
@@ -736,6 +763,95 @@ ${results.some((r) => !r.success) ? '- Run `pnpm controlplane doctor` to diagnos
       );
     }
     console.log(JSON.stringify(result.report, null, 2));
+    return;
+  }
+
+  // ── execute ─────────────────────────────────────────────────────────
+  // Full orchestrated execution: ControlPlane → select → execute → collect evidence → result
+  if (command === 'execute') {
+    const runnerName = args[0];
+    if (!runnerName || runnerName.startsWith('--')) {
+      exitWith(
+        1,
+        'Runner name is required. Usage: controlplane execute <runner> --input <file|json>'
+      );
+      return;
+    }
+
+    const inputValue = getOption(args, '--input');
+    if (!inputValue) {
+      exitWith(1, 'Missing --input <file|json>.');
+      return;
+    }
+
+    const input = readJsonInput(inputValue);
+
+    // Validate input contract before dispatch
+    const inputCheck = validateRunnerInput(input);
+    if (!inputCheck.valid) {
+      exitWith(
+        2,
+        formatError(
+          new ControlPlaneError(
+            'VALIDATION_FAILED',
+            `Input contract violation: ${inputCheck.errors.join(', ')}`,
+            'Input must have requestId (string), timestamp (ISO-8601 string), and payload (object).'
+          )
+        )
+      );
+      return;
+    }
+
+    const timeoutMs = parseInt(getOption(args, '--timeout') ?? '30000', 10);
+    const outputPath = getOption(args, '--out');
+
+    try {
+      const result = await executeRunner(
+        runnerName,
+        input as { requestId: string; timestamp: string; payload: Record<string, unknown> },
+        { timeoutMs, outputPath }
+      );
+
+      console.log(JSON.stringify({
+        runner: result.runner,
+        status: result.report.status,
+        reportValid: result.reportValid,
+        evidenceValid: result.evidenceValid,
+        durationMs: result.durationMs,
+        evidence: result.evidence ? {
+          id: result.evidence.id,
+          hash: result.evidence.hash,
+          decision: result.evidence.decision,
+          itemCount: result.evidence.items.length,
+        } : null,
+      }, null, 2));
+    } catch (error) {
+      exitWith(2, formatError(error));
+    }
+    return;
+  }
+
+  // ── registry ───────────────────────────────────────────────────────
+  if (command === 'registry') {
+    const registry = buildExecutionRegistry();
+
+    console.log(JSON.stringify({
+      timestamp: registry.timestamp,
+      total: registry.runners.length,
+      executable: registry.executable.length,
+      failed: registry.failed.length,
+      runners: registry.runners.map((r) => ({
+        name: r.name,
+        version: r.version,
+        executable: r.executable,
+        preflight: r.preflight,
+        ...(!r.executable ? { reason: (r as { reason: string }).reason } : {}),
+      })),
+    }, null, 2));
+
+    if (registry.failed.length > 0) {
+      exitWith(1, `${registry.failed.length} runner(s) failed pre-flight checks.`);
+    }
     return;
   }
 
