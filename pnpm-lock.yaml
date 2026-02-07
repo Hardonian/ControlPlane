@@ -105,6 +105,9 @@ importers:
       '@controlplane/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@controlplane/observability':
+        specifier: workspace:*
+        version: link:../observability
       chalk:
         specifier: ^5.3.0
         version: 5.6.2
@@ -283,6 +286,9 @@ importers:
       '@controlplane/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@controlplane/observability':
+        specifier: workspace:*
+        version: link:../observability
       chalk:
         specifier: ^5.3.0
         version: 5.6.2

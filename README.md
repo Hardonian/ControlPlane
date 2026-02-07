@@ -257,6 +257,86 @@ See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full architecture ref
 
 ---
 
+## Module Discovery & Integration
+
+ControlPlane automatically discovers and loads modules from multiple sources with graceful fallback:
+
+### Discovery Sources (Priority Order)
+
+1. **Workspace Packages** (`packages/`) - Local monorepo packages
+2. **Installed Packages** (`node_modules/`) - Published npm packages
+3. **Runner Manifests** (`runners/`) - Fallback manifest-based runners
+
+### Adding a New Module
+
+#### Option 1: Workspace Package
+```bash
+# Create package structure
+mkdir packages/my-runner
+cd packages/my-runner
+
+# Create package.json
+{
+  "name": "@controlplane/my-runner",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "exports": { ".": "./dist/index.js" }
+}
+
+# Implement runner logic
+# Build and export runner function
+```
+
+#### Option 2: Installed Package
+```bash
+# Publish your runner as npm package
+npm publish
+
+# Install in ControlPlane
+pnpm add @my-org/my-runner
+
+# ControlPlane will auto-discover it
+```
+
+#### Option 3: Manifest-Based Runner
+```bash
+# Create runner directory
+mkdir runners/my-runner
+
+# Create manifest
+# runners/my-runner/runner.manifest.json
+{
+  "name": "my-runner",
+  "version": "1.0.0",
+  "entrypoint": {
+    "command": "node",
+    "args": ["scripts/adapters/runner-adapter.mjs", "--runner", "my-runner"]
+  }
+}
+```
+
+### Graceful Degradation
+
+If a module is unavailable, ControlPlane:
+- Shows actionable error messages
+- Continues execution with available modules
+- Provides next-step commands for resolution
+
+### Testing Integration
+
+```bash
+# Run full pipeline demo
+pnpm controlplane run demo
+
+# Check module registry
+pnpm controlplane list
+
+# Verify ecosystem health
+pnpm controlplane doctor
+```
+
+---
+
 ## Contribution Workflow
 
 1. Fork or branch from `main`.

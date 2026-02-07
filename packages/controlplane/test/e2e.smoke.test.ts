@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
  */
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const repoRoot = resolve(__dirname, '../..');
+const repoRoot = resolve(__dirname, '../../..');
 
 describe('ControlPlane E2E Smoke Tests', () => {
   describe('Module Discovery', () => {
@@ -150,7 +150,7 @@ describe('ControlPlane E2E Smoke Tests', () => {
   });
 
   describe('Runner Manifest Validation', () => {
-    it('should validate all runner manifests in runners/ directory', () => {
+    it('should validate all runner manifests in runners/ directory', async () => {
       const runnersDir = join(repoRoot, 'runners');
 
       if (!existsSync(runnersDir)) {
@@ -158,9 +158,11 @@ describe('ControlPlane E2E Smoke Tests', () => {
         return;
       }
 
-      const { validateManifest, DEFAULT_DISCOVERY_CONFIG } = require('../src/registry/hardened.js');
+      const { validateManifest, DEFAULT_DISCOVERY_CONFIG } =
+        await import('../src/registry/hardened.js');
+      const { readdirSync } = await import('node:fs');
 
-      const entries = require('fs').readdirSync(runnersDir, { withFileTypes: true });
+      const entries = readdirSync(runnersDir, { withFileTypes: true });
 
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;

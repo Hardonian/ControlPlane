@@ -1,16 +1,13 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  validateReport,
-  type ValidationResult
-} from '@controlplane/contract-kit';
+import { validateReport, type ValidationResult } from '@controlplane/contract-kit';
 import { listRunners, resolveRunner, type RunnerRecord } from './registry/index.js';
 import {
   runEntrypoint,
   readJsonFile,
   ensureAbsolutePath,
-  type InvocationResult
+  type InvocationResult,
 } from './invoke/index.js';
 
 export type RunRunnerOptions = {
@@ -28,10 +25,7 @@ export type RunnerExecution = {
   validation: ValidationResult;
 };
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 const writeInputFile = (input: unknown, cwd: string) => {
   const inputPath = path.join(cwd, `controlplane-input-${Date.now()}.json`);
@@ -53,9 +47,7 @@ const buildArgs = (baseArgs: string[], inputPath: string, outputPath: string) =>
   return args;
 };
 
-export const runRunner = async (
-  options: RunRunnerOptions
-): Promise<RunnerExecution> => {
+export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecution> => {
   const runner = resolveRunner(options.runner);
   const cwd = repoRoot;
   const inputPath = writeInputFile(options.input, cwd);
@@ -69,7 +61,7 @@ export const runRunner = async (
     cwd,
     env: options.env,
     timeoutMs: options.timeoutMs,
-    redactEnvKeys: runner.requiredEnv ?? []
+    redactEnvKeys: runner.requiredEnv ?? [],
   });
 
   const report = readJsonFile(outputPath);
@@ -79,13 +71,16 @@ export const runRunner = async (
     runner,
     invocation,
     report,
-    validation
+    validation,
   };
 };
 
 export const listRunnerManifests = () => listRunners();
 
 export const validateReportPayload = validateReport;
+
+export { listModules, resolveModule } from './registry/index.js';
+export type { ModuleRecord, ModuleType } from './registry/index.js';
 
 export { discoverSiblings, findMissingSiblings } from './discovery.js';
 export type { SiblingRepo, SiblingManifest } from './discovery.js';
