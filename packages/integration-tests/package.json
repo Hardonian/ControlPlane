@@ -7,7 +7,7 @@
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 ../../tests/integration --ext .ts",
-    "test": "../sdk-generator/node_modules/.bin/vitest run --config ./vitest.config.ts"
+    "test": "vitest run --config ./vitest.config.ts"
   },
   "dependencies": {
     "@controlplane/contract-kit": "workspace:*",
