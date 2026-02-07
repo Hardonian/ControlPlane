@@ -19,7 +19,7 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 src --ext .ts",
-    "test": "../sdk-generator/node_modules/.bin/vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {},
   "devDependencies": {

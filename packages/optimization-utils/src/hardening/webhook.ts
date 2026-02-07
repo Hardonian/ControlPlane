@@ -634,7 +634,7 @@ export function webhookSecurityMiddleware(security: WebhookSecurity) {
     req: { body: unknown; headers: Record<string, string> },
     res: {
       setHeader: (name: string, value: string) => void;
-      status: (code: number) => void;
+      status: (code: number) => { json: (data: unknown) => void };
       json: (data: unknown) => void;
     },
     next: () => void
