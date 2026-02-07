@@ -22,7 +22,7 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 src --ext .ts",
-    "test": "../sdk-generator/node_modules/.bin/vitest run"
+    "test": "vitest run"
   },
   "dependencies": {
     "@controlplane/contract-kit": "workspace:*"
