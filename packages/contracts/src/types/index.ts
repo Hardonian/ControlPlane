@@ -5,3 +5,4 @@ export * from './common.js';
 export * from './distribution.js';
 export * from './registry.js';
 export * from './marketplace.js';
+export * from './enhanced.js';
