@@ -219,7 +219,7 @@ export function validateManifest(
   return {
     valid: errors.length === 0,
     errors,
-    manifest: validation.manifest || (data as VersionedManifest),
+    manifest: manifest as unknown as VersionedManifest,
   };
 }
 

@@ -9,10 +9,7 @@ import { discoverSiblings, findMissingSiblings } from './discovery.js';
 import { validateCompatibility } from './compatibility.js';
 import { ControlPlaneError, formatError } from './errors.js';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 const ARTIFACTS_ROOT = path.join(repoRoot, 'artifacts');
 
@@ -25,9 +22,7 @@ const exitWith = (code: number, message?: string): never => {
 
 const readJsonInput = (value: string) => {
   try {
-    const filePath = path.isAbsolute(value)
-      ? value
-      : path.join(process.cwd(), value);
+    const filePath = path.isAbsolute(value) ? value : path.join(process.cwd(), value);
     const raw = readFileSync(filePath, 'utf-8');
     return JSON.parse(raw) as unknown;
   } catch {
@@ -65,11 +60,20 @@ Commands:
   controlplane run <runner> --input <file|json> --out <path>  Execute a runner
   controlplane run --smoke                             Smoke-test all runners
   controlplane verify-integrations                     Full integration verification
+  controlplane verify:ecosystem                        Detect ecosystem drift
+    --baseline <path>                                  Path to baseline registry state
+    --format <json|text|markdown>                      Output format (default: text)
+    --out <path>                                       Write report to file
+  controlplane registry:report                         Generate registry report
+    --format <json|text|markdown>                      Output format (default: text)
+    --out <path>                                       Write report to file
+    --verbose                                          Include detailed information
+    --include-errors                                   Include validation errors
 
 Exit Codes:
   0  Success
-  1  Invalid arguments
-  2  Execution/validation failure
+  1  Invalid arguments or warnings detected
+  2  Execution/validation failure or critical drift
 `);
 };
 
@@ -89,12 +93,7 @@ type LogEntry = {
 
 const logs: LogEntry[] = [];
 
-const log = (
-  level: 'info' | 'warn' | 'error',
-  phase: string,
-  message: string,
-  runner?: string
-) => {
+const log = (level: 'info' | 'warn' | 'error', phase: string, message: string, runner?: string) => {
   logs.push({ ts: new Date().toISOString(), level, phase, message, runner });
 };
 
@@ -132,7 +131,8 @@ const run = async () => {
     const allSchemasOk = schemaChecks.every((s) => s.exists);
 
     // Optionally invoke sibling doctor commands
-    const siblingDoctorResults: { name: string; ok: boolean; output?: string; error?: string }[] = [];
+    const siblingDoctorResults: { name: string; ok: boolean; output?: string; error?: string }[] =
+      [];
     if (hasFlag(args, '--sibling')) {
       for (const sib of siblings) {
         if (sib.hasDoctorCommand && sib.source === 'sibling') {
@@ -323,11 +323,16 @@ const run = async () => {
       const fixturePath = path.join(repoRoot, 'tests/fixtures/golden-input.json');
       if (!existsSync(fixturePath)) {
         log('error', 'init', 'Golden fixture missing');
-        exitWith(2, formatError(new ControlPlaneError(
-          'MISSING_DEPENDENCY',
-          'Golden fixture tests/fixtures/golden-input.json not found.',
-          'Create the fixture file or run "pnpm run test:golden" to generate it.'
-        )));
+        exitWith(
+          2,
+          formatError(
+            new ControlPlaneError(
+              'MISSING_DEPENDENCY',
+              'Golden fixture tests/fixtures/golden-input.json not found.',
+              'Create the fixture file or run "pnpm run test:golden" to generate it.'
+            )
+          )
+        );
       }
       const input = JSON.parse(readFileSync(fixturePath, 'utf-8')) as unknown;
       log('info', 'init', 'Loaded golden fixture');
@@ -401,15 +406,11 @@ const run = async () => {
             evidenceValid,
             durationMs,
             artifactPath: runnerArtifactDir,
-            errors:
-              result.validation.errors.length > 0
-                ? result.validation.errors
-                : undefined,
+            errors: result.validation.errors.length > 0 ? result.validation.errors : undefined,
           });
         } catch (error) {
           const durationMs = Date.now() - startMs;
-          const msg =
-            error instanceof Error ? error.message : 'Unknown execution error';
+          const msg = error instanceof Error ? error.message : 'Unknown execution error';
           log('error', 'execute', `${runner.name} failed: ${msg}`, runner.name);
 
           results.push({
@@ -439,19 +440,13 @@ const run = async () => {
         },
       };
 
-      writeFileSync(
-        path.join(smokeDir, 'manifest.json'),
-        JSON.stringify(manifest, null, 2)
-      );
+      writeFileSync(path.join(smokeDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
       log('info', 'artifacts', `Manifest written to ${smokeDir}/manifest.json`);
 
       console.log(JSON.stringify(manifest, null, 2));
 
       if (failures.length > 0) {
-        exitWith(
-          2,
-          `Smoke test failed for ${failures.length} runner(s).`
-        );
+        exitWith(2, `Smoke test failed for ${failures.length} runner(s).`);
       }
       return;
     }
@@ -483,11 +478,13 @@ const run = async () => {
     if (!result.validation.valid) {
       exitWith(
         2,
-        formatError(new ControlPlaneError(
-          'VALIDATION_FAILED',
-          `Report validation failed: ${result.validation.errors.join(', ')}`,
-          'Check the runner output against the report schema.'
-        ))
+        formatError(
+          new ControlPlaneError(
+            'VALIDATION_FAILED',
+            `Report validation failed: ${result.validation.errors.join(', ')}`,
+            'Check the runner output against the report schema.'
+          )
+        )
       );
     }
     console.log(JSON.stringify(result.report, null, 2));
@@ -520,20 +517,78 @@ const run = async () => {
         results.push({
           runner: runner.name,
           ok: false,
-          errors: [
-            error instanceof Error ? error.message : 'Unknown execution error',
-          ],
+          errors: [error instanceof Error ? error.message : 'Unknown execution error'],
         });
       }
     }
     const failures = results.filter((result) => !result.ok);
     console.log(JSON.stringify({ results }, null, 2));
     if (failures.length > 0) {
-      exitWith(
-        2,
-        `Integration verification failed for ${failures.length} runner(s).`
+      exitWith(2, `Integration verification failed for ${failures.length} runner(s).`);
+    }
+    return;
+  }
+
+  // ── verify:ecosystem ────────────────────────────────────────────────
+  if (command === 'verify:ecosystem') {
+    const { runDriftDetection } = await import('./drift/index.js');
+
+    const baselinePath = getOption(args, '--baseline');
+    const format = (getOption(args, '--format') as 'json' | 'text' | 'markdown') || 'text';
+    const outputPath = getOption(args, '--out');
+
+    log('info', 'drift-detection', 'Starting ecosystem drift detection');
+
+    const { report, exitCode } = await runDriftDetection({
+      repoRoot,
+      baselinePath,
+      format,
+      outputPath,
+    });
+
+    if (report.status === 'healthy') {
+      log('info', 'drift-detection', 'No drift detected - ecosystem is healthy');
+    } else {
+      log(
+        report.status === 'critical' ? 'error' : 'warn',
+        'drift-detection',
+        `Detected ${report.summary.totalDrifts} drift(s) - status: ${report.status}`
       );
     }
+
+    process.exit(exitCode);
+  }
+
+  // ── registry:report ─────────────────────────────────────────────────
+  if (command === 'registry:report') {
+    const { discoverModules, buildRegistryState, generateRegistryReport } =
+      await import('./registry/hardened.js');
+
+    const format = (getOption(args, '--format') as 'json' | 'text' | 'markdown') || 'text';
+    const outputPath = getOption(args, '--out');
+    const verbose = hasFlag(args, '--verbose');
+    const includeErrors = hasFlag(args, '--include-errors');
+
+    log('info', 'registry', 'Discovering modules...');
+    const modules = discoverModules(repoRoot);
+    const state = buildRegistryState(modules);
+
+    log('info', 'registry', `Discovered ${state.summary.total} modules`);
+
+    const report = generateRegistryReport(state, {
+      format,
+      includeErrors: includeErrors || verbose,
+      includeWarnings: true,
+      verbose,
+    });
+
+    if (outputPath) {
+      writeFileSync(outputPath, report);
+      console.log(`Registry report written to: ${outputPath}`);
+    } else {
+      console.log(report);
+    }
+
     return;
   }
 
