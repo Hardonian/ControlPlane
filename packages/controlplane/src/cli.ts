@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listRunnerManifests, runRunner, listModules, resolveModule } from './index.js';
+import { listRunnerManifests, runRunner, resolveModule } from './index.js';
 import { validateEvidencePacket } from '@controlplane/contract-kit';
 import { discoverSiblings, findMissingSiblings } from './discovery.js';
 import { validateCompatibility } from './compatibility.js';
@@ -341,7 +341,14 @@ const run = async () => {
       const demoDir = path.join(ARTIFACTS_ROOT, 'demo', timestamp);
       mkdirSync(demoDir, { recursive: true });
 
-      const results: any[] = [];
+      const results: Array<{
+        stage: string;
+        runner: string;
+        success: boolean;
+        durationMs?: number;
+        outputPath?: string;
+        error?: string;
+      }> = [];
 
       // Step 2: Run TruthCore for validation
       try {

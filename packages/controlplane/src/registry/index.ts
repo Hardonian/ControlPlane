@@ -94,11 +94,16 @@ const tryLoadWorkspaceModule = (name: string): ModuleRecord | null => {
   const pkgPath = path.join(repoRoot, 'packages', name, 'package.json');
   if (existsSync(pkgPath)) {
     try {
-      const pkg = readJson(pkgPath) as any;
+      const pkg = readJson(pkgPath) as {
+        name?: string;
+        version?: string;
+        description?: string;
+        bin?: string;
+      };
       const manifestPath = path.join(repoRoot, 'packages', name, 'runner.manifest.json');
-      let manifest: any = null;
+      let manifest: RunnerManifest | null = null;
       if (existsSync(manifestPath)) {
-        manifest = readJson(manifestPath);
+        manifest = readJson(manifestPath) as RunnerManifest;
       }
 
       return {
@@ -139,11 +144,16 @@ const tryLoadInstalledPackage = (name: string): ModuleRecord | null => {
   const nodeModulesPath = path.join(repoRoot, 'node_modules', name, 'package.json');
   if (existsSync(nodeModulesPath)) {
     try {
-      const pkg = readJson(nodeModulesPath) as any;
+      const pkg = readJson(nodeModulesPath) as {
+        name?: string;
+        version?: string;
+        description?: string;
+        bin?: string;
+      };
       const manifestPath = path.join(repoRoot, 'node_modules', name, 'runner.manifest.json');
-      let manifest: any = null;
+      let manifest: RunnerManifest | null = null;
       if (existsSync(manifestPath)) {
-        manifest = readJson(manifestPath);
+        manifest = readJson(manifestPath) as RunnerManifest;
       }
 
       return {
@@ -195,7 +205,7 @@ export const listModules = (): ModuleRecord[] => {
       for (const entry of entries) {
         const pkgPath = path.join(workspacePackages, entry, 'package.json');
         if (existsSync(pkgPath)) {
-          const pkg = readJson(pkgPath) as any;
+          const pkg = readJson(pkgPath) as { name?: string };
           if (
             pkg.name?.startsWith('@controlplane/') ||
             pkg.name?.includes('runner') ||

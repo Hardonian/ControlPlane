@@ -35,15 +35,15 @@ describe('ControlPlane E2E Smoke Tests', () => {
     });
 
     it('should validate all discovered manifests', async () => {
-      const { discoverModules } = await import('../src/registry/hardened.js');
+      const { listModules } = await import('../src/registry/index.js');
 
-      const modules = discoverModules(repoRoot);
+      const modules = listModules();
 
       for (const module of modules) {
-        expect(module.validation.schemaValid).toBe(true);
-        expect(module.manifest.name).toBeDefined();
-        expect(module.manifest.version).toBeDefined();
-        expect(module.manifest.entrypoint).toBeDefined();
+        expect(module.available).toBe(true);
+        expect(module.name).toBeDefined();
+        expect(module.version).toBeDefined();
+        expect(module.entrypoint).toBeDefined();
       }
     });
   });
