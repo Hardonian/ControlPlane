@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -77,6 +78,22 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
   const executableRunner = resolveExecutableRunner(options.runner);
 
   const cwd = repoRoot;
+  const profileEnabled = process.env.CONTROLPLANE_PROFILE === '1';
+  const requestId = process.env.CONTROLPLANE_REQUEST_ID ?? randomUUID();
+  const profileLog = (step: string, durationMs: number) => {
+    if (!profileEnabled) return;
+    console.log(
+      JSON.stringify({
+        type: 'profile',
+        requestId,
+        runner: runner.name,
+        step,
+        durationMs,
+      })
+    );
+  };
+  const totalStart = Date.now();
+
   const inputPath = writeInputFile(options.input, cwd);
   const outputPath = ensureAbsolutePath(
     options.outputPath ?? path.join(cwd, `${executableRunner.name}-report.json`),
@@ -91,6 +108,7 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
     timeoutMs: options.timeoutMs,
     redactEnvKeys: executableRunner.requiredEnv ?? [],
   });
+  profileLog('invoke', Date.now() - invocationStart);
 
   // ── 4. Fail fast on non-zero exit ──────────────────────────────────
   if (invocation.exitCode !== 0) {
@@ -111,7 +129,12 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
   }
 
   const report = readJsonFile(outputPath);
+  profileLog('read-report', Date.now() - readStart);
+
+  const validateStart = Date.now();
   const validation = validateReport(report);
+  profileLog('validate-report', Date.now() - validateStart);
+  profileLog('total', Date.now() - totalStart);
 
   if (!validation.valid) {
     throw Errors.validationFailed(

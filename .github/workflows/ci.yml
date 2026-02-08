@@ -48,6 +48,9 @@ jobs:
       - name: Run contract tests
         run: pnpm run contract:validate:json
 
+      - name: Run contracts check
+        run: pnpm run contracts:check
+
       - name: Run contract sync check
         run: pnpm run contract:sync:check
 
@@ -119,6 +122,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Secret scan
+        run: pnpm run secret-scan
+
+      - name: Dependency audit (high severity)
+        run: pnpm audit --prod --audit-level=high
       - name: Run Reality Map drift check
         run: pnpm run reality:check
 
@@ -193,6 +201,10 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
+  e2e:
+    name: E2E Demo Tests
+    runs-on: ubuntu-latest
+    needs: [build]
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -225,6 +237,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run demo E2E tests
+        run: pnpm run test:e2e:demo
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          name: playwright-report
+          path: playwright-report
+
+  # Build verification
       - name: Run contract guard
         run: node scripts/contract-guard.mjs --json
 

@@ -54,6 +54,27 @@ This document provides a canonical, code-grounded view of the ControlPlane ecosy
 
 | Command | Options | Description |
 |---------|---------|-------------|
+| `controlplane doctor` | `@controlplane/controlplane` | Aggregated health check across all discovered runners |
+| `controlplane list` | `@controlplane/controlplane` | List all discovered runner manifests |
+| `controlplane run <runner>` | `@controlplane/controlplane` | Execute a single runner with input/output |
+| `controlplane plan` | `@controlplane/controlplane` | Dry-run: discover runners, validate contracts, print plan |
+| `controlplane run --smoke` | `@controlplane/controlplane` | Execute all runners with golden fixture, validate outputs |
+| `controlplane verify-integrations` | `@controlplane/controlplane` | Run all runners against golden fixture, assert schemas |
+| `contract-test` | `@controlplane/contract-test-kit` | Validate all contract schemas |
+| `contract-sync` | `@controlplane/contract-test-kit` | Sync schemas to implementations |
+| `capability-registry` | `@controlplane/contract-test-kit` | Generate capability registry |
+
+## Demo Mode (Deterministic, Offline)
+
+Demo mode uses the local runner adapter with a fixed timestamp for deterministic output. It does not call external services.
+
+| Script | Purpose |
+|--------|---------|
+| `pnpm run demo:reset` | Reset demo state and regenerate `demo/input.json` |
+| `pnpm run demo:setup` | Generate demo report + evidence artifacts |
+| `pnpm run demo:start` | Run demo setup and print locations |
+
+## Module Discovery Logic
 | `contract-test` | `--json` `--junit` `--verbose` | Run contract tests |
 
 ### Benchmark CLI Suites
@@ -562,6 +583,7 @@ See `config/distribution.oss.json` and `config/distribution.cloud.json` for feat
 - **Integration results**: `<repoRoot>/test-results/<runner>-report.json`
 - **Evidence packets**: `<repoRoot>/artifacts/<runner>/<timestamp>/evidence.json`
 - **Logs**: Structured JSON to stdout/stderr with secret redaction
+- **Demo artifacts**: `<repoRoot>/demo/report.json`, `<repoRoot>/demo/evidence.json`, `<repoRoot>/demo/manifest.json`
 
 ---
 
@@ -604,3 +626,15 @@ See `config/distribution.oss.json` and `config/distribution.cloud.json` for feat
 | Evidence Packet | `contracts/evidence.schema.json` | Validate evidence/artifact bundles |
 | Module Manifest | `contracts/module.manifest.schema.json` | Validate module discovery manifests |
 | Audit Trail | `contracts/audit-trail.schema.json` | Validate audit trail entries from compliance runners |
+
+## Environment Variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `NODE_ENV` | No | Environment identifier |
+| `CONTROLPLANE_OFFLINE` | No | Skip external repo cloning |
+| `CP_SMOKE_ALLOW_MISSING` | No | Allow missing services in smoke tests |
+| `GITHUB_TOKEN` | No | GitHub access for workflow automation |
+| `CONTROLPLANE_DEMO_TIME` | No | Fixed timestamp for deterministic demo runs |
+| `CONTROLPLANE_PROFILE` | No | Emit profile timing logs when `1` |
+| `CONTROLPLANE_REQUEST_ID` | No | Correlation ID for profile logs |

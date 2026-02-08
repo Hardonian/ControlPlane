@@ -99,6 +99,15 @@ Contracts Check Results
 
 Use `.env.example` as the canonical list of environment variables for local workflows and templates. For deployment guidance, see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md). Security posture is documented in [docs/SECURITY.md](./docs/SECURITY.md).
 
+### Demo Mode (Deterministic, Offline)
+
+```bash
+pnpm run demo:reset
+pnpm run demo:start
+```
+
+Artifacts are written to `demo/` with a fixed timestamp (override via `CONTROLPLANE_DEMO_TIME`).
+
 ## Architecture Overview
 
 ### Orchestration (`controlplane`)

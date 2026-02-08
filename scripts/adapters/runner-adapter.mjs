@@ -95,7 +95,12 @@ try {
   process.exit(1);
 }
 
-const startedAt = new Date().toISOString();
+const fixedTime = process.env.CONTROLPLANE_DEMO_TIME;
+const getNow = () => (fixedTime ? new Date(fixedTime) : new Date());
+const nowIso = () => getNow().toISOString();
+const nowMs = () => getNow().getTime();
+
+const startedAt = nowIso();
 
 /** Count total fields in an object recursively. */
 const countFields = (obj) => {
@@ -203,7 +208,7 @@ const runnerLogic = {
   aias: () => {
     const policies = (typeof input === 'object' && input !== null && input.payload?.policies) || [];
     const resources = (typeof input === 'object' && input !== null && input.payload?.resources) || [];
-    const now = new Date().toISOString();
+    const now = nowIso();
 
     const auditEntries = resources.map((resource, idx) => ({
       entryId: `audit-${idx + 1}`,
@@ -217,7 +222,7 @@ const runnerLogic = {
     }));
 
     const auditTrail = {
-      id: `at-aias-${Date.now()}`,
+      id: `at-aias-${nowMs()}`,
       runner: 'aias',
       timestamp: now,
       contractVersion: '1.0.0',
@@ -230,7 +235,7 @@ const runnerLogic = {
         skipped: 0,
       },
       metadata: {
-        correlationId: `corr-${Date.now()}`,
+        correlationId: `corr-${nowMs()}`,
         durationMs: 0,
       },
     };
@@ -268,8 +273,8 @@ const logic = runnerLogic[runner] || (() => ({
 }));
 
 const result = logic();
-const finishedAt = new Date().toISOString();
-const durationMs = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
+const finishedAt = nowIso();
+const durationMs = nowMs() - new Date(startedAt).getTime();
 
 // Build evidence items with stable ordering
 const evidenceItems = (result.evaluationItems || [])
@@ -283,7 +288,7 @@ const evidenceItems = (result.evaluationItems || [])
 const evidenceHash = stableHash(evidenceItems);
 
 const evidencePacket = {
-  id: `ev-${runner}-${Date.now()}`,
+  id: `ev-${runner}-${nowMs()}`,
   runner,
   timestamp: finishedAt,
   hash: evidenceHash,
@@ -293,7 +298,7 @@ const evidencePacket = {
   metadata: {
     durationMs,
     retryCount: 0,
-    correlationId: `corr-${Date.now()}`,
+    correlationId: `corr-${nowMs()}`,
   },
 };
 
