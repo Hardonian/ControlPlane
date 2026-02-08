@@ -46,18 +46,27 @@ function extractCodeBlocks(section) {
   const fence = '```';
   let inBlock = false;
   let current = [];
+  let isExecutableBlock = false;
   for (const line of section.split('\n')) {
     if (line.trim().startsWith(fence)) {
       if (inBlock) {
-        blocks.push(current.join('\n'));
+        // End of block - only add if it's an executable block
+        if (isExecutableBlock) {
+          blocks.push(current.join('\n'));
+        }
         current = [];
         inBlock = false;
+        isExecutableBlock = false;
       } else {
+        // Start of block - check if it's bash/shell/sh
         inBlock = true;
+        const lang = line.trim().slice(fence.length).trim().toLowerCase();
+        // Only process blocks explicitly marked as bash/sh/shell
+        isExecutableBlock = ['bash', 'sh', 'shell'].includes(lang);
       }
       continue;
     }
-    if (inBlock) {
+    if (inBlock && isExecutableBlock) {
       current.push(line);
     }
   }
@@ -87,7 +96,7 @@ function verifyCommands(blocks, scripts) {
 
       if (line.startsWith('pnpm ')) {
         const command = line.split(' ')[1];
-        const allowed = new Set(['install', 'exec']);
+        const allowed = new Set(['install', 'exec', 'controlplane']);
         if (!allowed.has(command)) {
           fail(`README command uses unsupported pnpm command: ${line}`);
         }

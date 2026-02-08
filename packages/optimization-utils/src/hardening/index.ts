@@ -429,3 +429,15 @@ export class BulkheadTimeoutError extends Error {
     this.name = 'BulkheadTimeoutError';
   }
 }
+
+// Webhook security exports
+export {
+  WebhookSecurity,
+  webhookSecurityMiddleware,
+  createWebhookHandler,
+  createWebhookSignature,
+  type WebhookSecurityConfig,
+  type SignatureVerificationResult,
+  type IdempotencyRecord,
+  type WebhookContext,
+} from './webhook.js';

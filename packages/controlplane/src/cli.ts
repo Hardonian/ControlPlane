@@ -3,16 +3,21 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listRunnerManifests, runRunner } from './index.js';
+import {
+  listRunnerManifests,
+  runRunner,
+  resolveModule,
+  executeRunner,
+  buildExecutionRegistry,
+  validateRunnerInput,
+} from './index.js';
+import { createHash } from 'node:crypto';
 import { validateEvidencePacket } from '@controlplane/contract-kit';
 import { discoverSiblings, findMissingSiblings } from './discovery.js';
 import { validateCompatibility } from './compatibility.js';
 import { ControlPlaneError, formatError } from './errors.js';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 const ARTIFACTS_ROOT = path.join(repoRoot, 'artifacts');
 
@@ -25,9 +30,7 @@ const exitWith = (code: number, message?: string): never => {
 
 const readJsonInput = (value: string) => {
   try {
-    const filePath = path.isAbsolute(value)
-      ? value
-      : path.join(process.cwd(), value);
+    const filePath = path.isAbsolute(value) ? value : path.join(process.cwd(), value);
     const raw = readFileSync(filePath, 'utf-8');
     return JSON.parse(raw) as unknown;
   } catch {
@@ -64,12 +67,24 @@ Commands:
   controlplane plan                                    Dry-run discovery + validation
   controlplane run <runner> --input <file|json> --out <path>  Execute a runner
   controlplane run --smoke                             Smoke-test all runners
+  controlplane run demo                                Execute full pipeline demo
+  controlplane execute <runner> --input <file|json>    Full orchestrated execution with contract enforcement
+  controlplane registry                                Show execution registry with pre-flight status
   controlplane verify-integrations                     Full integration verification
+  controlplane verify:ecosystem                        Detect ecosystem drift
+    --baseline <path>                                  Path to baseline registry state
+    --format <json|text|markdown>                      Output format (default: text)
+    --out <path>                                       Write report to file
+  controlplane registry:report                         Generate registry report
+    --format <json|text|markdown>                      Output format (default: text)
+    --out <path>                                       Write report to file
+    --verbose                                          Include detailed information
+    --include-errors                                   Include validation errors
 
 Exit Codes:
   0  Success
-  1  Invalid arguments
-  2  Execution/validation failure
+  1  Invalid arguments or warnings detected
+  2  Execution/validation failure or critical drift
 `);
 };
 
@@ -89,12 +104,7 @@ type LogEntry = {
 
 const logs: LogEntry[] = [];
 
-const log = (
-  level: 'info' | 'warn' | 'error',
-  phase: string,
-  message: string,
-  runner?: string
-) => {
+const log = (level: 'info' | 'warn' | 'error', phase: string, message: string, runner?: string) => {
   logs.push({ ts: new Date().toISOString(), level, phase, message, runner });
 };
 
@@ -132,7 +142,8 @@ const run = async () => {
     const allSchemasOk = schemaChecks.every((s) => s.exists);
 
     // Optionally invoke sibling doctor commands
-    const siblingDoctorResults: { name: string; ok: boolean; output?: string; error?: string }[] = [];
+    const siblingDoctorResults: { name: string; ok: boolean; output?: string; error?: string }[] =
+      [];
     if (hasFlag(args, '--sibling')) {
       for (const sib of siblings) {
         if (sib.hasDoctorCommand && sib.source === 'sibling') {
@@ -314,6 +325,270 @@ const run = async () => {
 
   // ── run ─────────────────────────────────────────────────────────────
   if (command === 'run') {
+    if (args[0] === 'demo') {
+      log('info', 'init', 'Starting demo pipeline execution');
+
+      // Step 1: Load sample job input
+      const fixturePath = path.join(repoRoot, 'tests/fixtures/golden-input.json');
+      if (!existsSync(fixturePath)) {
+        log('error', 'init', 'Golden fixture missing');
+        exitWith(
+          2,
+          formatError(
+            new ControlPlaneError(
+              'MISSING_DEPENDENCY',
+              'Demo requires tests/fixtures/golden-input.json',
+              'Create the fixture file or run "pnpm run test:golden" to generate it.'
+            )
+          )
+        );
+      }
+      const input = JSON.parse(readFileSync(fixturePath, 'utf-8')) as unknown;
+      log('info', 'init', 'Loaded sample job input');
+
+      mkdirSync(ARTIFACTS_ROOT, { recursive: true });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const demoDir = path.join(ARTIFACTS_ROOT, 'demo', timestamp);
+      mkdirSync(demoDir, { recursive: true });
+
+      const results: Array<{
+        stage: string;
+        runner: string;
+        success: boolean;
+        durationMs?: number;
+        outputPath?: string;
+        error?: string;
+      }> = [];
+
+      // Step 2: Run TruthCore for validation
+      {
+        const startMs = Date.now();
+        try {
+          log('info', 'pipeline', 'Running TruthCore validation', 'truthcore');
+          const truthcoreModule = resolveModule('truthcore', 'runner');
+          if (!truthcoreModule.available) {
+            log('warn', 'pipeline', `TruthCore not available: ${truthcoreModule.error}`, 'truthcore');
+          } else {
+            const outputPath = path.join(demoDir, 'truthcore-report.json');
+            const result = await runRunner({
+              runner: 'truthcore',
+              input,
+              outputPath,
+              timeoutMs: 30_000,
+            });
+            results.push({
+              stage: 'validation',
+              runner: 'truthcore',
+              success: result.validation.valid,
+              durationMs: Date.now() - startMs,
+              outputPath,
+            });
+            log('info', 'pipeline', 'TruthCore validation completed', 'truthcore');
+          }
+        } catch (error) {
+          log(
+            'error',
+            'pipeline',
+            `TruthCore failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'truthcore'
+          );
+          results.push({
+            stage: 'validation',
+            runner: 'truthcore',
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Step 3: Run JobForge connector
+      {
+        const startMs = Date.now();
+        try {
+          log('info', 'pipeline', 'Running JobForge connector', 'JobForge');
+          const jobforgeModule = resolveModule('JobForge', 'runner');
+          if (!jobforgeModule.available) {
+            log('warn', 'pipeline', `JobForge not available: ${jobforgeModule.error}`, 'JobForge');
+          } else {
+            const outputPath = path.join(demoDir, 'jobforge-report.json');
+            const result = await runRunner({
+              runner: 'JobForge',
+              input,
+              outputPath,
+              timeoutMs: 30_000,
+            });
+            results.push({
+              stage: 'connector',
+              runner: 'JobForge',
+              success: result.validation.valid,
+              durationMs: Date.now() - startMs,
+              outputPath,
+            });
+            log('info', 'pipeline', 'JobForge connector completed', 'JobForge');
+          }
+        } catch (error) {
+          log(
+            'error',
+            'pipeline',
+            `JobForge failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'JobForge'
+          );
+          results.push({
+            stage: 'connector',
+            runner: 'JobForge',
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Step 4: Run one autopilot runner (ops-autopilot as example)
+      {
+        const startMs = Date.now();
+        try {
+          log('info', 'pipeline', 'Running ops-autopilot', 'ops-autopilot');
+          const opsModule = resolveModule('ops-autopilot', 'runner');
+          if (!opsModule.available) {
+            log(
+              'warn',
+              'pipeline',
+              `ops-autopilot not available: ${opsModule.error}`,
+              'ops-autopilot'
+            );
+          } else {
+            const outputPath = path.join(demoDir, 'ops-autopilot-report.json');
+            const result = await runRunner({
+              runner: 'ops-autopilot',
+              input,
+              outputPath,
+              timeoutMs: 30_000,
+            });
+            results.push({
+              stage: 'automation',
+              runner: 'ops-autopilot',
+              success: result.validation.valid,
+              durationMs: Date.now() - startMs,
+              outputPath,
+            });
+            log('info', 'pipeline', 'ops-autopilot completed', 'ops-autopilot');
+          }
+        } catch (error) {
+          log(
+            'error',
+            'pipeline',
+            `ops-autopilot failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'ops-autopilot'
+          );
+          results.push({
+            stage: 'automation',
+            runner: 'ops-autopilot',
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Step 5: Generate evidence packet and summary
+      const evidencePayload = JSON.stringify(
+        results.map((r) => ({ stage: r.stage, runner: r.runner, success: r.success }))
+      );
+      const evidenceHash = createHash('sha256').update(evidencePayload).digest('hex');
+
+      const evidencePacket = {
+        id: `demo-${Date.now()}`,
+        runner: 'controlplane-demo',
+        timestamp: new Date().toISOString(),
+        hash: evidenceHash,
+        contractVersion: '1.0.0',
+        items: results.map((r, i) => ({
+          key: `stage-${i}`,
+          value: r.success,
+          source: r.runner,
+          redacted: false,
+        })),
+        decision: {
+          outcome: results.every((r) => r.success) ? 'pass' : 'fail',
+          reasons: results.map((r) => ({
+            ruleId: `DEMO-${r.stage.toUpperCase()}`,
+            message: `${r.runner} ${r.success ? 'succeeded' : 'failed'}`,
+          })),
+          confidence: results.filter((r) => r.success).length / results.length,
+        },
+      };
+
+      const markdownSummary = `# ControlPlane Demo Pipeline Results
+
+**Executed:** ${new Date().toISOString()}
+**Status:** ${results.every((r) => r.success) ? '✅ SUCCESS' : '❌ PARTIAL FAILURE'}
+
+## Pipeline Stages
+
+${results
+  .map(
+    (r) => `### ${r.stage}: ${r.runner}
+- **Status:** ${r.success ? '✅ Passed' : '❌ Failed'}
+${r.error ? `- **Error:** ${r.error}` : ''}
+${r.outputPath ? `- **Output:** ${r.outputPath}` : ''}
+`
+  )
+  .join('\n')}
+
+## Evidence Packet
+
+\`\`\`json
+${JSON.stringify(evidencePacket, null, 2)}
+\`\`\`
+
+## Replay Instructions
+
+To reproduce this demo:
+
+\`\`\`bash
+# Ensure golden fixture exists
+pnpm controlplane run demo
+\`\`\`
+
+## Next Steps
+
+${
+  results.every((r) => r.success)
+    ? '- All stages completed successfully'
+    : '- Review failed stages and check module availability'
+}
+${results.some((r) => !r.success) ? '- Run `pnpm controlplane doctor` to diagnose issues' : ''}
+`;
+
+      writeFileSync(path.join(demoDir, 'evidence.json'), JSON.stringify(evidencePacket, null, 2));
+      writeFileSync(path.join(demoDir, 'summary.md'), markdownSummary);
+
+      const manifest = {
+        command: 'run demo',
+        timestamp: new Date().toISOString(),
+        artifactsRoot: demoDir,
+        results,
+        logs,
+        summary: {
+          totalStages: results.length,
+          passed: results.filter((r) => r.success).length,
+          failed: results.filter((r) => !r.success).length,
+        },
+      };
+
+      writeFileSync(path.join(demoDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+      console.log(JSON.stringify(manifest, null, 2));
+      console.log(`\n📄 Summary: ${path.join(demoDir, 'summary.md')}`);
+      console.log(`🧾 Evidence: ${path.join(demoDir, 'evidence.json')}`);
+
+      if (results.some((r) => !r.success)) {
+        exitWith(2, 'Demo pipeline had failures - check logs and module availability');
+      }
+      return;
+    }
+
     if (hasFlag(args, '--smoke')) {
       log('info', 'init', 'Starting smoke run');
 
@@ -323,11 +598,16 @@ const run = async () => {
       const fixturePath = path.join(repoRoot, 'tests/fixtures/golden-input.json');
       if (!existsSync(fixturePath)) {
         log('error', 'init', 'Golden fixture missing');
-        exitWith(2, formatError(new ControlPlaneError(
-          'MISSING_DEPENDENCY',
-          'Golden fixture tests/fixtures/golden-input.json not found.',
-          'Create the fixture file or run "pnpm run test:golden" to generate it.'
-        )));
+        exitWith(
+          2,
+          formatError(
+            new ControlPlaneError(
+              'MISSING_DEPENDENCY',
+              'Golden fixture tests/fixtures/golden-input.json not found.',
+              'Create the fixture file or run "pnpm run test:golden" to generate it.'
+            )
+          )
+        );
       }
       const input = JSON.parse(readFileSync(fixturePath, 'utf-8')) as unknown;
       log('info', 'init', 'Loaded golden fixture');
@@ -401,15 +681,11 @@ const run = async () => {
             evidenceValid,
             durationMs,
             artifactPath: runnerArtifactDir,
-            errors:
-              result.validation.errors.length > 0
-                ? result.validation.errors
-                : undefined,
+            errors: result.validation.errors.length > 0 ? result.validation.errors : undefined,
           });
         } catch (error) {
           const durationMs = Date.now() - startMs;
-          const msg =
-            error instanceof Error ? error.message : 'Unknown execution error';
+          const msg = error instanceof Error ? error.message : 'Unknown execution error';
           log('error', 'execute', `${runner.name} failed: ${msg}`, runner.name);
 
           results.push({
@@ -439,19 +715,13 @@ const run = async () => {
         },
       };
 
-      writeFileSync(
-        path.join(smokeDir, 'manifest.json'),
-        JSON.stringify(manifest, null, 2)
-      );
+      writeFileSync(path.join(smokeDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
       log('info', 'artifacts', `Manifest written to ${smokeDir}/manifest.json`);
 
       console.log(JSON.stringify(manifest, null, 2));
 
       if (failures.length > 0) {
-        exitWith(
-          2,
-          `Smoke test failed for ${failures.length} runner(s).`
-        );
+        exitWith(2, `Smoke test failed for ${failures.length} runner(s).`);
       }
       return;
     }
@@ -483,14 +753,105 @@ const run = async () => {
     if (!result.validation.valid) {
       exitWith(
         2,
-        formatError(new ControlPlaneError(
-          'VALIDATION_FAILED',
-          `Report validation failed: ${result.validation.errors.join(', ')}`,
-          'Check the runner output against the report schema.'
-        ))
+        formatError(
+          new ControlPlaneError(
+            'VALIDATION_FAILED',
+            `Report validation failed: ${result.validation.errors.join(', ')}`,
+            'Check the runner output against the report schema.'
+          )
+        )
       );
     }
     console.log(JSON.stringify(result.report, null, 2));
+    return;
+  }
+
+  // ── execute ─────────────────────────────────────────────────────────
+  // Full orchestrated execution: ControlPlane → select → execute → collect evidence → result
+  if (command === 'execute') {
+    const runnerName = args[0];
+    if (!runnerName || runnerName.startsWith('--')) {
+      exitWith(
+        1,
+        'Runner name is required. Usage: controlplane execute <runner> --input <file|json>'
+      );
+      return;
+    }
+
+    const inputValue = getOption(args, '--input');
+    if (!inputValue) {
+      exitWith(1, 'Missing --input <file|json>.');
+      return;
+    }
+
+    const input = readJsonInput(inputValue);
+
+    // Validate input contract before dispatch
+    const inputCheck = validateRunnerInput(input);
+    if (!inputCheck.valid) {
+      exitWith(
+        2,
+        formatError(
+          new ControlPlaneError(
+            'VALIDATION_FAILED',
+            `Input contract violation: ${inputCheck.errors.join(', ')}`,
+            'Input must have requestId (string), timestamp (ISO-8601 string), and payload (object).'
+          )
+        )
+      );
+      return;
+    }
+
+    const timeoutMs = parseInt(getOption(args, '--timeout') ?? '30000', 10);
+    const outputPath = getOption(args, '--out');
+
+    try {
+      const result = await executeRunner(
+        runnerName,
+        input as { requestId: string; timestamp: string; payload: Record<string, unknown> },
+        { timeoutMs, outputPath }
+      );
+
+      console.log(JSON.stringify({
+        runner: result.runner,
+        status: result.report.status,
+        reportValid: result.reportValid,
+        evidenceValid: result.evidenceValid,
+        durationMs: result.durationMs,
+        evidence: result.evidence ? {
+          id: result.evidence.id,
+          hash: result.evidence.hash,
+          decision: result.evidence.decision,
+          itemCount: result.evidence.items.length,
+        } : null,
+      }, null, 2));
+    } catch (error) {
+      exitWith(2, formatError(error));
+    }
+    return;
+  }
+
+  // ── registry ───────────────────────────────────────────────────────
+  if (command === 'registry') {
+    const registry = buildExecutionRegistry();
+
+    console.log(JSON.stringify({
+      timestamp: registry.timestamp,
+      total: registry.runners.length,
+      executable: registry.executable.length,
+      failed: registry.failed.length,
+      runners: registry.runners.map((r) => ({
+        name: r.name,
+        version: r.version,
+        executable: r.executable,
+        preflight: r.preflight,
+        ...(!r.executable ? { reason: (r as { reason: string }).reason } : {}),
+      })),
+    }, null, 2));
+
+    if (registry.failed.length > 0) {
+      exitWith(1, `${registry.failed.length} runner(s) failed pre-flight checks.`);
+    }
     return;
   }
 
@@ -520,20 +881,78 @@ const run = async () => {
         results.push({
           runner: runner.name,
           ok: false,
-          errors: [
-            error instanceof Error ? error.message : 'Unknown execution error',
-          ],
+          errors: [error instanceof Error ? error.message : 'Unknown execution error'],
         });
       }
     }
     const failures = results.filter((result) => !result.ok);
     console.log(JSON.stringify({ results }, null, 2));
     if (failures.length > 0) {
-      exitWith(
-        2,
-        `Integration verification failed for ${failures.length} runner(s).`
+      exitWith(2, `Integration verification failed for ${failures.length} runner(s).`);
+    }
+    return;
+  }
+
+  // ── verify:ecosystem ────────────────────────────────────────────────
+  if (command === 'verify:ecosystem') {
+    const { runDriftDetection } = await import('./drift/index.js');
+
+    const baselinePath = getOption(args, '--baseline');
+    const format = (getOption(args, '--format') as 'json' | 'text' | 'markdown') || 'text';
+    const outputPath = getOption(args, '--out');
+
+    log('info', 'drift-detection', 'Starting ecosystem drift detection');
+
+    const { report, exitCode } = await runDriftDetection({
+      repoRoot,
+      baselinePath,
+      format,
+      outputPath,
+    });
+
+    if (report.status === 'healthy') {
+      log('info', 'drift-detection', 'No drift detected - ecosystem is healthy');
+    } else {
+      log(
+        report.status === 'critical' ? 'error' : 'warn',
+        'drift-detection',
+        `Detected ${report.summary.totalDrifts} drift(s) - status: ${report.status}`
       );
     }
+
+    process.exit(exitCode);
+  }
+
+  // ── registry:report ─────────────────────────────────────────────────
+  if (command === 'registry:report') {
+    const { discoverModules, buildRegistryState, generateRegistryReport } =
+      await import('./registry/hardened.js');
+
+    const format = (getOption(args, '--format') as 'json' | 'text' | 'markdown') || 'text';
+    const outputPath = getOption(args, '--out');
+    const verbose = hasFlag(args, '--verbose');
+    const includeErrors = hasFlag(args, '--include-errors');
+
+    log('info', 'registry', 'Discovering modules...');
+    const modules = discoverModules(repoRoot);
+    const state = buildRegistryState(modules);
+
+    log('info', 'registry', `Discovered ${state.summary.total} modules`);
+
+    const report = generateRegistryReport(state, {
+      format,
+      includeErrors: includeErrors || verbose,
+      includeWarnings: true,
+      verbose,
+    });
+
+    if (outputPath) {
+      writeFileSync(outputPath, report);
+      console.log(`Registry report written to: ${outputPath}`);
+    } else {
+      console.log(report);
+    }
+
     return;
   }
 

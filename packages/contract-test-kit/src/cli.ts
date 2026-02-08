@@ -6,6 +6,16 @@ import {
   type ContractTestResultDetail,
 } from './index.js';
 import chalk from 'chalk';
+import { createLogger, CorrelationManager } from '@controlplane/observability';
+import { createErrorEnvelope } from '@controlplane/contracts';
+
+// Initialize observability
+const correlation = new CorrelationManager();
+const logger = createLogger({
+  service: 'contract-test-kit',
+  version: '1.0.0',
+  level: 'info',
+});
 
 interface CLIOptions {
   format: 'pretty' | 'json' | 'junit';
@@ -90,10 +100,14 @@ function formatPretty(
   return output;
 }
 
-function formatJSON(result: { passed: number; failed: number; details: string[] }): string {
+function formatJSON(
+  result: { passed: number; failed: number; details: string[] },
+  runId: string
+): string {
   return JSON.stringify(
     {
       timestamp: new Date().toISOString(),
+      runId,
       total: result.passed + result.failed,
       passed: result.passed,
       failed: result.failed,
@@ -105,9 +119,12 @@ function formatJSON(result: { passed: number; failed: number; details: string[] 
   );
 }
 
-function formatJUnit(result: { passed: number; failed: number; details: string[] }): string {
+function formatJUnit(
+  result: { passed: number; failed: number; details: string[] },
+  runId: string
+): string {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += `<testsuite name="Contract Tests" tests="${result.passed + result.failed}" failures="${result.failed}" timestamp="${new Date().toISOString()}">\n`;
+  xml += `<testsuite name="Contract Tests" tests="${result.passed + result.failed}" failures="${result.failed}" timestamp="${new Date().toISOString()}" runId="${runId}">\n`;
 
   for (const detail of result.details) {
     const [name, counts] = detail.split(':');
@@ -121,41 +138,97 @@ function formatJUnit(result: { passed: number; failed: number; details: string[]
 }
 
 async function main() {
-  const options = parseArgs();
+  // Run with correlation context
+  return correlation.runWithNew(async () => {
+    const runId = correlation.getId() ?? crypto.randomUUID();
+    const childLogger = logger.child({ correlationId: runId });
+    const startTime = Date.now();
 
-  console.error(chalk.gray('Running ControlPlane contract tests...\n'));
+    try {
+      const options = parseArgs();
 
-  const detailedResult = runAllContractTestsDetailed();
-  const result = {
-    passed: detailedResult.passed,
-    failed: detailedResult.failed,
-    details: detailedResult.details,
-  };
+      childLogger.info('Contract tests started', {
+        format: options.format,
+        verbose: options.verbose,
+      });
 
-  let output: string;
-  switch (options.format) {
-    case 'json':
-      output = formatJSON(result);
-      break;
-    case 'junit':
-      output = formatJUnit(result);
-      break;
-    case 'pretty':
-    default:
-      output = formatPretty(detailedResult, options.verbose);
-      break;
-  }
+      if (process.stdout.isTTY && options.format === 'pretty') {
+        console.error(chalk.gray('Running ControlPlane contract tests...\n'));
+      }
 
-  console.log(output);
+      const detailedResult = runAllContractTestsDetailed();
+      const result = {
+        passed: detailedResult.passed,
+        failed: detailedResult.failed,
+        details: detailedResult.details,
+      };
 
-  if (options.exitOnFailure && result.failed > 0) {
-    process.exit(1);
-  }
+      const duration = Date.now() - startTime;
 
-  process.exit(0);
+      childLogger.info('Contract tests completed', {
+        total: result.passed + result.failed,
+        passed: result.passed,
+        failed: result.failed,
+        duration,
+        success: result.failed === 0,
+      });
+
+      let output: string;
+      switch (options.format) {
+        case 'json':
+          output = formatJSON(result, runId);
+          break;
+        case 'junit':
+          output = formatJUnit(result, runId);
+          break;
+        case 'pretty':
+        default:
+          output = formatPretty(detailedResult, options.verbose);
+          break;
+      }
+
+      console.log(output);
+
+      if (options.exitOnFailure && result.failed > 0) {
+        process.exit(1);
+      }
+
+      process.exit(0);
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      const errorEnvelope = createErrorEnvelope({
+        category: 'RUNTIME_ERROR',
+        severity: 'error',
+        code: 'CONTRACT_TEST_FAILED',
+        message: error instanceof Error ? error.message : 'Unknown contract test error',
+        service: 'contract-test-kit',
+        retryable: false,
+        details: [
+          { message: 'Contract test execution failed', code: 'EXECUTION_ERROR' },
+          { message: `Duration: ${duration}ms`, code: 'DURATION' },
+          { message: `Run ID: ${runId}`, code: 'RUN_ID' },
+          ...(error instanceof Error && error.stack
+            ? [{ message: error.stack, code: 'STACK_TRACE' }]
+            : []),
+        ],
+      });
+
+      childLogger.error('Contract test execution failed', {
+        error: errorEnvelope,
+        duration,
+        runId,
+      });
+
+      if (process.stdout.isTTY) {
+        console.error(chalk.red(`Error: ${errorEnvelope.message}`));
+      } else {
+        console.error(JSON.stringify(errorEnvelope, null, 2));
+      }
+
+      process.exit(2);
+    }
+  });
 }
 
-main().catch((error) => {
-  console.error(chalk.red(`Error: ${error.message}`));
-  process.exit(2);
-});
+main();

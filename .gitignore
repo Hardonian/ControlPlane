@@ -13,4 +13,5 @@ smoke-report.json
 .cache/
 artifacts/
 controlplane-input-*.json
+*-report.json
 compatibility-matrix.json

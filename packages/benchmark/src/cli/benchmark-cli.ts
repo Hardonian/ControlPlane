@@ -6,8 +6,53 @@ import { BenchmarkEngine } from '../benchmark-engine.js';
 import { BenchmarkReporter } from '../reporter.js';
 import type { BenchmarkSuite, BenchmarkConfig } from '../contracts/index.js';
 import { writeFileSync } from 'fs';
+import { createLogger, CorrelationManager } from '@controlplane/observability';
+import { createErrorEnvelope } from '@controlplane/contracts';
 
 const program = new Command();
+
+// Initialize observability
+const correlation = new CorrelationManager();
+const logger = createLogger({
+  service: 'cp-benchmark',
+  version: '1.0.0',
+  level: 'info',
+});
+
+const SUITE_OPTIONS: BenchmarkConfig['suite'][] = [
+  'throughput',
+  'latency',
+  'truthcore',
+  'runner',
+  'contract',
+  'queue',
+  'health',
+  'all',
+];
+const FORMAT_OPTIONS = ['json', 'table', 'markdown'] as const;
+
+type BenchmarkCliOptions = {
+  suite: string;
+  duration: string;
+  concurrency: string;
+  warmup: string;
+  truthcore: string;
+  jobforge: string;
+  runner: string;
+  format: string;
+  output?: string;
+  verbose: boolean;
+  targetRps?: string;
+  iterations?: string;
+  percentileMode?: string;
+  percentileThreshold?: string;
+  percentileBins?: string;
+  httpConcurrency?: string;
+  httpBatchSize?: string;
+  thresholdErrorRate?: string;
+  thresholdMaxLatency?: string;
+  thresholdMinThroughput?: string;
+};
 
 program
   .name('cp-benchmark')
@@ -45,46 +90,129 @@ program
   .option('--threshold-error-rate <rate>', 'Maximum acceptable error rate (0-1)', '0.05')
   .option('--threshold-max-latency <ms>', 'Maximum acceptable latency in ms')
   .option('--threshold-min-throughput <rps>', 'Minimum acceptable throughput')
-  .action(async (options) => {
-    try {
-      console.log(chalk.bold.blue('\n🏃 ControlPlane Benchmark Suite\n'));
+  .action(async (options: BenchmarkCliOptions) => {
+    // Run with correlation context for tracing
+    correlation.runWithNew(async () => {
+      const runId = correlation.getId();
+      const childLogger = logger.child({ correlationId: runId });
 
-      const config = createBenchmarkConfig(options);
-      const suite = createBenchmarkSuite(options.suite, config, {
-        truthcore: options.truthcore,
-        jobforge: options.jobforge,
-        runner: options.runner,
-      });
+      const startTime = Date.now();
 
-      const engine = new BenchmarkEngine({
-        truthcoreUrl: options.truthcore,
-        jobforgeUrl: options.jobforge,
-        runnerUrl: options.runner,
-        verbose: options.verbose,
-      });
+      try {
+        childLogger.info('Benchmark suite started', {
+          suite: options.suite,
+          duration: options.duration,
+          concurrency: options.concurrency,
+          runId,
+        });
 
-      const report = await engine.runSuite(suite);
+        // Only print visual header in non-JSON mode
+        if (options.format !== 'json') {
+          console.log(chalk.bold.blue('\n🏃 ControlPlane Benchmark Suite\n'));
+        }
 
-      const reporter = new BenchmarkReporter(options.format);
-      const output = reporter.report(report);
+        const suite = SUITE_OPTIONS.includes(options.suite as BenchmarkConfig['suite'])
+          ? (options.suite as BenchmarkConfig['suite'])
+          : 'all';
+        const format = FORMAT_OPTIONS.includes(options.format as (typeof FORMAT_OPTIONS)[number])
+          ? (options.format as (typeof FORMAT_OPTIONS)[number])
+          : 'table';
 
-      console.log(output);
+        const config = createBenchmarkConfig(options);
+        const suiteConfig = createBenchmarkSuite(suite, config, {
+          truthcore: options.truthcore,
+          jobforge: options.jobforge,
+          runner: options.runner,
+        });
 
-      if (options.output) {
-        writeFileSync(options.output, JSON.stringify(report, null, 2));
-        console.log(chalk.green(`\n✅ Report saved to: ${options.output}\n`));
+        childLogger.debug('Benchmark configuration created', {
+          suite,
+          configCount: suiteConfig.configs.length,
+        });
+
+        const engine = new BenchmarkEngine({
+          truthcoreUrl: options.truthcore,
+          jobforgeUrl: options.jobforge,
+          runnerUrl: options.runner,
+          verbose: options.verbose,
+        });
+
+        const report = await engine.runSuite(suiteConfig);
+
+        const duration = Date.now() - startTime;
+
+        childLogger.info('Benchmark suite completed', {
+          suite,
+          duration,
+          totalTests: report.summary.total,
+          passedTests: report.summary.passed,
+          failedTests: report.summary.failed,
+        });
+
+        const reporter = new BenchmarkReporter(format);
+        const output = reporter.report(report);
+
+        console.log(output);
+
+        if (options.output) {
+          writeFileSync(options.output, JSON.stringify(report, null, 2));
+          childLogger.info('Report saved to file', { outputPath: options.output });
+
+          if (format !== 'json') {
+            console.log(chalk.green(`\n✅ Report saved to: ${options.output}\n`));
+          }
+        }
+
+        const exitCode = report.summary.failed > 0 ? 1 : 0;
+
+        childLogger.info('Benchmark exiting', { exitCode, duration });
+        process.exit(exitCode);
+      } catch (error) {
+        const duration = Date.now() - startTime;
+
+        // Create structured error envelope
+        const errorEnvelope = createErrorEnvelope({
+          category: 'RUNTIME_ERROR',
+          severity: 'error',
+          code: 'BENCHMARK_FAILED',
+          message: error instanceof Error ? error.message : 'Unknown benchmark error',
+          service: 'cp-benchmark',
+          retryable: false,
+          details: [
+            { message: 'Benchmark execution failed', code: 'EXECUTION_ERROR' },
+            { message: `Duration: ${duration}ms`, code: 'DURATION' },
+            { message: `Run ID: ${runId}`, code: 'RUN_ID' },
+            { message: `Suite: ${options.suite}`, code: 'SUITE' },
+            ...(error instanceof Error && error.stack
+              ? [{ message: error.stack, code: 'STACK_TRACE' }]
+              : []),
+          ],
+        });
+
+        childLogger.error('Benchmark suite failed', {
+          error: errorEnvelope,
+          duration,
+          runId,
+        });
+
+        // Print user-friendly error in non-JSON mode
+        if (options.format !== 'json') {
+          console.error(chalk.red('\n❌ Benchmark failed:'), errorEnvelope.message);
+          if (options.verbose && error instanceof Error && error.stack) {
+            console.error(chalk.gray(error.stack));
+          }
+        } else {
+          // Output structured error in JSON mode
+          console.error(JSON.stringify(errorEnvelope, null, 2));
+        }
+
+        process.exit(1);
       }
-
-      const exitCode = report.summary.failed > 0 ? 1 : 0;
-      process.exit(exitCode);
-    } catch (error) {
-      console.error(chalk.red('\n❌ Benchmark failed:'), error);
-      process.exit(1);
-    }
+    });
   });
 
-function createBenchmarkConfig(options: any): BenchmarkConfig {
-  const thresholds: any = {};
+function createBenchmarkConfig(options: BenchmarkCliOptions): BenchmarkConfig {
+  const thresholds: BenchmarkConfig['thresholds'] = {};
 
   if (options.thresholdErrorRate !== undefined) {
     thresholds.maxErrorRate = parseFloat(options.thresholdErrorRate);
@@ -101,7 +229,9 @@ function createBenchmarkConfig(options: any): BenchmarkConfig {
   return {
     name: 'benchmark',
     description: 'ControlPlane performance benchmark',
-    suite: options.suite,
+    suite: SUITE_OPTIONS.includes(options.suite as BenchmarkConfig['suite'])
+      ? (options.suite as BenchmarkConfig['suite'])
+      : 'all',
     durationMs: parseInt(options.duration),
     warmupMs: parseInt(options.warmup),
     concurrency: parseInt(options.concurrency),

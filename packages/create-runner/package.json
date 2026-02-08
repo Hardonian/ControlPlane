@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "CLI tool to scaffold new ControlPlane runners in 15 minutes",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
   "bin": {
     "create-runner": "./bin/create-runner.js"
   },
@@ -17,7 +23,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint --max-warnings=0 src --ext .ts",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

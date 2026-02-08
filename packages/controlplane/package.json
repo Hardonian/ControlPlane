@@ -21,11 +21,12 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "test": "../sdk-generator/node_modules/.bin/vitest run"
+    "lint": "eslint --max-warnings=0 src --ext .ts",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@controlplane/contract-kit": "workspace:*"
+    "@controlplane/contract-kit": "workspace:*",
+    "@controlplane/observability": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

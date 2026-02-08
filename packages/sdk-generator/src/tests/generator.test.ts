@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { z } from 'zod';
 import { extractSchemas, validateSchemas, DEFAULT_CONFIG } from '../core.js';
 import { generateTypeScriptSDK } from '../generators/typescript.js';
 import { generatePythonSDK } from '../generators/python.js';
@@ -23,8 +24,8 @@ describe('SDK Generator', () => {
 
     it('should detect duplicate schema names', () => {
       const schemas = [
-        { name: 'Test', schema: {} as any, jsonSchema: {}, category: 'types' as const },
-        { name: 'Test', schema: {} as any, jsonSchema: {}, category: 'types' as const },
+        { name: 'Test', schema: {} as z.ZodTypeAny, jsonSchema: {}, category: 'types' as const },
+        { name: 'Test', schema: {} as z.ZodTypeAny, jsonSchema: {}, category: 'types' as const },
       ];
       const validation = validateSchemas(schemas);
       expect(validation.valid).toBe(false);
