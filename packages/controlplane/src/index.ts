@@ -86,13 +86,15 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
       JSON.stringify({
         type: 'profile',
         requestId,
-        runner: runner.name,
+        runner: executableRunner.name,
         step,
         durationMs,
       })
     );
   };
   const totalStart = Date.now();
+  const invocationStart = totalStart;
+  const readStart = totalStart;
 
   const inputPath = writeInputFile(options.input, cwd);
   const outputPath = ensureAbsolutePath(
