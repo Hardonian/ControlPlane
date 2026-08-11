@@ -30,7 +30,7 @@ jobs:
         run: pnpm run build:contracts
 
       - name: Build SDK generator
-        run: pnpm --filter @controlplane/sdk-generator build
+        run: pnpm --filter @controlplane/sdk-generator... build
 
       - name: Generate TypeScript SDK
         run: pnpm sdk:generate --language typescript
@@ -101,7 +101,7 @@ jobs:
         run: pnpm run build:contracts
 
       - name: Build SDK generator
-        run: pnpm --filter @controlplane/sdk-generator build
+        run: pnpm --filter @controlplane/sdk-generator... build
 
       - name: Generate Python SDK
         run: pnpm sdk:generate --language python
@@ -184,7 +184,7 @@ jobs:
         run: pnpm run build:contracts
 
       - name: Build SDK generator
-        run: pnpm --filter @controlplane/sdk-generator build
+        run: pnpm --filter @controlplane/sdk-generator... build
 
       - name: Generate Go SDK
         run: pnpm sdk:generate --language go
