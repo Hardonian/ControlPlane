@@ -61,8 +61,8 @@
     "sdk:generate": "pnpm --filter @controlplane/sdk-generator generate",
     "sdk:validate": "pnpm --filter @controlplane/sdk-generator validate",
     "sdk:check": "node scripts/check-sdk-drift.js",
-    "sdk:build": "pnpm --filter @controlplane/sdk-generator build",
-    "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator build",
+    "sdk:build": "pnpm --filter @controlplane/sdk-generator... build",
+    "build:sdk-generator": "pnpm --filter @controlplane/sdk-generator... build",
     "secret-scan": "node scripts/secret-scan.js",
     "benchmark:contract": "pnpm --filter @controlplane/benchmark benchmark:contract",
     "benchmark:queue": "pnpm --filter @controlplane/benchmark benchmark:queue",
@@ -103,11 +103,11 @@
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.55.0",
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
+    "lint-staged": "^17.3.0",
     "prettier": "^3.1.0",
     "semantic-release": "^22.0.0",
     "turbo": "^1.11.0",
-    "typescript": "^5.3.3"
+    "typescript": "^7.0.2"
   },
   "packageManager": "pnpm@8.12.0",
   "engines": {
