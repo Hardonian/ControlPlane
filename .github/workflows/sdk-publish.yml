@@ -38,7 +38,7 @@ jobs:
         run: pnpm run build:contracts
 
       - name: Build SDK generator
-        run: pnpm --filter @controlplane/sdk-generator build
+        run: pnpm --filter @controlplane/sdk-generator... build
 
       - name: Generate SDKs
         run: pnpm sdk:generate

@@ -27,7 +27,7 @@ jobs:
           version: 8.12.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -51,7 +51,7 @@ jobs:
           version: 8.12.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -79,7 +79,7 @@ jobs:
           version: 8.12.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@b357bbe22bb6e5c4766654a3233a9d348ebeb38a
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
           cache: 'pnpm'
