@@ -167,7 +167,7 @@ const runnerLogic = {
       ],
     };
   },
-  JobForge: () => ({
+  jobforge: () => ({
     connectorResult: { ok: true, data: { jobsProcessed: 1 }, error: null },
     evaluationItems: [
       { key: 'connector-status', value: 'ok', source: 'jobforge-connector' },
@@ -268,7 +268,7 @@ const runnerLogic = {
   },
 };
 
-const logic = runnerLogic[runner] || (() => ({
+const logic = runnerLogic[runner] || runnerLogic[runner.toLowerCase()] || (() => ({
   evaluationItems: [{ key: 'generic-run', value: true, source: runner }],
 }));
 

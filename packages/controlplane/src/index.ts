@@ -8,7 +8,7 @@ import {
   validateEvidencePacket,
   type ValidationResult,
 } from '@controlplane/contract-kit';
-import { listRunners, resolveRunner, type RunnerRecord } from './registry/index.js';
+import { listRunners, type RunnerRecord } from './registry/index.js';
 import {
   buildExecutionRegistry,
   resolveExecutableRunner,
@@ -86,7 +86,7 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
       JSON.stringify({
         type: 'profile',
         requestId,
-        runner: runner.name,
+        runner: executableRunner.name,
         step,
         durationMs,
       })
@@ -108,7 +108,7 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
     timeoutMs: options.timeoutMs,
     redactEnvKeys: executableRunner.requiredEnv ?? [],
   });
-  profileLog('invoke', Date.now() - invocationStart);
+  profileLog('invoke', Date.now() - totalStart);
 
   // ── 4. Fail fast on non-zero exit ──────────────────────────────────
   if (invocation.exitCode !== 0) {
@@ -128,6 +128,7 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
     );
   }
 
+  const readStart = Date.now();
   const report = readJsonFile(outputPath);
   profileLog('read-report', Date.now() - readStart);
 

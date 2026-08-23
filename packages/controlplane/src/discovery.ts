@@ -39,7 +39,7 @@ export type SiblingRepo = {
 
 const KNOWN_SIBLINGS = [
   'truthcore',
-  'JobForge',
+  'jobforge',
   'autopilot-suite',
   'finops-autopilot',
   'ops-autopilot',
