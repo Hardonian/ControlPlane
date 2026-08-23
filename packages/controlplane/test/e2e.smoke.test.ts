@@ -27,7 +27,7 @@ describe('ControlPlane E2E Smoke Tests', () => {
 
       // Check that expected runners are present
       const runnerNames = modules.map((m) => m.manifest.name);
-      const expectedRunners = ['JobForge', 'truthcore', 'aias', 'autopilot-suite'];
+      const expectedRunners = ['jobforge', 'truthcore', 'aias', 'autopilot-suite'];
 
       for (const expected of expectedRunners) {
         expect(runnerNames).toContain(expected);

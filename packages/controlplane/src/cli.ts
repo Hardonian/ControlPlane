@@ -407,20 +407,20 @@ const run = async () => {
         const startMs = Date.now();
         try {
           log('info', 'pipeline', 'Running JobForge connector', 'JobForge');
-          const jobforgeModule = resolveModule('JobForge', 'runner');
+          const jobforgeModule = resolveModule('jobforge', 'runner');
           if (!jobforgeModule.available) {
             log('warn', 'pipeline', `JobForge not available: ${jobforgeModule.error}`, 'JobForge');
           } else {
             const outputPath = path.join(demoDir, 'jobforge-report.json');
             const result = await runRunner({
-              runner: 'JobForge',
+              runner: 'jobforge',
               input,
               outputPath,
               timeoutMs: 30_000,
             });
             results.push({
               stage: 'connector',
-              runner: 'JobForge',
+              runner: 'jobforge',
               success: result.validation.valid,
               durationMs: Date.now() - startMs,
               outputPath,
@@ -435,12 +435,12 @@ const run = async () => {
             'JobForge'
           );
           results.push({
-            stage: 'connector',
-            runner: 'JobForge',
-            success: false,
-            durationMs: Date.now() - startMs,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
+              stage: 'connector',
+              runner: 'jobforge',
+              success: false,
+              durationMs: Date.now() - startMs,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
         }
       }
 

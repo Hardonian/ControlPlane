@@ -1,5 +1,5 @@
 {
-  "name": "JobForge",
+  "name": "jobforge",
   "version": "0.1.0",
   "description": "ControlPlane adapter for JobForge",
   "entrypoint": {
@@ -7,7 +7,7 @@
     "args": [
       "scripts/adapters/runner-adapter.mjs",
       "--runner",
-      "JobForge"
+      "jobforge"
     ]
   },
   "capabilities": [

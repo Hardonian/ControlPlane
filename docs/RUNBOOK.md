@@ -123,10 +123,10 @@ Contracts Check Results
     "description": "Job orchestration runner",
     "entrypoint": {
       "command": "node",
-      "args": ["scripts/adapters/runner-adapter.mjs", "--runner", "JobForge"]
+      "args": ["scripts/adapters/runner-adapter.mjs", "--runner", "jobforge"]
     },
     "capabilities": ["adapter", "dry-run"],
-    "source": "runners/JobForge/runner.manifest.json"
+    "source": "runners/jobforge/runner.manifest.json"
   },
   // ... other runners
 ]

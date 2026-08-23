@@ -76,7 +76,7 @@ describe('ControlPlane Orchestration', () => {
 
       const expectedRunners = [
         'truthcore',
-        'JobForge',
+        'jobforge',
         'ops-autopilot',
         'finops-autopilot',
         'growth-autopilot',
@@ -97,7 +97,7 @@ describe('ControlPlane Orchestration', () => {
       const registry = buildExecutionRegistry();
       const requiredRunners = [
         'truthcore',
-        'JobForge',
+        'jobforge',
         'ops-autopilot',
         'finops-autopilot',
         'growth-autopilot',
@@ -172,12 +172,12 @@ describe('ControlPlane Orchestration', () => {
     it('executes JobForge end-to-end', async () => {
       const { executeRunner } = await import('../src/index.js');
 
-      const result = await executeRunner('JobForge', goldenInput, {
+      const result = await executeRunner('jobforge', goldenInput, {
         timeoutMs: 30_000,
       });
 
       expect(result.reportValid).toBe(true);
-      expect(result.report.runner.name).toBe('JobForge');
+      expect(result.report.runner.name).toBe('jobforge');
       expect(result.evidenceValid).toBe(true);
       expect(result.durationMs).toBeGreaterThan(0);
     }, 30_000);
@@ -187,7 +187,7 @@ describe('ControlPlane Orchestration', () => {
 
       const runners = [
         'truthcore',
-        'JobForge',
+        'jobforge',
         'ops-autopilot',
         'finops-autopilot',
         'growth-autopilot',
@@ -222,7 +222,7 @@ describe('ControlPlane Orchestration', () => {
   describe('Runner Contract Drift Guard', () => {
     const REQUIRED_RUNNERS = [
       'truthcore',
-      'JobForge',
+      'jobforge',
       'ops-autopilot',
       'finops-autopilot',
       'growth-autopilot',
