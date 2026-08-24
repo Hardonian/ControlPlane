@@ -105,7 +105,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.2.0",
     "prettier": "^3.1.0",
-    "semantic-release": "^22.0.0",
+    "semantic-release": "^25.0.9",
     "turbo": "^1.11.0",
     "typescript": "^7.0.2"
   },
