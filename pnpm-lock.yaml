@@ -116,10 +116,10 @@ importers:
         version: 8.57.1
       tsup:
         specifier: ^8.0.1
-        version: 8.5.1(typescript@5.9.3)
+        version: 8.5.1(typescript@7.0.2)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -133,8 +133,8 @@ importers:
         specifier: ^8.55.0
         version: 8.57.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -165,10 +165,10 @@ importers:
         version: 8.57.1
       tsup:
         specifier: ^8.0.1
-        version: 8.5.1(typescript@5.9.3)
+        version: 8.5.1(typescript@7.0.2)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -187,10 +187,10 @@ importers:
         version: 8.57.1
       tsup:
         specifier: ^8.0.1
-        version: 8.5.1(typescript@5.9.3)
+        version: 8.5.1(typescript@7.0.2)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -211,8 +211,8 @@ importers:
         specifier: ^8.55.0
         version: 8.57.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -245,8 +245,8 @@ importers:
         specifier: ^8.55.0
         version: 8.57.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -267,8 +267,8 @@ importers:
         specifier: ^8.55.0
         version: 8.57.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -292,8 +292,8 @@ importers:
         specifier: ^8.55.0
         version: 8.57.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -314,8 +314,8 @@ importers:
         specifier: ^8.55.0
         version: 8.57.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -346,10 +346,10 @@ importers:
         version: 8.57.1
       tsup:
         specifier: ^8.0.1
-        version: 8.5.1(typescript@5.9.3)
+        version: 8.5.1(typescript@7.0.2)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.2.0)
@@ -5681,7 +5681,7 @@ packages:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
     dev: true
 
-  /tsup@8.5.1(typescript@5.9.3):
+  /tsup@8.5.1(typescript@7.0.2):
     resolution: {integrity: sha512-xtgkqwdhpKWr3tKPmCkvYmS9xnQK3m3XgxZHwSUjvfTjp7YfXe5tT3GgWi0F2N+ZSMsOeWeZFh7ZZFg5iPhing==}
     engines: {node: '>=18'}
     hasBin: true
@@ -5717,7 +5717,7 @@ packages:
       tinyexec: 0.3.2
       tinyglobby: 0.2.15
       tree-kill: 1.2.2
-      typescript: 5.9.3
+      typescript: 7.0.2
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -5789,12 +5789,6 @@ packages:
     engines: {node: '>=20'}
     dependencies:
       tagged-tag: 1.0.0
-    dev: true
-
-  /typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
-    engines: {node: '>=14.17'}
-    hasBin: true
     dev: true
 
   /typescript@7.0.2:
