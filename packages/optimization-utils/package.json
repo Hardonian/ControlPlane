@@ -37,7 +37,7 @@
   "devDependencies": {
     "@types/node": "^26.2.0",
     "typescript": "^7.0.2",
-    "vitest": "^3.2.6",
+    "vitest": "^4.1.11",
     "eslint": "^8.55.0"
   },
   "peerDependencies": {
