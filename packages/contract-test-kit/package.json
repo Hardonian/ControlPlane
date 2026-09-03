@@ -38,7 +38,7 @@
     "@controlplane/contracts": "workspace:*",
     "@controlplane/observability": "workspace:*",
     "zod": "^4.5.4",
-    "chalk": "^5.3.0",
+    "chalk": "^6.0.0",
     "glob": "^10.3.10"
   },
   "devDependencies": {
