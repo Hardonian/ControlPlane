@@ -1,5 +1,9 @@
 # ControlPlane Contracts & Tooling
 
+<!-- BEGIN: REPO HERO -->
+![ControlPlane — hero generated locally on the GPU stack](assets/repo-hero.png)
+<!-- END: REPO HERO -->
+
 [![Integration Verified](https://github.com/Hardonian/ControlPlane/actions/workflows/verify-integrations.yml/badge.svg)](https://github.com/Hardonian/ControlPlane/actions/workflows/verify-integrations.yml)
 [![CI](https://github.com/Hardonian/ControlPlane/actions/workflows/ci.yml/badge.svg)](https://github.com/Hardonian/ControlPlane/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
