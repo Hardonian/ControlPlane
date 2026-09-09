@@ -103,7 +103,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.55.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.2.0",
+    "lint-staged": "^17.5.0",
     "prettier": "^3.9.6",
     "semantic-release": "^25.0.9",
     "turbo": "^1.11.0",
