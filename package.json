@@ -31,7 +31,6 @@
     "verify": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run docs:verify",
     "verify:full": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run docs:verify && pnpm run verify:ecosystem",
     "verify:ecosystem": "pnpm run build && node packages/controlplane/dist/cli.js verify:ecosystem",
-    "controlplane": "node packages/controlplane/dist/cli.js",
     "ci": "pnpm run verify:full && pnpm run test:e2e",
     "registry:lint": "npx tsx scripts/registry-lint.ts",
     "registry:verify": "pnpm run registry:lint && pnpm run test:smoke",
