@@ -23,6 +23,8 @@ type RequestLike = {
 type ResponseLike = {
   statusCode: number;
   on: (event: string, listener: () => void) => void;
+  setHeader?: (name: string, value: string) => void;
+  [key: string]: unknown;
 };
 
 type NextFunctionLike = (err?: unknown) => void;
@@ -53,6 +55,14 @@ export function observabilityMiddleware(options: ObservabilityOptions) {
       req.correlationId = correlationId;
       req.logger = logger.child({ correlationId });
       req.metrics = metrics;
+
+      // Propagate headers to response if setHeader is supported
+      if (typeof res.setHeader === 'function') {
+        const outHeaders = correlation.propagateHeaders();
+        for (const [key, value] of Object.entries(outHeaders)) {
+          res.setHeader(key, value);
+        }
+      }
 
       // Log request
       const startTime = Date.now();

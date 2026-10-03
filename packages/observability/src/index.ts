@@ -14,3 +14,21 @@ export {
   type CorrelationContext,
 } from './correlation.js';
 export { observabilityMiddleware, type ObservabilityOptions } from './middleware.js';
+export {
+  Span,
+  Tracer,
+  defaultTracer,
+  InMemorySpanExporter,
+  ConsoleSpanExporter,
+  OtlpJsonSpanExporter,
+  generateTraceId,
+  generateSpanId,
+  parseTraceParent,
+  formatTraceParent,
+  type SpanContext,
+  type SpanStatusCode,
+  type SpanStatus,
+  type SpanEvent,
+  type ReadableSpan,
+  type SpanExporter,
+} from './tracing.js';

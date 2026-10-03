@@ -263,7 +263,11 @@ export class Tracer {
     const parentSpanId = parent?.spanId;
     const spanId = generateSpanId();
 
-    const span = new Span(name, { traceId, spanId, traceFlags: parent?.traceFlags ?? 1 }, parentSpanId);
+    const span = new Span(
+      name,
+      { traceId, spanId, traceFlags: parent?.traceFlags ?? 1 },
+      parentSpanId
+    );
     if (options.attributes) {
       span.setAttributes(options.attributes);
     }
