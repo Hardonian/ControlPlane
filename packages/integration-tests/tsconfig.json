@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
+    "types": ["node"],
     "paths": {
       "@controlplane/contract-kit": ["../contract-kit/dist/index.d.ts"],
       "@controlplane/controlplane": ["../controlplane/dist/index.d.ts"]

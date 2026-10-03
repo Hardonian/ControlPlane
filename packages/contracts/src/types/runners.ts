@@ -7,8 +7,8 @@ export const RunnerCapability = z.object({
   name: z.string(),
   version: z.string(),
   description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
+  inputSchema: z.record(z.string(), z.unknown()),
+  outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
   maxConcurrency: z.number().int().positive().default(1),
   timeoutMs: z.number().positive().default(30000),
@@ -18,7 +18,7 @@ export const RunnerCapability = z.object({
       memory: z.string().optional(),
       gpu: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
 });
 export type RunnerCapability = z.infer<typeof RunnerCapability>;
 
@@ -79,8 +79,8 @@ export const ModuleManifest = z.object({
   contractVersion: ContractVersion,
   capabilities: z.array(RunnerCapability),
   dependencies: z.array(z.string()).default([]),
-  configSchema: z.record(z.unknown()).optional(),
-  defaultConfig: z.record(z.unknown()).default({}),
+  configSchema: z.record(z.string(), z.unknown()).optional(),
+  defaultConfig: z.record(z.string(), z.unknown()).default({}),
 });
 export type ModuleManifest = z.infer<typeof ModuleManifest>;
 
@@ -88,7 +88,7 @@ export const RunnerExecutionRequest = z.object({
   jobId: z.string().uuid(),
   moduleId: z.string(),
   capabilityId: z.string(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   timeoutMs: z.number().positive().default(30000),
   metadata: z
     .object({

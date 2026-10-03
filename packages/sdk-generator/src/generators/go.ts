@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
+import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig, normalizeDef } from '../core.js';
 
 export function generateGoSDK(
   schemas: SchemaDefinition[],
@@ -79,30 +79,26 @@ function generateGoTypesFile(schemas: SchemaDefinition[]): string {
 
 function generateGoStructCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const zodDef = schema.schema._def as {
-    typeName?: string;
-    shape?: () => Record<string, z.ZodTypeAny>;
-    values?: string[];
-  };
+  const zodDef = normalizeDef(schema.schema);
 
   // Generate doc comment
   lines.push(`// ${schema.name} represents a ${schema.category} schema`);
   lines.push(`type ${schema.name} struct {`);
 
-  if (zodDef?.typeName === 'ZodObject') {
+  if (zodDef.typeName === 'ZodObject') {
     const shape = zodDef.shape?.() ?? {};
 
     for (const [key, val] of Object.entries(shape)) {
-      const fieldDef = (val as z.ZodTypeAny)._def as { typeName?: string };
+      const fieldDef = normalizeDef(val);
       const goType = zodToGoType(val as z.ZodTypeAny);
       const isOptional =
-        fieldDef?.typeName === 'ZodOptional' || fieldDef?.typeName === 'ZodDefault';
+        fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
       const jsonTag = isOptional ? `json:"${key},omitempty"` : `json:"${key}"`;
 
       lines.push(`\t${capitalizeFirst(key)} ${goType} \`${jsonTag}\``);
     }
-  } else if (zodDef?.typeName === 'ZodEnum') {
-    const values = zodDef.values as string[];
+  } else if (zodDef.typeName === 'ZodEnum') {
+    const values = zodDef.values ?? [];
     lines.push(`\tValue string \`json:"value"\``);
     lines.push('}');
     lines.push('');
@@ -131,15 +127,9 @@ function generateGoStructCode(schema: SchemaDefinition): string[] {
 }
 
 function zodToGoType(schema: z.ZodTypeAny): string {
-  if (!schema || !schema._def) return 'interface{}';
+  if (!schema) return 'interface{}';
 
-  const def = schema._def as {
-    typeName?: string;
-    checks?: Array<{ kind: string }>;
-    innerType?: z.ZodTypeAny;
-    type?: z.ZodTypeAny;
-    valueType?: z.ZodTypeAny;
-  };
+  const def = normalizeDef(schema);
 
   switch (def.typeName) {
     case 'ZodString':
@@ -373,10 +363,8 @@ function generateGoSchemasFile(schemas: SchemaDefinition[]): string {
   lines.push('var SchemaRegistry = map[string]SchemaValidator{');
 
   for (const schema of schemas) {
-    const zodDef = schema.schema._def as {
-      typeName?: string;
-    };
-    if (zodDef?.typeName === 'ZodObject') {
+    const zodDef = normalizeDef(schema.schema);
+    if (zodDef.typeName === 'ZodObject') {
       lines.push(`\t"${schema.name}": func(m interface{}) error {`);
       lines.push(`\t\tif v, ok := m.(${schema.name}); ok {`);
       lines.push(`\t\t\treturn validate${schema.name}(v)`);
@@ -390,11 +378,8 @@ function generateGoSchemasFile(schemas: SchemaDefinition[]): string {
   lines.push('');
 
   for (const schema of schemas) {
-    const zodDef = schema.schema._def as {
-      typeName?: string;
-      shape?: () => Record<string, z.ZodTypeAny>;
-    };
-    if (zodDef?.typeName === 'ZodObject') {
+    const zodDef = normalizeDef(schema.schema);
+    if (zodDef.typeName === 'ZodObject') {
       lines.push(...generateGoValidationFunction(schema, zodDef.shape?.() ?? {}));
       lines.push('');
     }
@@ -414,8 +399,8 @@ function generateGoValidationFunction(
   lines.push('');
 
   for (const [key, val] of Object.entries(shape)) {
-    const fieldDef = val._def;
-    const isRequired = fieldDef?.typeName !== 'ZodOptional' && fieldDef?.typeName !== 'ZodDefault';
+    const fieldDef = normalizeDef(val);
+    const isRequired = fieldDef.typeName !== 'ZodOptional' && fieldDef.typeName !== 'ZodDefault';
     const capitalizedKey = capitalizeFirst(key);
 
     if (isRequired) {

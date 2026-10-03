@@ -40,21 +40,196 @@ function convertZodToJsonSchema(schema: z.ZodTypeAny, title?: string): JsonSchem
   return base;
 }
 
-function zodTypeToJsonSchema(schema: z.ZodTypeAny): JsonSchema {
-  const def = schema._def as {
-    typeName?: string;
-    checks?: Array<{ kind: string; value?: number; inclusive?: boolean }>;
-    innerType?: z.ZodTypeAny;
-    defaultValue?: () => unknown;
-    type?: z.ZodTypeAny;
-    shape?: () => Record<string, z.ZodTypeAny>;
-    valueType?: z.ZodTypeAny;
-    values?: string[];
-    options?: z.ZodTypeAny[];
-    schema?: z.ZodTypeAny;
-    getter?: () => z.ZodTypeAny;
-    value?: unknown;
+export interface NormalizedCheck {
+  kind: string;
+  value?: number;
+  inclusive?: boolean;
+}
+
+export interface NormalizedDef {
+  typeName: string;
+  checks?: NormalizedCheck[];
+  innerType?: z.ZodType;
+  defaultValue?: () => unknown;
+  type?: z.ZodType;
+  element?: z.ZodType;
+  shape?: (() => Record<string, z.ZodType>) & Record<string, z.ZodType>;
+  keyType?: z.ZodType;
+  valueType?: z.ZodType;
+  values?: string[];
+  value?: unknown;
+  options?: z.ZodType[];
+  schema?: z.ZodType;
+  getter?: () => z.ZodType;
+  rawDef: unknown;
+}
+
+const TYPE_MAP: Record<string, string> = {
+  string: 'ZodString',
+  number: 'ZodNumber',
+  boolean: 'ZodBoolean',
+  null: 'ZodNull',
+  optional: 'ZodOptional',
+  default: 'ZodDefault',
+  prefault: 'ZodDefault',
+  array: 'ZodArray',
+  object: 'ZodObject',
+  record: 'ZodRecord',
+  enum: 'ZodEnum',
+  union: 'ZodUnion',
+  discriminatedUnion: 'ZodDiscriminatedUnion',
+  discriminated_union: 'ZodDiscriminatedUnion',
+  literal: 'ZodLiteral',
+  lazy: 'ZodLazy',
+  pipe: 'ZodEffects',
+  transform: 'ZodEffects',
+  unknown: 'ZodUnknown',
+  any: 'ZodAny',
+  void: 'ZodVoid',
+  undefined: 'ZodUndefined',
+};
+
+function normalizeCheck(rawCheck: unknown): NormalizedCheck | null {
+  if (!rawCheck || typeof rawCheck !== 'object') return null;
+  const obj = rawCheck as Record<string, unknown>;
+  const zodDef = (obj._zod as { def?: Record<string, unknown> } | undefined)?.def;
+  const c = zodDef || (obj.def as Record<string, unknown> | undefined) || obj;
+
+  if (c.check === 'min_length') {
+    const val = typeof c.minimum === 'number' ? c.minimum : typeof c.min === 'number' ? c.min : typeof c.value === 'number' ? c.value : undefined;
+    return { kind: 'min', value: val, inclusive: true };
+  }
+  if (c.check === 'max_length') {
+    const val = typeof c.maximum === 'number' ? c.maximum : typeof c.max === 'number' ? c.max : typeof c.value === 'number' ? c.value : undefined;
+    return { kind: 'max', value: val, inclusive: true };
+  }
+  if (c.check === 'greater_than') {
+    const val = typeof c.value === 'number' ? c.value : undefined;
+    return { kind: 'min', value: val, inclusive: c.inclusive !== false };
+  }
+  if (c.check === 'less_than') {
+    const val = typeof c.value === 'number' ? c.value : undefined;
+    return { kind: 'max', value: val, inclusive: c.inclusive !== false };
+  }
+
+  const format = c.format || obj.format;
+  if (format === 'safeint' || format === 'int' || c.check === 'int') {
+    return { kind: 'int' };
+  }
+  if (format === 'email') return { kind: 'email' };
+  if (format === 'uuid') return { kind: 'uuid' };
+  if (format === 'url') return { kind: 'url' };
+  if (format === 'datetime') return { kind: 'datetime' };
+
+  if (typeof obj.kind === 'string') {
+    return {
+      kind: obj.kind,
+      value: typeof obj.value === 'number' ? obj.value : undefined,
+      inclusive: typeof obj.inclusive === 'boolean' ? obj.inclusive : undefined,
+    };
+  }
+
+  return null;
+}
+
+export function normalizeDef(schemaOrDef: unknown): NormalizedDef {
+  if (!schemaOrDef || typeof schemaOrDef !== 'object') {
+    return { typeName: 'ZodUnknown', rawDef: schemaOrDef };
+  }
+
+  const rawDef: Record<string, unknown> =
+    '_def' in schemaOrDef && schemaOrDef._def && typeof schemaOrDef._def === 'object'
+      ? (schemaOrDef._def as Record<string, unknown>)
+      : (schemaOrDef as Record<string, unknown>);
+
+  let typeName = typeof rawDef.typeName === 'string' ? rawDef.typeName : '';
+  if (!typeName && typeof rawDef.type === 'string') {
+    typeName = TYPE_MAP[rawDef.type] || `Zod${rawDef.type.charAt(0).toUpperCase() + rawDef.type.slice(1)}`;
+  }
+  if (!typeName) {
+    typeName = 'ZodUnknown';
+  }
+
+  let shapeFn: ((() => Record<string, z.ZodType>) & Record<string, z.ZodType>) | undefined = undefined;
+  const rawShape =
+    typeof rawDef.shape === 'function' ? (rawDef.shape as () => Record<string, z.ZodType>)() : rawDef.shape;
+  if (rawShape && typeof rawShape === 'object') {
+    const shapeObj = rawShape as Record<string, z.ZodType>;
+    const fn = (() => shapeObj) as (() => Record<string, z.ZodType>) & Record<string, z.ZodType>;
+    shapeFn = new Proxy(fn, {
+      get(target, prop, receiver) {
+        if (typeof prop === 'string' && prop in shapeObj) {
+          return shapeObj[prop];
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+      ownKeys() {
+        return Reflect.ownKeys(shapeObj);
+      },
+      getOwnPropertyDescriptor(target, prop) {
+        return Object.getOwnPropertyDescriptor(shapeObj, prop);
+      },
+    });
+  }
+
+  let checks: NormalizedCheck[] | undefined = undefined;
+  if (Array.isArray(rawDef.checks)) {
+    const list: NormalizedCheck[] = [];
+    for (const ch of rawDef.checks) {
+      const norm = normalizeCheck(ch);
+      if (norm) list.push(norm);
+    }
+    checks = list;
+  }
+
+  let defaultValue: (() => unknown) | undefined = undefined;
+  if (rawDef.defaultValue !== undefined) {
+    const rawDefault = rawDef.defaultValue;
+    defaultValue = () => (typeof rawDefault === 'function' ? rawDefault() : rawDefault);
+  }
+
+  const arrayElement = (rawDef.element ?? rawDef.type) as z.ZodType | undefined;
+  const keyType = (rawDef.keyType ?? z.string()) as z.ZodType;
+  const valueType = rawDef.valueType as z.ZodType | undefined;
+
+  let values: string[] | undefined = undefined;
+  if (Array.isArray(rawDef.values)) {
+    values = rawDef.values.map(String);
+  } else if (rawDef.entries && typeof rawDef.entries === 'object') {
+    values = Object.values(rawDef.entries).map(String);
+  }
+
+  let value: unknown = rawDef.value;
+  if (value === undefined && Array.isArray(rawDef.values) && rawDef.values.length > 0) {
+    value = rawDef.values[0];
+  }
+
+  const options = Array.isArray(rawDef.options) ? (rawDef.options as z.ZodType[]) : undefined;
+  const schema = (rawDef.schema ?? rawDef.in) as z.ZodType | undefined;
+  const getter = typeof rawDef.getter === 'function' ? (rawDef.getter as () => z.ZodType) : undefined;
+  const innerType = rawDef.innerType as z.ZodType | undefined;
+
+  return {
+    typeName,
+    checks,
+    innerType,
+    defaultValue,
+    type: arrayElement,
+    element: arrayElement,
+    shape: shapeFn,
+    keyType,
+    valueType,
+    values,
+    value,
+    options,
+    schema,
+    getter,
+    rawDef,
   };
+}
+
+function zodTypeToJsonSchema(schema: z.ZodTypeAny): JsonSchema {
+  const def = normalizeDef(schema);
 
   switch (def.typeName) {
     case 'ZodString': {
@@ -108,7 +283,7 @@ function zodTypeToJsonSchema(schema: z.ZodTypeAny): JsonSchema {
 
       for (const [key, value] of Object.entries(shape)) {
         properties[key] = zodTypeToJsonSchema(value);
-        const valueDef = value._def as { typeName?: string };
+        const valueDef = normalizeDef(value);
         if (valueDef.typeName !== 'ZodOptional' && valueDef.typeName !== 'ZodDefault') {
           required.push(key);
         }

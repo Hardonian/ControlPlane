@@ -55,6 +55,19 @@ export interface ContractTestRunSummary {
   results: ContractTestResultDetail[];
 }
 
+const schemaIdMap = new WeakMap<ZodSchema, string>();
+let schemaIdCounter = 0;
+function getSchemaId(schema: ZodSchema): string {
+  const customId = (schema as { _id?: string })._id;
+  if (customId) return customId;
+  let id = schemaIdMap.get(schema);
+  if (!id) {
+    id = `schema_${++schemaIdCounter}`;
+    schemaIdMap.set(schema, id);
+  }
+  return id;
+}
+
 // Simple LRU cache for validation results to avoid re-validating identical data
 class ValidationCache {
   private cache = new Map<string, ValidationResult>();
@@ -62,7 +75,7 @@ class ValidationCache {
 
   getKey(schema: ZodSchema, data: unknown): string {
     // Create a deterministic key based on schema shape and data
-    const schemaKey = (schema as { _id?: string })._id || String(schema._type);
+    const schemaKey = getSchemaId(schema);
     const dataKey =
       typeof data === 'object' && data !== null
         ? JSON.stringify(data).slice(0, 500) // Limit key size
@@ -249,12 +262,12 @@ export class ContractValidator {
     this.results.clear();
   }
 
-  private getValueAtPath(obj: unknown, path: (string | number)[]): unknown {
+  private getValueAtPath(obj: unknown, path: readonly PropertyKey[]): unknown {
     let current: unknown = obj;
     for (const key of path) {
       if (current === null || current === undefined) return undefined;
       if (typeof current === 'object') {
-        current = (current as Record<string | number, unknown>)[key];
+        current = (current as Record<PropertyKey, unknown>)[key];
       } else {
         return undefined;
       }

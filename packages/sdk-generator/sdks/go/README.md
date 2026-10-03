@@ -60,14 +60,13 @@ package main
 import (
     "context"
     "os"
-
     "github.com/controlplane/sdk-go"
 )
 
 func main() {
     client := controlplane.NewClient(controlplane.ClientConfig{
         BaseURL: "https://api.controlplane.io",
-        APIKey:  os.Getenv("CONTROLPLANE_API_KEY"),
+		APIKey:  os.Getenv("CONTROLPLANE_API_KEY"),
     })
 
     ctx := context.Background()

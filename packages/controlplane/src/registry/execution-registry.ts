@@ -88,7 +88,8 @@ const checkEntrypointExists = (runner: RunnerRecord): PreflightCheck => {
 const checkCommandAvailable = (runner: RunnerRecord): PreflightCheck => {
   const cmd = runner.entrypoint.command;
   try {
-    execSync(`which ${cmd}`, { stdio: 'pipe', encoding: 'utf-8' });
+    const checkCmd = process.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
+    execSync(checkCmd, { stdio: 'pipe', encoding: 'utf-8' });
     return {
       check: 'command-available',
       passed: true,
