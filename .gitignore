@@ -22,3 +22,5 @@ build/
 .vscode/
 *.pyc
 .next/
+.turbo/
+
