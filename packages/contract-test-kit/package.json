@@ -38,7 +38,7 @@
     "@controlplane/contracts": "workspace:*",
     "@controlplane/observability": "workspace:*",
     "zod": "^4.5.4",
-    "chalk": "^6.0.0",
+    "chalk": "^6.0.1",
     "glob": "^13.0.6"
   },
   "devDependencies": {
@@ -46,7 +46,7 @@
     "eslint": "^8.55.0",
     "tsup": "^8.0.1",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
