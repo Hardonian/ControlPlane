@@ -96,11 +96,25 @@ function normalizeCheck(rawCheck: unknown): NormalizedCheck | null {
   const c = zodDef || (obj.def as Record<string, unknown> | undefined) || obj;
 
   if (c.check === 'min_length') {
-    const val = typeof c.minimum === 'number' ? c.minimum : typeof c.min === 'number' ? c.min : typeof c.value === 'number' ? c.value : undefined;
+    const val =
+      typeof c.minimum === 'number'
+        ? c.minimum
+        : typeof c.min === 'number'
+          ? c.min
+          : typeof c.value === 'number'
+            ? c.value
+            : undefined;
     return { kind: 'min', value: val, inclusive: true };
   }
   if (c.check === 'max_length') {
-    const val = typeof c.maximum === 'number' ? c.maximum : typeof c.max === 'number' ? c.max : typeof c.value === 'number' ? c.value : undefined;
+    const val =
+      typeof c.maximum === 'number'
+        ? c.maximum
+        : typeof c.max === 'number'
+          ? c.max
+          : typeof c.value === 'number'
+            ? c.value
+            : undefined;
     return { kind: 'max', value: val, inclusive: true };
   }
   if (c.check === 'greater_than') {
@@ -144,15 +158,19 @@ export function normalizeDef(schemaOrDef: unknown): NormalizedDef {
 
   let typeName = typeof rawDef.typeName === 'string' ? rawDef.typeName : '';
   if (!typeName && typeof rawDef.type === 'string') {
-    typeName = TYPE_MAP[rawDef.type] || `Zod${rawDef.type.charAt(0).toUpperCase() + rawDef.type.slice(1)}`;
+    typeName =
+      TYPE_MAP[rawDef.type] || `Zod${rawDef.type.charAt(0).toUpperCase() + rawDef.type.slice(1)}`;
   }
   if (!typeName) {
     typeName = 'ZodUnknown';
   }
 
-  let shapeFn: ((() => Record<string, z.ZodType>) & Record<string, z.ZodType>) | undefined = undefined;
+  let shapeFn: ((() => Record<string, z.ZodType>) & Record<string, z.ZodType>) | undefined =
+    undefined;
   const rawShape =
-    typeof rawDef.shape === 'function' ? (rawDef.shape as () => Record<string, z.ZodType>)() : rawDef.shape;
+    typeof rawDef.shape === 'function'
+      ? (rawDef.shape as () => Record<string, z.ZodType>)()
+      : rawDef.shape;
   if (rawShape && typeof rawShape === 'object') {
     const shapeObj = rawShape as Record<string, z.ZodType>;
     const fn = (() => shapeObj) as (() => Record<string, z.ZodType>) & Record<string, z.ZodType>;
@@ -206,7 +224,8 @@ export function normalizeDef(schemaOrDef: unknown): NormalizedDef {
 
   const options = Array.isArray(rawDef.options) ? (rawDef.options as z.ZodType[]) : undefined;
   const schema = (rawDef.schema ?? rawDef.in) as z.ZodType | undefined;
-  const getter = typeof rawDef.getter === 'function' ? (rawDef.getter as () => z.ZodType) : undefined;
+  const getter =
+    typeof rawDef.getter === 'function' ? (rawDef.getter as () => z.ZodType) : undefined;
   const innerType = rawDef.innerType as z.ZodType | undefined;
 
   return {

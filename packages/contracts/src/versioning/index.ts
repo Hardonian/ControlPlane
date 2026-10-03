@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/**
+ * Semantic version definition for ControlPlane contracts.
+ */
 export const ContractVersion = z.object({
   major: z.number().int().nonnegative(),
   minor: z.number().int().nonnegative(),
@@ -9,6 +12,9 @@ export const ContractVersion = z.object({
 
 export type ContractVersion = z.infer<typeof ContractVersion>;
 
+/**
+ * Compatible contract version range specification (min, max, or exact).
+ */
 export const ContractRange = z.object({
   min: ContractVersion,
   max: ContractVersion.optional(),
@@ -17,6 +23,9 @@ export const ContractRange = z.object({
 
 export type ContractRange = z.infer<typeof ContractRange>;
 
+/**
+ * Authoritative current contract version for the ControlPlane platform.
+ */
 export const CONTRACT_VERSION_CURRENT: ContractVersion = {
   major: 1,
   minor: 0,

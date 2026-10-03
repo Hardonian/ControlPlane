@@ -346,6 +346,7 @@ export const EnhancedErrorEnvelope = z.object({
     'SCHEMA_MISMATCH',
     'SERVICE_UNAVAILABLE',
     'RATE_LIMIT',
+    'RATE_LIMITED',
     'INTERNAL_ERROR',
   ]),
 
@@ -374,7 +375,10 @@ export const EnhancedErrorEnvelope = z.object({
       stack: z.string().optional(),
 
       // Contextual information
-      context: z.record(z.string(), z.unknown()).optional().describe('Additional context about the error'),
+      context: z
+        .record(z.string(), z.unknown())
+        .optional()
+        .describe('Additional context about the error'),
 
       // Related IDs
       relatedIds: z

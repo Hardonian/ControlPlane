@@ -130,8 +130,7 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
     for (const [key, val] of Object.entries(shape)) {
       const fieldType = zodToPythonType(val as z.ZodTypeAny);
       const fieldDef = normalizeDef(val);
-      const isOptional =
-        fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
+      const isOptional = fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
       const hasDefault = fieldDef.typeName === 'ZodDefault';
 
       let fieldLine = `    ${key}: ${fieldType}`;

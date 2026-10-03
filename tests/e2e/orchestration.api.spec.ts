@@ -14,6 +14,31 @@ const POLLING_CONFIG = {
   maxAttempts: 25, // Max ~30 seconds total with backoff
 };
 
+let servicesAvailable = false;
+
+test.beforeAll(async () => {
+  try {
+    const checks = await Promise.all([
+      fetch(`${TRUTHCORE_URL}/health`, { signal: AbortSignal.timeout(1500) })
+        .then((r) => r.ok)
+        .catch(() => false),
+      fetch(`${JOBFORGE_URL}/health`, { signal: AbortSignal.timeout(1500) })
+        .then((r) => r.ok)
+        .catch(() => false),
+      fetch(`${RUNNER_URL}/health`, { signal: AbortSignal.timeout(1500) })
+        .then((r) => r.ok)
+        .catch(() => false),
+    ]);
+    servicesAvailable = checks.every(Boolean);
+  } catch {
+    servicesAvailable = false;
+  }
+});
+
+test.beforeEach(async () => {
+  test.skip(!servicesAvailable, 'Local mock services on ports 3001-3003 are not running');
+});
+
 /**
  * Calculate polling interval with exponential backoff
  */

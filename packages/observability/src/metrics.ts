@@ -203,4 +203,7 @@ export const METRIC_NAMES = {
   RUNNER_HEARTBEAT: 'runner_heartbeat_timestamp',
   EXTERNAL_API_REQUESTS: 'external_api_requests_total',
   EXTERNAL_API_DURATION: 'external_api_duration_seconds',
+  HTTP_REQUESTS: 'http_requests_total',
+  HTTP_DURATION: 'http_request_duration_seconds',
+  HTTP_ERRORS: 'http_errors_total',
 } as const;

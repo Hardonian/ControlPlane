@@ -24,7 +24,9 @@ test.describe('@demo Demo mode', () => {
     await runDemoScript('scripts/demo-start.mjs');
 
     const report = JSON.parse(readFileSync(path.join(demoDir, 'report.json'), 'utf-8')) as unknown;
-    const evidence = JSON.parse(readFileSync(path.join(demoDir, 'evidence.json'), 'utf-8')) as unknown;
+    const evidence = JSON.parse(
+      readFileSync(path.join(demoDir, 'evidence.json'), 'utf-8')
+    ) as unknown;
 
     const reportRecord = report as Record<string, unknown>;
     const evidenceRecord = evidence as Record<string, unknown>;

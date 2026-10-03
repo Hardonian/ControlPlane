@@ -6,14 +6,11 @@ export type ValidationResult = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const isString = (value: unknown): value is string =>
-  typeof value === 'string' && value.length > 0;
+const isString = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 
-const hasString = (obj: Record<string, unknown>, key: string) =>
-  isString(obj[key]);
+const hasString = (obj: Record<string, unknown>, key: string) => isString(obj[key]);
 
-const hasArray = (obj: Record<string, unknown>, key: string) =>
-  Array.isArray(obj[key]);
+const hasArray = (obj: Record<string, unknown>, key: string) => Array.isArray(obj[key]);
 
 const pushError = (errors: string[], message: string) => {
   errors.push(message);
@@ -30,8 +27,7 @@ export const validateEvent = (payload: unknown): ValidationResult => {
   if (!hasString(payload, 'id')) pushError(errors, 'id is required');
   if (!hasString(payload, 'source')) pushError(errors, 'source is required');
   if (!hasString(payload, 'type')) pushError(errors, 'type is required');
-  if (!hasString(payload, 'timestamp'))
-    pushError(errors, 'timestamp is required');
+  if (!hasString(payload, 'timestamp')) pushError(errors, 'timestamp is required');
   if (!hasString(payload, 'version')) pushError(errors, 'version is required');
   if (!isRecord(payload.data)) pushError(errors, 'data must be an object');
   if (hasString(payload, 'version')) {
@@ -59,10 +55,8 @@ export const validateReport = (payload: unknown): ValidationResult => {
     }
   }
   if (!hasString(payload, 'status')) pushError(errors, 'status is required');
-  if (!hasString(payload, 'startedAt'))
-    pushError(errors, 'startedAt is required');
-  if (!hasString(payload, 'finishedAt'))
-    pushError(errors, 'finishedAt is required');
+  if (!hasString(payload, 'startedAt')) pushError(errors, 'startedAt is required');
+  if (!hasString(payload, 'finishedAt')) pushError(errors, 'finishedAt is required');
   if (!hasString(payload, 'summary')) pushError(errors, 'summary is required');
   return { valid: errors.length === 0, errors };
 };
@@ -74,8 +68,7 @@ export const validateRunnerManifest = (payload: unknown): ValidationResult => {
   }
   if (!hasString(payload, 'name')) pushError(errors, 'name is required');
   if (!hasString(payload, 'version')) pushError(errors, 'version is required');
-  if (!hasString(payload, 'description'))
-    pushError(errors, 'description is required');
+  if (!hasString(payload, 'description')) pushError(errors, 'description is required');
   if (!isRecord(payload.entrypoint)) {
     pushError(errors, 'entrypoint is required');
   } else {
@@ -127,8 +120,10 @@ export const validateEvidencePacket = (payload: unknown): ValidationResult => {
     if (!isRecord(payload.decision)) {
       pushError(errors, 'decision must be an object');
     } else {
-      if (!hasString(payload.decision, 'outcome')) pushError(errors, 'decision.outcome is required');
-      if (!hasArray(payload.decision, 'reasons')) pushError(errors, 'decision.reasons must be an array');
+      if (!hasString(payload.decision, 'outcome'))
+        pushError(errors, 'decision.outcome is required');
+      if (!hasArray(payload.decision, 'reasons'))
+        pushError(errors, 'decision.reasons must be an array');
       if (payload.decision.confidence !== undefined && !isNumber(payload.decision.confidence)) {
         pushError(errors, 'decision.confidence must be a number');
       }

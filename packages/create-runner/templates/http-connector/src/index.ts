@@ -51,7 +51,7 @@ function rateLimit(req: Request, res: Response, next: NextFunction) {
   entry.count += 1;
   if (entry.count > RATE_LIMIT_MAX) {
     const errorEnvelope = createErrorEnvelope({
-      category: 'RATE_LIMIT',
+      category: 'RATE_LIMITED',
       message: 'Too many requests',
       code: 'RATE_LIMIT_EXCEEDED',
     });

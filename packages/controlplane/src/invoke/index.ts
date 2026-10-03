@@ -39,7 +39,7 @@ export const runEntrypoint = async (
     const child = spawn(command, args, {
       cwd: options.cwd,
       env,
-      shell: false
+      shell: false,
     });
 
     let stdout = '';
@@ -72,7 +72,7 @@ export const runEntrypoint = async (
         stdout: redact(stdout, env, redactKeys),
         stderr: redact(stderr, env, redactKeys),
         exitCode: code ?? 1,
-        durationMs
+        durationMs,
       });
     });
   });

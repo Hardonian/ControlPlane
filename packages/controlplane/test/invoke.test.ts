@@ -14,10 +14,14 @@ describe('runEntrypoint failure handling', () => {
   });
 
   it('redacts sensitive env values from output', async () => {
-    const result = await runEntrypoint(nodeCommand, ['-e', 'console.log(process.env.SECRET_VALUE)'], {
-      env: { SECRET_VALUE: 'super-secret' },
-      redactEnvKeys: ['SECRET_VALUE'],
-    });
+    const result = await runEntrypoint(
+      nodeCommand,
+      ['-e', 'console.log(process.env.SECRET_VALUE)'],
+      {
+        env: { SECRET_VALUE: 'super-secret' },
+        redactEnvKeys: ['SECRET_VALUE'],
+      }
+    );
 
     expect(result.stdout).toContain('***');
     expect(result.stdout).not.toContain('super-secret');

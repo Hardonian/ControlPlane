@@ -9,10 +9,7 @@ import {
   type ValidationResult,
 } from '@controlplane/contract-kit';
 import { listRunners, type RunnerRecord } from './registry/index.js';
-import {
-  buildExecutionRegistry,
-  resolveExecutableRunner,
-} from './registry/execution-registry.js';
+import { buildExecutionRegistry, resolveExecutableRunner } from './registry/execution-registry.js';
 import {
   runEntrypoint,
   readJsonFile,
@@ -68,10 +65,7 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
   // ── 1. Validate input before dispatch ──────────────────────────────
   const inputCheck = validateRunnerInput(options.input);
   if (!inputCheck.valid) {
-    throw Errors.validationFailed(
-      `input for runner "${options.runner}"`,
-      inputCheck.errors
-    );
+    throw Errors.validationFailed(`input for runner "${options.runner}"`, inputCheck.errors);
   }
 
   // ── 2. Resolve runner via execution registry (fail-fast) ───────────
@@ -112,11 +106,7 @@ export const runRunner = async (options: RunRunnerOptions): Promise<RunnerExecut
 
   // ── 4. Fail fast on non-zero exit ──────────────────────────────────
   if (invocation.exitCode !== 0) {
-    throw Errors.invocationFailed(
-      executableRunner.name,
-      invocation.exitCode,
-      invocation.stderr
-    );
+    throw Errors.invocationFailed(executableRunner.name, invocation.exitCode, invocation.stderr);
   }
 
   // ── 5. Read and validate report ────────────────────────────────────
@@ -220,10 +210,7 @@ export { listModules, resolveModule } from './registry/index.js';
 export type { ModuleRecord, ModuleType } from './registry/index.js';
 
 // Re-export execution registry
-export {
-  buildExecutionRegistry,
-  resolveExecutableRunner,
-} from './registry/execution-registry.js';
+export { buildExecutionRegistry, resolveExecutableRunner } from './registry/execution-registry.js';
 export type {
   ExecutableRunner,
   FailedRunner,
@@ -233,9 +220,7 @@ export type {
 } from './registry/execution-registry.js';
 
 // Re-export contracts
-export {
-  validateRunnerInput,
-} from './contracts.js';
+export { validateRunnerInput } from './contracts.js';
 export type {
   RunnerInput,
   RunnerReport,

@@ -16,10 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { listRunners, type RunnerRecord } from './index.js';
 import { validateRunnerManifest } from '@controlplane/contract-kit';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -180,12 +177,8 @@ export const buildExecutionRegistry = (): ExecutionRegistryState => {
   const discovered = listRunners();
   const entries = discovered.map(runPreflight);
 
-  const executable = entries.filter(
-    (e): e is ExecutableRunner => e.executable
-  );
-  const failed = entries.filter(
-    (e): e is FailedRunner => !e.executable
-  );
+  const executable = entries.filter((e): e is ExecutableRunner => e.executable);
+  const failed = entries.filter((e): e is FailedRunner => !e.executable);
 
   return {
     timestamp: new Date().toISOString(),
@@ -210,9 +203,7 @@ export const resolveExecutableRunner = (name: string): ExecutableRunner => {
   }
 
   if (!entry.executable) {
-    throw new Error(
-      `Runner "${name}" failed pre-flight checks: ${(entry as FailedRunner).reason}`
-    );
+    throw new Error(`Runner "${name}" failed pre-flight checks: ${(entry as FailedRunner).reason}`);
   }
 
   return entry as ExecutableRunner;

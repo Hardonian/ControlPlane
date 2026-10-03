@@ -1,9 +1,15 @@
 import { z } from 'zod';
 import { ErrorEnvelope } from '../errors/index.js';
 
+/**
+ * Health assessment status of a service or dependency check.
+ */
 export const HealthStatus = z.enum(['healthy', 'degraded', 'unhealthy', 'unknown']);
 export type HealthStatus = z.infer<typeof HealthStatus>;
 
+/**
+ * Standard health check response format across all ControlPlane microservices and runners.
+ */
 export const HealthCheck = z.object({
   service: z.string(),
   status: HealthStatus,
@@ -23,6 +29,9 @@ export const HealthCheck = z.object({
 });
 export type HealthCheck = z.infer<typeof HealthCheck>;
 
+/**
+ * Descriptive runtime metadata for identifying a running service instance.
+ */
 export const ServiceMetadata = z.object({
   name: z.string(),
   version: z.string(),
@@ -33,6 +42,9 @@ export const ServiceMetadata = z.object({
 });
 export type ServiceMetadata = z.infer<typeof ServiceMetadata>;
 
+/**
+ * Standard pagination and sorting query parameters.
+ */
 export const PaginatedRequest = z.object({
   limit: z.number().int().positive().max(1000).default(100),
   offset: z.number().int().nonnegative().default(0),
@@ -42,6 +54,9 @@ export const PaginatedRequest = z.object({
 });
 export type PaginatedRequest = z.infer<typeof PaginatedRequest>;
 
+/**
+ * Standard envelope for paginated collection responses.
+ */
 export const PaginatedResponse = z.object({
   items: z.array(z.unknown()),
   total: z.number().int().nonnegative(),
@@ -52,6 +67,9 @@ export const PaginatedResponse = z.object({
 });
 export type PaginatedResponse = z.infer<typeof PaginatedResponse>;
 
+/**
+ * Canonical HTTP/RPC API request representation.
+ */
 export const ApiRequest = z.object({
   id: z.string().uuid(),
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
@@ -67,6 +85,9 @@ export const ApiRequest = z.object({
 });
 export type ApiRequest = z.infer<typeof ApiRequest>;
 
+/**
+ * Canonical HTTP/RPC API response representation with status, duration, and error envelope.
+ */
 export const ApiResponse = z.object({
   requestId: z.string().uuid(),
   statusCode: z.number().int().min(100).max(599),

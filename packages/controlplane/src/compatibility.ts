@@ -20,10 +20,7 @@ import {
 import type { SiblingRepo } from './discovery.js';
 import { listRunners, type RunnerRecord } from './registry/index.js';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 export type CompatCheck = {
   name: string;
@@ -166,9 +163,7 @@ const checkSiblingCompatibility = (siblings: SiblingRepo[]): CompatCheck[] => {
 /**
  * Run all compatibility checks and return a structured report.
  */
-export const validateCompatibility = (
-  siblings: SiblingRepo[]
-): CompatReport => {
+export const validateCompatibility = (siblings: SiblingRepo[]): CompatReport => {
   let runners: RunnerRecord[];
   try {
     runners = listRunners();

@@ -12,7 +12,7 @@ export interface ObservabilityOptions {
 type RequestLike = {
   method: string;
   path: string;
-  headers: Record<string, string | string[]>;
+  headers: Record<string, string | string[] | undefined>;
   route?: { path?: string };
   correlationId?: string;
   logger?: Logger;
@@ -22,10 +22,10 @@ type RequestLike = {
 
 type ResponseLike = {
   statusCode: number;
-  on: (event: 'finish', listener: () => void) => void;
+  on: (event: string, listener: () => void) => void;
 };
 
-type NextFunctionLike = () => void;
+type NextFunctionLike = (err?: unknown) => void;
 
 export function observabilityMiddleware(options: ObservabilityOptions) {
   const logger = createLogger({
@@ -40,7 +40,7 @@ export function observabilityMiddleware(options: ObservabilityOptions) {
 
   return (req: RequestLike, res: ResponseLike, next: NextFunctionLike) => {
     // Extract or generate correlation ID
-    const headers = req.headers;
+    const headers = req.headers as Record<string, string | string[]>;
     const existingContext = correlation.extractHeaders(headers);
 
     const runWithCorrelation = existingContext
@@ -48,52 +48,90 @@ export function observabilityMiddleware(options: ObservabilityOptions) {
       : (fn: () => void) => correlation.runWithNew(fn);
 
     runWithCorrelation(() => {
+      const correlationId = correlation.getId();
       // Attach to request
-      req.correlationId = correlation.getId();
-      req.logger = logger.child({
-        correlationId: correlation.getId(),
-      });
+      req.correlationId = correlationId;
+      req.logger = logger.child({ correlationId });
       req.metrics = metrics;
 
       // Log request
       const startTime = Date.now();
+      let completed = false;
 
       logger.info('Request started', {
         method: req.method,
         path: req.path,
-        correlationId: correlation.getId(),
+        correlationId,
       });
 
-      // Capture response
-      res.on('finish', () => {
+      const onFinishOrClose = (event: 'finish' | 'close') => {
+        if (completed) return;
+        completed = true;
         const duration = Date.now() - startTime;
-        const status = res.statusCode;
+        const status = res.statusCode || (event === 'close' ? 499 : 200);
 
         logger.info('Request completed', {
           method: req.method,
           path: req.path,
           status,
           duration,
-          correlationId: correlation.getId(),
+          correlationId,
+          event,
         });
 
         // Track metrics
-        metrics.increment('http_requests_total', {
+        metrics.increment(METRIC_NAMES.HTTP_REQUESTS, {
           method: req.method,
           status: status.toString(),
           path: req.route?.path || req.path,
         });
 
-        metrics.observe('http_request_duration_seconds', duration / 1000, {
+        metrics.observe(METRIC_NAMES.HTTP_DURATION, duration / 1000, {
           method: req.method,
           path: req.route?.path || req.path,
         });
-      });
+      };
 
-      next();
+      res.on('finish', () => onFinishOrClose('finish'));
+      res.on('close', () => onFinishOrClose('close'));
+
+      try {
+        next();
+      } catch (err) {
+        logger.error('Unhandled synchronous error in request handler', {
+          error: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+          correlationId,
+          method: req.method,
+          path: req.path,
+        });
+        metrics.increment(METRIC_NAMES.HTTP_ERRORS, {
+          method: req.method,
+          path: req.route?.path || req.path,
+        });
+        throw err;
+      }
     });
   };
 }
 
+export function observabilityErrorMiddleware(logger: Logger, metrics?: MetricsCollector) {
+  return (err: unknown, req: RequestLike, res: ResponseLike, next: NextFunctionLike) => {
+    const correlationId = req.correlationId || 'unknown';
+    logger.error('Request processing error', {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      correlationId,
+      method: req.method,
+      path: req.path,
+    });
+    metrics?.increment(METRIC_NAMES.HTTP_ERRORS, {
+      method: req.method,
+      path: req.route?.path || req.path,
+    });
+    next(err);
+  };
+}
+
 export { createLogger, MetricsCollector, CorrelationManager, METRIC_NAMES };
-export type { LoggerOptions };
+export type { LoggerOptions, Logger };

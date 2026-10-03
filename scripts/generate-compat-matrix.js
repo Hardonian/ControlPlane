@@ -236,6 +236,21 @@ function main() {
   const content = format === 'json' ? generateJson(matrix) : generateMarkdown(matrix);
   const outputPath = resolve(ROOT_DIR, outputFile);
 
+  if (args.includes('--check-stale')) {
+    if (!existsSync(outputPath)) {
+      console.error(`❌ ${outputFile} does not exist. Run: pnpm compat:generate`);
+      process.exit(1);
+    }
+    const existing = readFileSync(outputPath, 'utf8');
+    const normalize = (text) => text.replace(/\d{4}-\d{2}-\d{2}(T[\d:.]+Z)?/g, 'DATE');
+    if (normalize(existing) !== normalize(content)) {
+      console.error(`❌ ${outputFile} is stale! Run: pnpm compat:generate`);
+      process.exit(1);
+    }
+    console.log(`✅ ${outputFile} is up-to-date.`);
+    process.exit(0);
+  }
+
   writeFileSync(outputPath, content, 'utf8');
   console.log(`✅ Compatibility matrix written to ${outputFile}`);
 

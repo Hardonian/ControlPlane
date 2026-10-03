@@ -83,7 +83,11 @@ for (const name of REQUIRED_RUNNERS) {
 
   // Verify name matches directory
   if (manifest.name !== name) {
-    check(`manifest:${name}`, false, `Manifest name "${manifest.name}" does not match directory "${name}"`);
+    check(
+      `manifest:${name}`,
+      false,
+      `Manifest name "${manifest.name}" does not match directory "${name}"`
+    );
     continue;
   }
 
@@ -99,10 +103,11 @@ for (const name of REQUIRED_RUNNERS) {
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
   const args = manifest.entrypoint?.args || [];
 
-  const usesAdapter = manifest.entrypoint?.command === 'node'
-    && args[0] === 'scripts/adapters/runner-adapter.mjs'
-    && args.includes('--runner')
-    && args.includes(name);
+  const usesAdapter =
+    manifest.entrypoint?.command === 'node' &&
+    args[0] === 'scripts/adapters/runner-adapter.mjs' &&
+    args.includes('--runner') &&
+    args.includes(name);
 
   check(
     `adapter:${name}`,
@@ -117,7 +122,11 @@ for (const name of REQUIRED_RUNNERS) {
 
 const adapterPath = resolve(repoRoot, 'scripts/adapters/runner-adapter.mjs');
 const adapterExists = existsSync(adapterPath);
-check('adapter:exists', adapterExists, adapterExists ? 'runner-adapter.mjs exists' : 'runner-adapter.mjs is MISSING');
+check(
+  'adapter:exists',
+  adapterExists,
+  adapterExists ? 'runner-adapter.mjs exists' : 'runner-adapter.mjs is MISSING'
+);
 
 if (adapterExists) {
   const adapterContent = readFileSync(adapterPath, 'utf-8');
@@ -158,23 +167,25 @@ for (const name of REQUIRED_RUNNERS) {
   }
 }
 
-check(
-  'fingerprints',
-  true,
-  `Manifest fingerprints: ${JSON.stringify(manifestFingerprints)}`
-);
+check('fingerprints', true, `Manifest fingerprints: ${JSON.stringify(manifestFingerprints)}`);
 
 // ── Summary ────────────────────────────────────────────────────────────
 
 if (jsonFlag) {
-  console.log(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    total: results.length,
-    passed: results.filter((r) => r.passed).length,
-    failed: failures,
-    results,
-    manifestFingerprints,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        total: results.length,
+        passed: results.filter((r) => r.passed).length,
+        failed: failures,
+        results,
+        manifestFingerprints,
+      },
+      null,
+      2
+    )
+  );
 } else {
   console.log(`\n${'─'.repeat(60)}`);
   console.log(

@@ -1,9 +1,15 @@
 import { z } from 'zod';
 import { ContractVersion } from '../versioning/index.js';
 
+/**
+ * Error severity levels representing impact and operational urgency.
+ */
 export const ErrorSeverity = z.enum(['fatal', 'error', 'warning', 'info']);
 export type ErrorSeverity = z.infer<typeof ErrorSeverity>;
 
+/**
+ * Standardized categorization of errors across platform services and runners.
+ */
 export const ErrorCategory = z.enum([
   'VALIDATION_ERROR',
   'SCHEMA_MISMATCH',
@@ -22,6 +28,9 @@ export const ErrorCategory = z.enum([
 ]);
 export type ErrorCategory = z.infer<typeof ErrorCategory>;
 
+/**
+ * Retry policy configuring maximum attempts, exponential backoff, and category classifications.
+ */
 export const RetryPolicy = z.object({
   maxRetries: z.number().int().nonnegative().default(3),
   backoffMs: z.number().nonnegative().default(1000),
@@ -42,6 +51,9 @@ export const RetryPolicy = z.object({
 });
 export type RetryPolicy = z.infer<typeof RetryPolicy>;
 
+/**
+ * Default fallback retry policy used when not explicitly configured.
+ */
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxRetries: 3,
   backoffMs: 1000,
@@ -57,6 +69,9 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   ],
 };
 
+/**
+ * Field-level error diagnostic detail, specifying path, message, code, and offending value.
+ */
 export const ErrorDetail = z.object({
   path: z.array(z.string()).optional(),
   message: z.string(),
@@ -65,6 +80,9 @@ export const ErrorDetail = z.object({
 });
 export type ErrorDetail = z.infer<typeof ErrorDetail>;
 
+/**
+ * Canonical error envelope for platform services, connectors, and runners.
+ */
 export const ErrorEnvelope = z.object({
   id: z.string().uuid(),
   timestamp: z.string().datetime(),

@@ -12,10 +12,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 export type SiblingManifest = {
   name: string;
@@ -49,11 +46,7 @@ const KNOWN_SIBLINGS = [
 ];
 
 /** Manifest file names we search for, in priority order. */
-const MANIFEST_NAMES = [
-  'module.manifest.json',
-  'runner.manifest.json',
-  'manifest.json',
-];
+const MANIFEST_NAMES = ['module.manifest.json', 'runner.manifest.json', 'manifest.json'];
 
 const tryReadJson = (filePath: string): unknown | null => {
   try {

@@ -12,7 +12,8 @@
     "benchmark:scale": "tsx src/runner.ts --scenario=scale",
     "benchmark:report": "tsx src/report.ts",
     "analyze": "tsx src/analyze.ts",
-    "validate": "tsx src/validate.ts"
+    "validate": "tsx src/validate.ts",
+    "list": "tsx src/runner.ts --list"
   },
   "dependencies": {
     "@controlplane/contracts": "workspace:*",

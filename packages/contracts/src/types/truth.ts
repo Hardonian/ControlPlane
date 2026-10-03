@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { ErrorEnvelope } from '../errors/index.js';
 
+/**
+ * Permissible primitive or structured values for a TruthCore knowledge triple object.
+ */
 export const TruthValue = z.union([
   z.string(),
   z.number(),
@@ -11,6 +14,9 @@ export const TruthValue = z.union([
 ]);
 export type TruthValue = z.infer<typeof TruthValue>;
 
+/**
+ * Immutable fact or statement asserted into TruthCore with confidence rating and provenance.
+ */
 export const TruthAssertion = z.object({
   id: z.string().uuid(),
   subject: z.string(),
@@ -24,6 +30,9 @@ export const TruthAssertion = z.object({
 });
 export type TruthAssertion = z.infer<typeof TruthAssertion>;
 
+/**
+ * Query pattern and filters for matching knowledge assertions within TruthCore.
+ */
 export const TruthQuery = z.object({
   id: z.string().uuid(),
   pattern: z.object({
@@ -44,6 +53,9 @@ export const TruthQuery = z.object({
 });
 export type TruthQuery = z.infer<typeof TruthQuery>;
 
+/**
+ * Paginated query results returned by TruthCore containing matched assertions.
+ */
 export const TruthQueryResult = z.object({
   queryId: z.string().uuid(),
   assertions: z.array(TruthAssertion),
@@ -53,6 +65,9 @@ export const TruthQueryResult = z.object({
 });
 export type TruthQueryResult = z.infer<typeof TruthQueryResult>;
 
+/**
+ * Active reactive subscription pattern for receiving newly asserted truths.
+ */
 export const TruthSubscription = z.object({
   id: z.string().uuid(),
   pattern: z.object({
@@ -70,6 +85,9 @@ export const TruthSubscription = z.object({
 });
 export type TruthSubscription = z.infer<typeof TruthSubscription>;
 
+/**
+ * Universal RPC request envelope for TruthCore operations.
+ */
 export const TruthCoreRequest = z.object({
   id: z.string().uuid(),
   type: z.enum(['assert', 'query', 'subscribe', 'unsubscribe']),
@@ -82,6 +100,9 @@ export const TruthCoreRequest = z.object({
 });
 export type TruthCoreRequest = z.infer<typeof TruthCoreRequest>;
 
+/**
+ * Response envelope returned by TruthCore for knowledge assertions or queries.
+ */
 export const TruthCoreResponse = z.object({
   requestId: z.string().uuid(),
   success: z.boolean(),
@@ -91,5 +112,8 @@ export const TruthCoreResponse = z.object({
 });
 export type TruthCoreResponse = z.infer<typeof TruthCoreResponse>;
 
+/**
+ * Replication and assertion consistency guarantees supported by TruthCore.
+ */
 export const ConsistencyLevel = z.enum(['strict', 'eventual', 'best_effort']);
 export type ConsistencyLevel = z.infer<typeof ConsistencyLevel>;

@@ -41,7 +41,8 @@ try {
       if (!isRecord(manifest.entrypoint)) {
         errors.push('entrypoint is required');
       } else {
-        if (!hasString(manifest.entrypoint, 'command')) errors.push('entrypoint.command is required');
+        if (!hasString(manifest.entrypoint, 'command'))
+          errors.push('entrypoint.command is required');
         if (!hasArray(manifest.entrypoint, 'args')) errors.push('entrypoint.args must be an array');
       }
       check(`runner-manifest:${entry}`, errors.length === 0, errors);
@@ -104,9 +105,7 @@ try {
 }
 
 // 5. Validate all module.manifest.json files (for sibling repos)
-const moduleManifestLocations = [
-  path.join(repoRoot, 'module.manifest.json'),
-];
+const moduleManifestLocations = [path.join(repoRoot, 'module.manifest.json')];
 // Also check runners for module manifests
 try {
   const entries = readdirSync(runnersDir);
@@ -142,7 +141,9 @@ const failures = results.filter((r) => !r.valid);
 const jsonOutput = process.argv.includes('--json');
 
 if (jsonOutput) {
-  console.log(JSON.stringify({ results, failures: failures.length, total: results.length }, null, 2));
+  console.log(
+    JSON.stringify({ results, failures: failures.length, total: results.length }, null, 2)
+  );
 } else {
   console.log(`\nContracts Check Results\n${'='.repeat(50)}`);
   for (const r of results) {

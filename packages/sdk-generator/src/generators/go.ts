@@ -91,8 +91,7 @@ function generateGoStructCode(schema: SchemaDefinition): string[] {
     for (const [key, val] of Object.entries(shape)) {
       const fieldDef = normalizeDef(val);
       const goType = zodToGoType(val as z.ZodTypeAny);
-      const isOptional =
-        fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
+      const isOptional = fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
       const jsonTag = isOptional ? `json:"${key},omitempty"` : `json:"${key}"`;
 
       lines.push(`\t${capitalizeFirst(key)} ${goType} \`${jsonTag}\``);

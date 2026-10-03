@@ -210,34 +210,34 @@ function generateZodDefinition(schema: z.ZodTypeAny, depth = 0): string {
       return `z.record(${keyDef}, ${valDef})`;
     }
 
-      case 'ZodEnum': {
-        const values = (def.values ?? []).map((v) => `'${v}'`).join(', ');
-        return `z.enum([${values}])`;
-      }
-
-      case 'ZodUnion':
-      case 'ZodDiscriminatedUnion': {
-        const options = (def.options ?? [])
-          .map((opt) => generateZodDefinition(opt, depth))
-          .join(', ');
-        return `z.union([${options}])`;
-      }
-
-      case 'ZodEffects':
-        return generateZodDefinition(def.schema ?? schema, depth);
-
-      case 'ZodLazy':
-        return generateZodDefinition(def.getter?.() ?? schema, depth);
-
-      case 'ZodUnknown':
-        return 'z.unknown()';
-
-      case 'ZodAny':
-        return 'z.any()';
-
-      default:
-        return 'z.any()';
+    case 'ZodEnum': {
+      const values = (def.values ?? []).map((v) => `'${v}'`).join(', ');
+      return `z.enum([${values}])`;
     }
+
+    case 'ZodUnion':
+    case 'ZodDiscriminatedUnion': {
+      const options = (def.options ?? [])
+        .map((opt) => generateZodDefinition(opt, depth))
+        .join(', ');
+      return `z.union([${options}])`;
+    }
+
+    case 'ZodEffects':
+      return generateZodDefinition(def.schema ?? schema, depth);
+
+    case 'ZodLazy':
+      return generateZodDefinition(def.getter?.() ?? schema, depth);
+
+    case 'ZodUnknown':
+      return 'z.unknown()';
+
+    case 'ZodAny':
+      return 'z.any()';
+
+    default:
+      return 'z.any()';
+  }
 
   return 'z.any()';
 }
