@@ -96,8 +96,8 @@ importers:
         specifier: workspace:*
         version: link:../observability
       chalk:
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: ^6.0.1
+        version: 6.0.1
       cli-table3:
         specifier: ^0.6.3
         version: 0.6.5
@@ -148,8 +148,8 @@ importers:
         specifier: workspace:*
         version: link:../observability
       chalk:
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: ^6.0.1
+        version: 6.0.1
       glob:
         specifier: ^13.0.6
         version: 13.0.6
@@ -220,8 +220,8 @@ importers:
   packages/create-runner:
     dependencies:
       chalk:
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: ^6.0.1
+        version: 6.0.1
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -329,8 +329,8 @@ importers:
         specifier: workspace:*
         version: link:../observability
       chalk:
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: ^6.0.1
+        version: 6.0.1
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -2429,8 +2429,8 @@ packages:
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dev: true
 
-  /chalk@6.0.0:
-    resolution: {integrity: sha512-2uNTXIuTTxk7ciZgAU1BQcgnchcG0xXnrs6jzkQfj9SsRa9M2s5zE8WT96hS6KmG4MzWHSrvH43DF1m4XRkrFg==}
+  /chalk@6.0.1:
+    resolution: {integrity: sha512-/Ce6KNm3vIbWdMlNna6RVIZ/ICQxnJxCicet5LBKK9ZffBkqzDw0xh9EiKSljdRtiIQ1S1z4YgcscUUGzNCWrA==}
     engines: {node: '>=22'}
     dev: false
 
