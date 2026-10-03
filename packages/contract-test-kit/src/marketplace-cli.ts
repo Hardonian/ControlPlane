@@ -356,8 +356,19 @@ async function handleQuery(options: CLIOptions): Promise<void> {
   if (existsSync(indexPath)) {
     index = JSON.parse(readFileSync(indexPath, 'utf-8'));
   } else {
-    console.error(chalk.yellow('No marketplace index found. Run `marketplace build` first.\n'));
-    process.exit(1);
+    const { registry } = await buildCapabilityRegistry({
+      workspaceRoot: process.cwd(),
+      environment: options.environment,
+      includeOffline: options.includeUnverified,
+    });
+    const { index: builtIndex } = await buildMarketplaceIndex(registry, new Map(), {
+      workspaceRoot: process.cwd(),
+      environment: options.environment,
+      includeUnverified: options.includeUnverified,
+      includeDeprecated: options.includeDeprecated,
+      includePending: false,
+    });
+    index = builtIndex;
   }
 
   // Build query
@@ -414,13 +425,24 @@ async function handleServe(options: CLIOptions): Promise<void> {
 
     // Load index
     const indexPath = './marketplace-index.json';
-    if (!existsSync(indexPath)) {
-      res.writeHead(503, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Marketplace index not available' }));
-      return;
+    let index;
+    if (existsSync(indexPath)) {
+      index = JSON.parse(readFileSync(indexPath, 'utf-8'));
+    } else {
+      const { registry } = await buildCapabilityRegistry({
+        workspaceRoot: process.cwd(),
+        environment: options.environment,
+        includeOffline: options.includeUnverified,
+      });
+      const { index: builtIndex } = await buildMarketplaceIndex(registry, new Map(), {
+        workspaceRoot: process.cwd(),
+        environment: options.environment,
+        includeUnverified: options.includeUnverified,
+        includeDeprecated: options.includeDeprecated,
+        includePending: false,
+      });
+      index = builtIndex;
     }
-
-    const index = JSON.parse(readFileSync(indexPath, 'utf-8'));
 
     const url = new URL(req.url || '/', `http://localhost:${options.port}`);
 

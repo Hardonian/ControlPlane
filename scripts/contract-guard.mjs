@@ -23,7 +23,7 @@ const repoRoot = resolve(__dirname, '..');
 
 const REQUIRED_RUNNERS = [
   'truthcore',
-  'JobForge',
+  'jobforge',
   'ops-autopilot',
   'finops-autopilot',
   'growth-autopilot',

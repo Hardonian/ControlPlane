@@ -93,12 +93,17 @@ export const discoverSiblings = (): SiblingRepo[] => {
   for (const name of KNOWN_SIBLINGS) {
     const siblingPath = path.join(parentDir, name);
     if (existsSync(siblingPath)) {
+      const manifest = readManifest(siblingPath);
+      const runnerAdapterPath = path.join(repoRoot, 'runners', name);
+      const runnerManifest =
+        !manifest && existsSync(runnerAdapterPath) ? readManifest(runnerAdapterPath) : null;
+
       seen.add(name);
       found.push({
         name,
-        source: 'sibling',
-        path: siblingPath,
-        manifest: readManifest(siblingPath),
+        source: runnerManifest ? 'runner-adapter' : 'sibling',
+        path: runnerManifest ? runnerAdapterPath : siblingPath,
+        manifest: manifest || runnerManifest,
         hasDoctorCommand: hasDoctorScript(siblingPath),
         hasPackageJson: hasPackageJson(siblingPath),
       });

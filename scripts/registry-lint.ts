@@ -163,7 +163,7 @@ function validatePackage(name, { dir, pkg, pkgJsonPath }) {
     addError(`Package ${name} is missing 'version' field`);
   }
 
-  if (!pkg.main && !pkg.exports) {
+  if (!pkg.main && !pkg.exports && !pkg.private) {
     addWarning(`Package ${name} has neither 'main' nor 'exports' field`);
   }
 
@@ -192,7 +192,7 @@ function validatePackage(name, { dir, pkg, pkgJsonPath }) {
   const distDir = path.join(dir, 'dist');
   const hasBuildScript = pkg.scripts && pkg.scripts.build;
 
-  if (hasBuildScript && !dirExists(distDir)) {
+  if (hasBuildScript && !pkg.private && !dirExists(distDir)) {
     addWarning(`Package ${name} has build script but dist/ directory does not exist`);
   }
 
@@ -281,16 +281,17 @@ function validateRunner(name, { dir, manifest, manifestPath }) {
 
     if (manifest.entrypoint.args) {
       for (const arg of manifest.entrypoint.args) {
-        if (arg.includes('runner.manifest.json')) {
-          continue; // Skip self-reference
+        if (arg.includes('runner.manifest.json') || arg.startsWith('--')) {
+          continue;
         }
-        if (arg.startsWith('--')) {
-          continue; // Skip flags
-        }
-        // Check if file args exist
-        const argPath = path.join(dir, arg);
-        if (!fileExists(argPath) && !arg.includes(':')) {
-          addWarning(`Runner ${name}: entrypoint arg may not exist: ${arg}`);
+        // Check if file args exist (look in both runner dir and monorepo root)
+        const isFileArg = /\.[a-z0-9]+$/i.test(arg);
+        if (isFileArg && !arg.includes(':')) {
+          const argPathFromDir = path.join(dir, arg);
+          const argPathFromRoot = path.join(ROOT, arg);
+          if (!fileExists(argPathFromDir) && !fileExists(argPathFromRoot)) {
+            addWarning(`Runner ${name}: entrypoint arg may not exist: ${arg}`);
+          }
         }
       }
     }
