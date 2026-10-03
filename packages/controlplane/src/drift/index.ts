@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { RegistryState } from '../registry/hardened.js';
 import {
   discoverModules,
@@ -648,15 +649,21 @@ export async function runDriftDetection(
       ...options.config,
     };
 
-    // Load baseline if specified
+    // Load baseline if specified or default repository baseline
+    const baselinePath =
+      options.baselinePath ||
+      (existsSync(join(options.repoRoot, 'config/ecosystem-baseline.json'))
+        ? join(options.repoRoot, 'config/ecosystem-baseline.json')
+        : undefined);
+
     let baseline: RegistryState | undefined;
-    if (options.baselinePath) {
+    if (baselinePath) {
       config.baseline = {
-        path: options.baselinePath,
+        path: baselinePath,
         version: '1.0.0',
       };
-      baseline = loadBaseline(options.baselinePath);
-      childLogger.debug('Baseline loaded', { baselinePath: options.baselinePath });
+      baseline = loadBaseline(baselinePath);
+      childLogger.debug('Baseline loaded', { baselinePath });
     }
 
     // Discover current state

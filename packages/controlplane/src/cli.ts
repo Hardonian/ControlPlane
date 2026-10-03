@@ -80,6 +80,8 @@ Commands:
     --out <path>                                       Write report to file
     --verbose                                          Include detailed information
     --include-errors                                   Include validation errors
+  controlplane registry:baseline                       Generate or update ecosystem baseline
+    --out <path>                                       Write baseline to file (default: config/ecosystem-baseline.json)
 
 Exit Codes:
   0  Success
@@ -971,6 +973,26 @@ ${results.some((r) => !r.success) ? '- Run `pnpm controlplane doctor` to diagnos
       console.log(report);
     }
 
+    return;
+  }
+
+  // ── registry:baseline ───────────────────────────────────────────────
+  if (command === 'registry:baseline') {
+    const { discoverModules, buildRegistryState } = await import('./registry/hardened.js');
+    const outputPath =
+      getOption(args, '--out') || path.join(repoRoot, 'config/ecosystem-baseline.json');
+
+    log('info', 'registry', 'Generating ecosystem baseline...');
+    const modules = discoverModules(repoRoot);
+    const state = buildRegistryState(modules);
+
+    writeFileSync(outputPath, JSON.stringify(state, null, 2) + '\n', 'utf-8');
+    log(
+      'info',
+      'registry',
+      `Baseline generated with ${state.summary.total} modules at: ${outputPath}`
+    );
+    console.log(`Ecosystem baseline written to: ${outputPath}`);
     return;
   }
 

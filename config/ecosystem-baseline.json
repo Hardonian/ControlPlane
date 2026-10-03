@@ -1,0 +1,320 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-10-03T17:51:17.473Z",
+  "modules": [
+    {
+      "manifest": {
+        "name": "aias",
+        "version": "0.1.0",
+        "description": "AI Audit Service - compliance auditing, policy evaluation, and audit-trail generation",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "aias"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run",
+          "audit-trail"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report",
+          "audit-trail"
+        ],
+        "docs": "docs/REALITY_MAP.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\aias\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.469Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.469Z"
+    },
+    {
+      "manifest": {
+        "name": "autopilot-suite",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for autopilot-suite",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "autopilot-suite"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\autopilot-suite\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.470Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.470Z"
+    },
+    {
+      "manifest": {
+        "name": "finops-autopilot",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for finops-autopilot",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "finops-autopilot"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\finops-autopilot\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.470Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.470Z"
+    },
+    {
+      "manifest": {
+        "name": "growth-autopilot",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for growth-autopilot",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "growth-autopilot"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\growth-autopilot\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.470Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.471Z"
+    },
+    {
+      "manifest": {
+        "name": "jobforge",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for JobForge",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "jobforge"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\jobforge\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.471Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.471Z"
+    },
+    {
+      "manifest": {
+        "name": "ops-autopilot",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for ops-autopilot",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "ops-autopilot"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\ops-autopilot\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.472Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.472Z"
+    },
+    {
+      "manifest": {
+        "name": "support-autopilot",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for support-autopilot",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "support-autopilot"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\support-autopilot\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.472Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.472Z"
+    },
+    {
+      "manifest": {
+        "name": "truthcore",
+        "version": "0.1.0",
+        "description": "ControlPlane adapter for truthcore",
+        "entrypoint": {
+          "command": "node",
+          "args": [
+            "scripts/adapters/runner-adapter.mjs",
+            "--runner",
+            "truthcore"
+          ]
+        },
+        "capabilities": [
+          "adapter",
+          "dry-run"
+        ],
+        "requiredEnv": [],
+        "outputs": [
+          "report"
+        ],
+        "docs": "docs/reality/EXECUTION_GRAPH.md"
+      },
+      "source": {
+        "path": "C:\\Users\\scott\\GitHub\\ControlPlane\\runners\\truthcore\\runner.manifest.json",
+        "type": "runners",
+        "discoveredAt": "2026-10-03T17:51:17.473Z"
+      },
+      "status": "valid",
+      "validation": {
+        "schemaValid": true,
+        "versionCompatible": true,
+        "entrypointExists": true,
+        "requiredEnvPresent": true,
+        "errors": []
+      },
+      "lastValidatedAt": "2026-10-03T17:51:17.473Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "valid": 8,
+    "invalid": 0,
+    "incompatible": 0,
+    "unreachable": 0,
+    "disabled": 0
+  }
+}
