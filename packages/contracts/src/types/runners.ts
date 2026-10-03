@@ -2,13 +2,16 @@ import { z } from 'zod';
 import { ContractVersion } from '../versioning/index.js';
 import { ErrorEnvelope } from '../errors/index.js';
 
+/**
+ * Functional capability exposed by a Runner, specifying input/output schemas and resource constraints.
+ */
 export const RunnerCapability = z.object({
   id: z.string(),
   name: z.string(),
   version: z.string(),
   description: z.string(),
-  inputSchema: z.record(z.unknown()),
-  outputSchema: z.record(z.unknown()),
+  inputSchema: z.record(z.string(), z.unknown()),
+  outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
   maxConcurrency: z.number().int().positive().default(1),
   timeoutMs: z.number().positive().default(30000),
@@ -18,10 +21,13 @@ export const RunnerCapability = z.object({
       memory: z.string().optional(),
       gpu: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
 });
 export type RunnerCapability = z.infer<typeof RunnerCapability>;
 
+/**
+ * Active registration record and health status of a connected Runner.
+ */
 export const RunnerMetadata = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -37,6 +43,9 @@ export const RunnerMetadata = z.object({
 });
 export type RunnerMetadata = z.infer<typeof RunnerMetadata>;
 
+/**
+ * Handshake payload sent by a Runner when joining the ControlPlane cluster.
+ */
 export const RunnerRegistrationRequest = z.object({
   name: z.string(),
   version: z.string(),
@@ -47,6 +56,9 @@ export const RunnerRegistrationRequest = z.object({
 });
 export type RunnerRegistrationRequest = z.infer<typeof RunnerRegistrationRequest>;
 
+/**
+ * Acknowledgement returned to a Runner upon successful registration.
+ */
 export const RunnerRegistrationResponse = z.object({
   runnerId: z.string().uuid(),
   registeredAt: z.string().datetime(),
@@ -54,6 +66,9 @@ export const RunnerRegistrationResponse = z.object({
 });
 export type RunnerRegistrationResponse = z.infer<typeof RunnerRegistrationResponse>;
 
+/**
+ * Periodic liveness ping and workload metrics emitted by active Runners.
+ */
 export const RunnerHeartbeat = z.object({
   runnerId: z.string().uuid(),
   timestamp: z.string().datetime(),
@@ -70,6 +85,9 @@ export const RunnerHeartbeat = z.object({
 });
 export type RunnerHeartbeat = z.infer<typeof RunnerHeartbeat>;
 
+/**
+ * Declarative package manifest describing an executable module and its capabilities.
+ */
 export const ModuleManifest = z.object({
   id: z.string(),
   name: z.string(),
@@ -79,16 +97,19 @@ export const ModuleManifest = z.object({
   contractVersion: ContractVersion,
   capabilities: z.array(RunnerCapability),
   dependencies: z.array(z.string()).default([]),
-  configSchema: z.record(z.unknown()).optional(),
-  defaultConfig: z.record(z.unknown()).default({}),
+  configSchema: z.record(z.string(), z.unknown()).optional(),
+  defaultConfig: z.record(z.string(), z.unknown()).default({}),
 });
 export type ModuleManifest = z.infer<typeof ModuleManifest>;
 
+/**
+ * Dispatch envelope instructing a runner to execute a specific capability for a job.
+ */
 export const RunnerExecutionRequest = z.object({
   jobId: z.string().uuid(),
   moduleId: z.string(),
   capabilityId: z.string(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   timeoutMs: z.number().positive().default(30000),
   metadata: z
     .object({
@@ -99,6 +120,9 @@ export const RunnerExecutionRequest = z.object({
 });
 export type RunnerExecutionRequest = z.infer<typeof RunnerExecutionRequest>;
 
+/**
+ * Execution completion report emitted by a Runner back to JobForge.
+ */
 export const RunnerExecutionResponse = z.object({
   jobId: z.string().uuid(),
   success: z.boolean(),

@@ -43,9 +43,7 @@ if (format !== 'json') {
 
 const readInput = (value) => {
   try {
-    const filePath = path.isAbsolute(value)
-      ? value
-      : path.join(process.cwd(), value);
+    const filePath = path.isAbsolute(value) ? value : path.join(process.cwd(), value);
     const raw = readFileSync(filePath, 'utf-8');
     return JSON.parse(raw);
   } catch {
@@ -133,10 +131,29 @@ const runnerLogic = {
     }
 
     const reasons = [
-      { ruleId: 'TC-001', message: 'Input payload structure validated', evidenceRefs: ['input-structure'] },
-      { ruleId: 'TC-002', message: 'No anomalies detected in payload', evidenceRefs: ['input-hash'] },
-      { ruleId: 'TC-003', message: `Field count check: ${fieldCount} fields found`, evidenceRefs: ['field-count'] },
-      { ruleId: 'TC-004', message: depth <= 10 ? `Nesting depth ${depth} within limit` : `Nesting depth ${depth} exceeds recommended limit of 10`, evidenceRefs: ['nesting-depth'] },
+      {
+        ruleId: 'TC-001',
+        message: 'Input payload structure validated',
+        evidenceRefs: ['input-structure'],
+      },
+      {
+        ruleId: 'TC-002',
+        message: 'No anomalies detected in payload',
+        evidenceRefs: ['input-hash'],
+      },
+      {
+        ruleId: 'TC-003',
+        message: `Field count check: ${fieldCount} fields found`,
+        evidenceRefs: ['field-count'],
+      },
+      {
+        ruleId: 'TC-004',
+        message:
+          depth <= 10
+            ? `Nesting depth ${depth} within limit`
+            : `Nesting depth ${depth} exceeds recommended limit of 10`,
+        evidenceRefs: ['nesting-depth'],
+      },
     ];
 
     if (hasTimestamp) {
@@ -161,9 +178,21 @@ const runnerLogic = {
       evaluationItems: [
         { key: 'field-count', value: fieldCount, source: 'truthcore-field-counter' },
         { key: 'input-hash', value: stableHash(input), source: 'truthcore-hasher' },
-        { key: 'input-structure', value: typeof input === 'object' ? 'valid-object' : 'primitive', source: 'truthcore-validator' },
+        {
+          key: 'input-structure',
+          value: typeof input === 'object' ? 'valid-object' : 'primitive',
+          source: 'truthcore-validator',
+        },
         { key: 'nesting-depth', value: depth, source: 'truthcore-depth-analyzer' },
-        ...(hasTimestamp ? [{ key: 'timestamp-freshness', value: timestampFresh ? 'fresh' : 'stale', source: 'truthcore-freshness-checker' }] : []),
+        ...(hasTimestamp
+          ? [
+              {
+                key: 'timestamp-freshness',
+                value: timestampFresh ? 'fresh' : 'stale',
+                source: 'truthcore-freshness-checker',
+              },
+            ]
+          : []),
       ],
     };
   },
@@ -183,31 +212,24 @@ const runnerLogic = {
   }),
   'finops-autopilot': () => ({
     costAnalysis: { savingsIdentified: 0, recommendations: 0 },
-    evaluationItems: [
-      { key: 'cost-analysis-complete', value: true, source: 'finops-autopilot' },
-    ],
+    evaluationItems: [{ key: 'cost-analysis-complete', value: true, source: 'finops-autopilot' }],
   }),
   'growth-autopilot': () => ({
     growthMetrics: { opportunitiesFound: 0 },
-    evaluationItems: [
-      { key: 'growth-scan-complete', value: true, source: 'growth-autopilot' },
-    ],
+    evaluationItems: [{ key: 'growth-scan-complete', value: true, source: 'growth-autopilot' }],
   }),
   'support-autopilot': () => ({
     supportMetrics: { ticketsProcessed: 0 },
-    evaluationItems: [
-      { key: 'support-scan-complete', value: true, source: 'support-autopilot' },
-    ],
+    evaluationItems: [{ key: 'support-scan-complete', value: true, source: 'support-autopilot' }],
   }),
   'autopilot-suite': () => ({
     suiteResult: { modulesRun: 4 },
-    evaluationItems: [
-      { key: 'suite-complete', value: true, source: 'autopilot-suite' },
-    ],
+    evaluationItems: [{ key: 'suite-complete', value: true, source: 'autopilot-suite' }],
   }),
   aias: () => {
     const policies = (typeof input === 'object' && input !== null && input.payload?.policies) || [];
-    const resources = (typeof input === 'object' && input !== null && input.payload?.resources) || [];
+    const resources =
+      (typeof input === 'object' && input !== null && input.payload?.resources) || [];
     const now = nowIso();
 
     const auditEntries = resources.map((resource, idx) => ({
@@ -254,7 +276,9 @@ const runnerLogic = {
             ruleId: 'AIAS-002',
             message: auditEntries.length > 0 ? 'All audit entries passed' : 'No resources to audit',
             evidenceRefs: ['audit-summary'],
-            ...(auditEntries.length === 0 ? { uncertainty: 'Empty resource list may indicate misconfiguration' } : {}),
+            ...(auditEntries.length === 0
+              ? { uncertainty: 'Empty resource list may indicate misconfiguration' }
+              : {}),
           },
         ],
         confidence: auditEntries.length > 0 ? 0.9 : 0.5,
@@ -262,15 +286,22 @@ const runnerLogic = {
       evaluationItems: [
         { key: 'audit-policies', value: policies.length, source: 'aias-policy-engine' },
         { key: 'audit-resources', value: resources.length, source: 'aias-resource-scanner' },
-        { key: 'audit-summary', value: `${auditEntries.length} entries, ${auditEntries.length} passed`, source: 'aias-auditor' },
+        {
+          key: 'audit-summary',
+          value: `${auditEntries.length} entries, ${auditEntries.length} passed`,
+          source: 'aias-auditor',
+        },
       ],
     };
   },
 };
 
-const logic = runnerLogic[runner] || runnerLogic[runner.toLowerCase()] || (() => ({
-  evaluationItems: [{ key: 'generic-run', value: true, source: runner }],
-}));
+const logic =
+  runnerLogic[runner] ||
+  runnerLogic[runner.toLowerCase()] ||
+  (() => ({
+    evaluationItems: [{ key: 'generic-run', value: true, source: runner }],
+  }));
 
 const result = logic();
 const finishedAt = nowIso();
@@ -313,9 +344,7 @@ const report = {
   status: 'success',
   startedAt,
   finishedAt,
-  summary: dryRun
-    ? `Dry-run completed for ${runner}`
-    : `Execution completed for ${runner}`,
+  summary: dryRun ? `Dry-run completed for ${runner}` : `Execution completed for ${runner}`,
   metrics: { durationMs },
   artifacts: [
     { name: 'evidence-packet', path: evidenceOut || 'inline', mediaType: 'application/json' },
@@ -342,9 +371,7 @@ writeFileSync(outputPath, JSON.stringify(report, null, 2));
 
 // Write evidence packet separately if requested
 if (evidenceOut) {
-  const evPath = path.isAbsolute(evidenceOut)
-    ? evidenceOut
-    : path.join(process.cwd(), evidenceOut);
+  const evPath = path.isAbsolute(evidenceOut) ? evidenceOut : path.join(process.cwd(), evidenceOut);
   mkdirSync(path.dirname(evPath), { recursive: true });
   writeFileSync(evPath, JSON.stringify(evidencePacket, null, 2));
 }

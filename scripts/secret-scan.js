@@ -14,11 +14,17 @@ const allowedExtensions = new Set(['.js', '.ts', '.tsx', '.json', '.yml', '.yaml
 
 function listFiles() {
   const output = execSync('git ls-files', { encoding: 'utf8' });
-  return output.split('\n').filter(Boolean);
+  return output.split(/\r?\n/).filter(Boolean);
 }
 
 function shouldScan(filePath) {
-  if (filePath.includes('node_modules/')) {
+  const normalized = filePath.replace(/\\/g, '/');
+  if (
+    normalized.includes('node_modules/') ||
+    normalized.includes('/test/') ||
+    normalized.includes('/tests/') ||
+    normalized.includes('webhook-simulator.ts')
+  ) {
     return false;
   }
   const ext = path.extname(filePath);

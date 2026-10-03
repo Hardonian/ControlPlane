@@ -1,9 +1,15 @@
 import { z } from 'zod';
 import { ErrorEnvelope, RetryPolicy } from '../errors/index.js';
 
+/**
+ * Unique identifier for a Job (UUID format).
+ */
 export const JobId = z.string().uuid();
 export type JobId = z.infer<typeof JobId>;
 
+/**
+ * Execution lifecycle states of a Job.
+ */
 export const JobStatus = z.enum([
   'pending',
   'queued',
@@ -15,9 +21,15 @@ export const JobStatus = z.enum([
 ]);
 export type JobStatus = z.infer<typeof JobStatus>;
 
+/**
+ * Priority value for job scheduling (0-100, default: 50).
+ */
 export const JobPriority = z.number().int().min(0).max(100).default(50);
 export type JobPriority = z.infer<typeof JobPriority>;
 
+/**
+ * Contextual provenance and tracing metadata attached to a Job.
+ */
 export const JobMetadata = z.object({
   source: z.string(),
   userId: z.string().optional(),
@@ -31,14 +43,20 @@ export const JobMetadata = z.object({
 });
 export type JobMetadata = z.infer<typeof JobMetadata>;
 
+/**
+ * Payload contents containing type, version, input data, and runner options.
+ */
 export const JobPayload = z.object({
   type: z.string(),
   version: z.string().default('1.0.0'),
-  data: z.record(z.unknown()),
-  options: z.record(z.unknown()).default({}),
+  data: z.record(z.string(), z.unknown()),
+  options: z.record(z.string(), z.unknown()).default({}),
 });
 export type JobPayload = z.infer<typeof JobPayload>;
 
+/**
+ * Inbound job submission specification for JobForge and runners.
+ */
 export const JobRequest = z.object({
   id: JobId,
   type: z.string(),
@@ -57,6 +75,9 @@ export const JobRequest = z.object({
 });
 export type JobRequest = z.infer<typeof JobRequest>;
 
+/**
+ * Output result payload produced when a Job finishes execution.
+ */
 export const JobResult = z.object({
   success: z.boolean(),
   data: z.unknown().optional(),
@@ -72,6 +93,9 @@ export const JobResult = z.object({
 });
 export type JobResult = z.infer<typeof JobResult>;
 
+/**
+ * Canonical lifecycle state representation returned when querying a Job.
+ */
 export const JobResponse = z.object({
   id: JobId,
   status: JobStatus,
@@ -82,6 +106,9 @@ export const JobResponse = z.object({
 });
 export type JobResponse = z.infer<typeof JobResponse>;
 
+/**
+ * Event types emitted across the Job lifecycle timeline.
+ */
 export const JobEventType = z.enum([
   'job.created',
   'job.queued',
@@ -95,12 +122,15 @@ export const JobEventType = z.enum([
 ]);
 export type JobEventType = z.infer<typeof JobEventType>;
 
+/**
+ * Structured audit event recording state changes and progress during job execution.
+ */
 export const JobEvent = z.object({
   id: z.string().uuid(),
   type: JobEventType,
   jobId: JobId,
   timestamp: z.string().datetime(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
   metadata: z.object({
     service: z.string(),
     version: z.string(),
@@ -108,6 +138,9 @@ export const JobEvent = z.object({
 });
 export type JobEvent = z.infer<typeof JobEvent>;
 
+/**
+ * Message envelope for queuing jobs across message brokers (e.g. Redis, SQS).
+ */
 export const QueueMessage = z.object({
   id: z.string().uuid(),
   jobId: JobId,

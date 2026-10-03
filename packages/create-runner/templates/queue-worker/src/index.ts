@@ -52,7 +52,7 @@ function rateLimit(req: Request, res: Response, next: NextFunction) {
   entry.count += 1;
   if (entry.count > RATE_LIMIT_MAX) {
     const errorEnvelope = createErrorEnvelope({
-      category: 'RATE_LIMIT',
+      category: 'RATE_LIMITED',
       message: 'Too many requests',
       code: 'RATE_LIMIT_EXCEEDED',
     });
@@ -106,28 +106,39 @@ app.post('/execute', async (req, res) => {
   try {
     const job = JobRequest.parse(req.body);
 
-    console.log(`[Job ${job.jobId}] Starting execution`, {
+    console.log(`[Job ${job.id}] Starting execution`, {
       requestId: (req as RequestWithId).requestId,
     });
 
+    const startTime = Date.now();
     // Execute job
-    const result = await executeJob(job);
+    const resultData = await executeJob(job);
+    const durationMs = Date.now() - startTime;
 
     const response = JobResponse.parse({
-      jobId: job.jobId,
+      id: job.id,
       status: 'completed',
-      result,
-      executedAt: new Date().toISOString(),
-      runnerId: RUNNER_ID,
-      contractVersion: CONTRACT_VERSION_CURRENT,
+      request: job,
+      result: {
+        success: true,
+        data: resultData,
+        metadata: {
+          startedAt: new Date(startTime).toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs,
+          attempts: 1,
+          runnerId: RUNNER_ID,
+        },
+      },
+      updatedAt: new Date().toISOString(),
     });
 
-    console.log(`[Job ${job.jobId}] Completed successfully`, {
+    console.log(`[Job ${job.id}] Completed successfully`, {
       requestId: (req as RequestWithId).requestId,
     });
     res.json(response);
   } catch (error) {
-    console.error(`[Job ${req.body.jobId}] Execution failed:`, error, {
+    console.error(`Execution failed:`, error, {
       requestId: (req as RequestWithId).requestId,
     });
 
@@ -138,19 +149,15 @@ app.post('/execute', async (req, res) => {
     });
 
     res.status(500).json({
-      jobId: req.body.jobId,
-      status: 'failed',
       error: errorEnvelope,
-      executedAt: new Date().toISOString(),
-      runnerId: RUNNER_ID,
-      contractVersion: CONTRACT_VERSION_CURRENT,
+      requestId: (req as RequestWithId).requestId,
     });
   }
 });
 
-async function executeJob(job) {
+async function executeJob(job: JobRequest) {
   // Add to active jobs
-  activeJobs.set(job.jobId, { startedAt: Date.now(), job });
+  activeJobs.set(job.id, { startedAt: Date.now(), job });
 
   try {
     // Simulate job execution (replace with actual logic)
@@ -162,7 +169,7 @@ async function executeJob(job) {
       timestamp: new Date().toISOString(),
     };
   } finally {
-    activeJobs.delete(job.jobId);
+    activeJobs.delete(job.id);
   }
 }
 
@@ -204,13 +211,13 @@ async function processQueue() {
         const [, jobData] = result;
         const job = JSON.parse(jobData);
 
-        console.log(`[Queue] Processing job: ${job.jobId}`);
+        console.log(`[Queue] Processing job: ${job.id}`);
 
         // Execute job
         await executeJob(job);
 
         // Acknowledge completion
-        console.log(`[Queue] Job ${job.jobId} completed`);
+        console.log(`[Queue] Job ${job.id} completed`);
       }
     } catch (error) {
       console.error('Queue processing error:', error);

@@ -367,7 +367,12 @@ const run = async () => {
           log('info', 'pipeline', 'Running TruthCore validation', 'truthcore');
           const truthcoreModule = resolveModule('truthcore', 'runner');
           if (!truthcoreModule.available) {
-            log('warn', 'pipeline', `TruthCore not available: ${truthcoreModule.error}`, 'truthcore');
+            log(
+              'warn',
+              'pipeline',
+              `TruthCore not available: ${truthcoreModule.error}`,
+              'truthcore'
+            );
           } else {
             const outputPath = path.join(demoDir, 'truthcore-report.json');
             const result = await runRunner({
@@ -435,12 +440,12 @@ const run = async () => {
             'JobForge'
           );
           results.push({
-              stage: 'connector',
-              runner: 'jobforge',
-              success: false,
-              durationMs: Date.now() - startMs,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            });
+            stage: 'connector',
+            runner: 'jobforge',
+            success: false,
+            durationMs: Date.now() - startMs,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
 
@@ -652,8 +657,7 @@ ${results.some((r) => !r.success) ? '- Run `pnpm controlplane doctor` to diagnos
           const reportData = result.report as Record<string, unknown> | undefined;
           if (reportData && typeof reportData === 'object') {
             const data = (reportData as Record<string, unknown>).data as
-              | Record<string, unknown>
-              | undefined;
+              Record<string, unknown> | undefined;
             if (data && typeof data === 'object' && data.evidence) {
               const evResult = validateEvidencePacket(data.evidence);
               evidenceValid = evResult.valid;
@@ -812,19 +816,27 @@ ${results.some((r) => !r.success) ? '- Run `pnpm controlplane doctor` to diagnos
         { timeoutMs, outputPath }
       );
 
-      console.log(JSON.stringify({
-        runner: result.runner,
-        status: result.report.status,
-        reportValid: result.reportValid,
-        evidenceValid: result.evidenceValid,
-        durationMs: result.durationMs,
-        evidence: result.evidence ? {
-          id: result.evidence.id,
-          hash: result.evidence.hash,
-          decision: result.evidence.decision,
-          itemCount: result.evidence.items.length,
-        } : null,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            runner: result.runner,
+            status: result.report.status,
+            reportValid: result.reportValid,
+            evidenceValid: result.evidenceValid,
+            durationMs: result.durationMs,
+            evidence: result.evidence
+              ? {
+                  id: result.evidence.id,
+                  hash: result.evidence.hash,
+                  decision: result.evidence.decision,
+                  itemCount: result.evidence.items.length,
+                }
+              : null,
+          },
+          null,
+          2
+        )
+      );
     } catch (error) {
       exitWith(2, formatError(error));
     }
@@ -835,19 +847,25 @@ ${results.some((r) => !r.success) ? '- Run `pnpm controlplane doctor` to diagnos
   if (command === 'registry') {
     const registry = buildExecutionRegistry();
 
-    console.log(JSON.stringify({
-      timestamp: registry.timestamp,
-      total: registry.runners.length,
-      executable: registry.executable.length,
-      failed: registry.failed.length,
-      runners: registry.runners.map((r) => ({
-        name: r.name,
-        version: r.version,
-        executable: r.executable,
-        preflight: r.preflight,
-        ...(!r.executable ? { reason: (r as { reason: string }).reason } : {}),
-      })),
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          timestamp: registry.timestamp,
+          total: registry.runners.length,
+          executable: registry.executable.length,
+          failed: registry.failed.length,
+          runners: registry.runners.map((r) => ({
+            name: r.name,
+            version: r.version,
+            executable: r.executable,
+            preflight: r.preflight,
+            ...(!r.executable ? { reason: (r as { reason: string }).reason } : {}),
+          })),
+        },
+        null,
+        2
+      )
+    );
 
     if (registry.failed.length > 0) {
       exitWith(1, `${registry.failed.length} runner(s) failed pre-flight checks.`);

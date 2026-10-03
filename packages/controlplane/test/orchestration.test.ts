@@ -65,9 +65,7 @@ describe('ControlPlane Orchestration', () => {
   // ── Execution Registry ───────────────────────────────────────────────
   describe('Execution Registry', () => {
     it('discovers all expected runners with pre-flight checks', async () => {
-      const { buildExecutionRegistry } = await import(
-        '../src/registry/execution-registry.js'
-      );
+      const { buildExecutionRegistry } = await import('../src/registry/execution-registry.js');
 
       const registry = buildExecutionRegistry();
 
@@ -90,9 +88,7 @@ describe('ControlPlane Orchestration', () => {
     });
 
     it('all required runners pass pre-flight checks', async () => {
-      const { buildExecutionRegistry } = await import(
-        '../src/registry/execution-registry.js'
-      );
+      const { buildExecutionRegistry } = await import('../src/registry/execution-registry.js');
 
       const registry = buildExecutionRegistry();
       const requiredRunners = [
@@ -117,13 +113,9 @@ describe('ControlPlane Orchestration', () => {
     });
 
     it('resolveExecutableRunner fails fast for unknown runner', async () => {
-      const { resolveExecutableRunner } = await import(
-        '../src/registry/execution-registry.js'
-      );
+      const { resolveExecutableRunner } = await import('../src/registry/execution-registry.js');
 
-      expect(() => resolveExecutableRunner('nonexistent-runner')).toThrow(
-        /not found/
-      );
+      expect(() => resolveExecutableRunner('nonexistent-runner')).toThrow(/not found/);
     });
   });
 
@@ -240,10 +232,7 @@ describe('ControlPlane Orchestration', () => {
         const manifest = JSON.parse(content);
         const result = validateRunnerManifest(manifest);
 
-        expect(
-          result.valid,
-          `${name} manifest is invalid: ${result.errors.join(', ')}`
-        ).toBe(true);
+        expect(result.valid, `${name} manifest is invalid: ${result.errors.join(', ')}`).toBe(true);
       }
     });
 

@@ -147,10 +147,12 @@ async function main() {
     try {
       const options = parseArgs();
 
-      childLogger.info('Contract tests started', {
-        format: options.format,
-        verbose: options.verbose,
-      });
+      if (options.format === 'pretty') {
+        childLogger.info('Contract tests started', {
+          format: options.format,
+          verbose: options.verbose,
+        });
+      }
 
       if (process.stdout.isTTY && options.format === 'pretty') {
         console.error(chalk.gray('Running ControlPlane contract tests...\n'));
@@ -165,13 +167,15 @@ async function main() {
 
       const duration = Date.now() - startTime;
 
-      childLogger.info('Contract tests completed', {
-        total: result.passed + result.failed,
-        passed: result.passed,
-        failed: result.failed,
-        duration,
-        success: result.failed === 0,
-      });
+      if (options.format === 'pretty') {
+        childLogger.info('Contract tests completed', {
+          total: result.passed + result.failed,
+          passed: result.passed,
+          failed: result.failed,
+          duration,
+          success: result.failed === 0,
+        });
+      }
 
       let output: string;
       switch (options.format) {

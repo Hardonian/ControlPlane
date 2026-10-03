@@ -25,17 +25,25 @@ const results = [];
 const runAdapter = (runnerName, inputPath, outputPath) => {
   const adapterPath = path.join(repoRoot, 'scripts/adapters/runner-adapter.mjs');
   try {
-    const stdout = execFileSync('node', [
-      adapterPath,
-      '--runner', runnerName,
-      '--input', inputPath,
-      '--out', outputPath,
-      '--format', 'json',
-    ], {
-      cwd: repoRoot,
-      encoding: 'utf-8',
-      timeout: 30000,
-    });
+    const stdout = execFileSync(
+      'node',
+      [
+        adapterPath,
+        '--runner',
+        runnerName,
+        '--input',
+        inputPath,
+        '--out',
+        outputPath,
+        '--format',
+        'json',
+      ],
+      {
+        cwd: repoRoot,
+        encoding: 'utf-8',
+        timeout: 30000,
+      }
+    );
     return { ok: true, stdout };
   } catch (err) {
     return { ok: false, error: err.message };
@@ -79,9 +87,13 @@ const validateAuditTrail = (auditTrail) => {
     const validActions = ['create', 'read', 'update', 'delete', 'evaluate', 'approve', 'reject'];
     for (let i = 0; i < auditTrail.entries.length; i++) {
       const entry = auditTrail.entries[i];
-      if (!isRecord(entry)) { errors.push(`entries[${i}] must be an object`); continue; }
+      if (!isRecord(entry)) {
+        errors.push(`entries[${i}] must be an object`);
+        continue;
+      }
       if (!isString(entry.entryId)) errors.push(`entries[${i}].entryId is required`);
-      if (!isString(entry.action) || !validActions.includes(entry.action)) errors.push(`entries[${i}].action is invalid`);
+      if (!isString(entry.action) || !validActions.includes(entry.action))
+        errors.push(`entries[${i}].action is invalid`);
       if (!isString(entry.actor)) errors.push(`entries[${i}].actor is required`);
       if (!isString(entry.resource)) errors.push(`entries[${i}].resource is required`);
     }
@@ -102,14 +114,21 @@ for (const fixture of fixtures) {
     const adapterResult = runAdapter(connectorName, inputPath, outputPath);
 
     if (!adapterResult.ok) {
-      results.push({ fixture: testName, runner: connectorName, valid: false, errors: [adapterResult.error] });
+      results.push({
+        fixture: testName,
+        runner: connectorName,
+        valid: false,
+        errors: [adapterResult.error],
+      });
       continue;
     }
 
     try {
       const report = JSON.parse(readFileSync(outputPath, 'utf-8'));
       const reportErrors = validateReportStructure(report);
-      const evidenceErrors = report.data?.evidence ? validateEvidence(report.data.evidence) : ['No evidence packet in report'];
+      const evidenceErrors = report.data?.evidence
+        ? validateEvidence(report.data.evidence)
+        : ['No evidence packet in report'];
       const allErrors = [...reportErrors, ...evidenceErrors];
 
       // For aias, also validate audit trail structure
@@ -133,7 +152,12 @@ for (const fixture of fixtures) {
         errors: allErrors.length > 0 ? allErrors : undefined,
       });
     } catch (err) {
-      results.push({ fixture: testName, runner: connectorName, valid: false, errors: [err.message] });
+      results.push({
+        fixture: testName,
+        runner: connectorName,
+        valid: false,
+        errors: [err.message],
+      });
     }
   }
 }
@@ -143,7 +167,9 @@ const failures = results.filter((r) => !r.valid);
 const jsonOutput = process.argv.includes('--json');
 
 if (jsonOutput) {
-  console.log(JSON.stringify({ results, failures: failures.length, total: results.length }, null, 2));
+  console.log(
+    JSON.stringify({ results, failures: failures.length, total: results.length }, null, 2)
+  );
 } else {
   console.log(`\nConnector Harness Test Results\n${'='.repeat(50)}`);
   for (const r of results) {

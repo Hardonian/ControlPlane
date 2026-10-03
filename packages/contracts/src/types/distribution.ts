@@ -1,8 +1,14 @@
 import { z } from 'zod';
 
+/**
+ * Operating distribution mode: open-source standalone ('oss') or managed multi-tenant ('cloud').
+ */
 export const DistributionModeSchema = z.enum(['oss', 'cloud']);
 export type DistributionMode = z.infer<typeof DistributionModeSchema>;
 
+/**
+ * Enterprise/Cloud-only feature toggles governed by license and distribution config.
+ */
 export const CloudFeatureFlagsSchema = z
   .object({
     managedHosting: z.boolean(),
@@ -18,6 +24,9 @@ export const CloudFeatureFlagsSchema = z
 
 export type CloudFeatureFlags = z.infer<typeof CloudFeatureFlagsSchema>;
 
+/**
+ * Root feature flag container schema.
+ */
 export const FeatureFlagsSchema = z
   .object({
     cloud: CloudFeatureFlagsSchema,
@@ -26,6 +35,9 @@ export const FeatureFlagsSchema = z
 
 export type FeatureFlags = z.infer<typeof FeatureFlagsSchema>;
 
+/**
+ * Pluggable extension points enabled in this environment.
+ */
 export const ExtensionPointsSchema = z
   .object({
     runners: z.boolean(),
@@ -38,6 +50,9 @@ export const ExtensionPointsSchema = z
 
 export type ExtensionPoints = z.infer<typeof ExtensionPointsSchema>;
 
+/**
+ * Authoritative distribution configuration schema verifying OSS and cloud feature boundaries.
+ */
 export const DistributionConfigSchema = z
   .object({
     mode: DistributionModeSchema,

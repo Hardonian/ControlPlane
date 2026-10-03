@@ -1,6 +1,6 @@
 # Compatibility Matrix
 
-> **Generated**: 2026-02-04T02:54:41.666Z
+> **Generated**: 2026-10-03T16:09:16.845Z
 > **Contract Version**: 1.0.0
 
 ## Current Component Versions
@@ -8,10 +8,14 @@
 | Component | Version | Contract Range | Status | Location |
 |-------------|---------|----------------|--------|----------|
 | @controlplane/benchmark | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/benchmark |
+| @controlplane/contract-kit | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/contract-kit |
 | @controlplane/contract-test-kit | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/contract-test-kit |
 | @controlplane/contracts | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/contracts |
+| @controlplane/controlplane | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/controlplane |
 | @controlplane/create-runner | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/create-runner |
+| @controlplane/integration-tests | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/integration-tests |
 | @controlplane/observability | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/observability |
+| @controlplane/optimization-utils | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/optimization-utils |
 | @controlplane/sdk-generator | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | packages/sdk-generator |
 | @controlplane/orchestrator | 1.0.0 | 1.0.0 - <2.0.0 | ✅ active | root |
 
@@ -20,10 +24,14 @@
 | Component | Compatible Contract Versions |
 |-------------|------------------------------|
 | @controlplane/benchmark | 1.0.0 <= version < 2.0.0 |
+| @controlplane/contract-kit | 1.0.0 <= version < 2.0.0 |
 | @controlplane/contract-test-kit | 1.0.0 <= version < 2.0.0 |
 | @controlplane/contracts | 1.0.0 <= version < 2.0.0 |
+| @controlplane/controlplane | 1.0.0 <= version < 2.0.0 |
 | @controlplane/create-runner | 1.0.0 <= version < 2.0.0 |
+| @controlplane/integration-tests | 1.0.0 <= version < 2.0.0 |
 | @controlplane/observability | 1.0.0 <= version < 2.0.0 |
+| @controlplane/optimization-utils | 1.0.0 <= version < 2.0.0 |
 | @controlplane/sdk-generator | 1.0.0 <= version < 2.0.0 |
 | @controlplane/orchestrator | 1.0.0 <= version < 2.0.0 |
 

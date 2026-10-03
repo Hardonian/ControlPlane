@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
+import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig, normalizeDef } from '../core.js';
 
 export function generateTypeScriptSDK(
   schemas: SchemaDefinition[],
@@ -50,7 +50,7 @@ export function generateTypeScriptSDK(
       test: 'vitest run',
     },
     dependencies: {
-      zod: '^3.22.4',
+      zod: '^4.5.4',
     },
     devDependencies: {
       '@types/node': '^20.10.0',
@@ -125,130 +125,118 @@ function generateZodSchemaCode(schema: SchemaDefinition): string[] {
 function generateZodDefinition(schema: z.ZodTypeAny, depth = 0): string {
   if (!schema) return 'z.any()';
 
-  // Handle Zod types
-  if (schema._def) {
-    const def = schema._def as {
-      typeName?: string;
-      checks?: Array<{ kind: string; value?: number; inclusive?: boolean }>;
-      innerType?: z.ZodTypeAny;
-      type?: z.ZodTypeAny;
-      shape?: () => Record<string, z.ZodTypeAny>;
-      valueType?: z.ZodTypeAny;
-      values?: string[];
-      options?: z.ZodTypeAny[];
-      schema?: z.ZodTypeAny;
-      getter?: () => z.ZodTypeAny;
-      defaultValue?: () => unknown;
-    };
-    const typeName = def.typeName;
+  const def = normalizeDef(schema);
+  const typeName = def.typeName;
 
-    switch (typeName) {
-      case 'ZodString': {
-        let str = 'z.string()';
-        if (def.checks) {
-          for (const check of def.checks) {
-            switch (check.kind) {
-              case 'min':
-                str += `.min(${check.value})`;
-                break;
-              case 'max':
-                str += `.max(${check.value})`;
-                break;
-              case 'email':
-                str += '.email()';
-                break;
-              case 'uuid':
-                str += '.uuid()';
-                break;
-              case 'url':
-                str += '.url()';
-                break;
-              case 'datetime':
-                str += '.datetime()';
-                break;
-            }
+  switch (typeName) {
+    case 'ZodString': {
+      let str = 'z.string()';
+      if (def.checks) {
+        for (const check of def.checks) {
+          switch (check.kind) {
+            case 'min':
+              str += `.min(${check.value})`;
+              break;
+            case 'max':
+              str += `.max(${check.value})`;
+              break;
+            case 'email':
+              str += '.email()';
+              break;
+            case 'uuid':
+              str += '.uuid()';
+              break;
+            case 'url':
+              str += '.url()';
+              break;
+            case 'datetime':
+              str += '.datetime()';
+              break;
           }
         }
-        return str;
       }
-
-      case 'ZodNumber': {
-        let num = 'z.number()';
-        if (def.checks) {
-          for (const check of def.checks) {
-            switch (check.kind) {
-              case 'min':
-                if (check.inclusive) num += `.min(${check.value})`;
-                break;
-              case 'max':
-                if (check.inclusive) num += `.max(${check.value})`;
-                break;
-              case 'int':
-                num += '.int()';
-                break;
-            }
-          }
-        }
-        return num;
-      }
-
-      case 'ZodBoolean':
-        return 'z.boolean()';
-
-      case 'ZodNull':
-        return 'z.null()';
-
-      case 'ZodOptional':
-        return `${generateZodDefinition(def.innerType ?? schema, depth)}.optional()`;
-
-      case 'ZodDefault': {
-        const inner = generateZodDefinition(def.innerType ?? schema, depth);
-        const defaultValue = JSON.stringify(def.defaultValue?.());
-        return `${inner}.default(${defaultValue})`;
-      }
-
-      case 'ZodArray':
-        return `z.array(${generateZodDefinition(def.type ?? schema, depth)})`;
-
-      case 'ZodObject': {
-        const shape = def.shape?.() ?? {};
-        const entries = Object.entries(shape)
-          .map(([key, val]) => `  ${key}: ${generateZodDefinition(val, depth + 1)}`)
-          .join(',\n');
-        return `z.object({\n${entries}\n})`;
-      }
-
-      case 'ZodRecord':
-        return `z.record(${generateZodDefinition(def.valueType ?? schema, depth)})`;
-
-      case 'ZodEnum': {
-        const values = (def.values ?? []).map((v) => `'${v}'`).join(', ');
-        return `z.enum([${values}])`;
-      }
-
-      case 'ZodUnion':
-      case 'ZodDiscriminatedUnion': {
-        const options = (def.options ?? [])
-          .map((opt) => generateZodDefinition(opt, depth))
-          .join(', ');
-        return `z.union([${options}])`;
-      }
-
-      case 'ZodEffects':
-        return generateZodDefinition(def.schema ?? schema, depth);
-
-      case 'ZodLazy':
-        return generateZodDefinition(def.getter?.() ?? schema, depth);
-
-      case 'ZodUnknown':
-        return 'z.unknown()';
-
-      case 'ZodAny':
-        return 'z.any()';
-
-      default:
-        return 'z.any()';
+      return str;
     }
+
+    case 'ZodNumber': {
+      let num = 'z.number()';
+      if (def.checks) {
+        for (const check of def.checks) {
+          switch (check.kind) {
+            case 'min':
+              if (check.inclusive) num += `.min(${check.value})`;
+              break;
+            case 'max':
+              if (check.inclusive) num += `.max(${check.value})`;
+              break;
+            case 'int':
+              num += '.int()';
+              break;
+          }
+        }
+      }
+      return num;
+    }
+
+    case 'ZodBoolean':
+      return 'z.boolean()';
+
+    case 'ZodNull':
+      return 'z.null()';
+
+    case 'ZodOptional':
+      return `${generateZodDefinition(def.innerType ?? schema, depth)}.optional()`;
+
+    case 'ZodDefault': {
+      const inner = generateZodDefinition(def.innerType ?? schema, depth);
+      const defaultValue = JSON.stringify(def.defaultValue?.());
+      return `${inner}.default(${defaultValue})`;
+    }
+
+    case 'ZodArray':
+      return `z.array(${generateZodDefinition(def.type ?? schema, depth)})`;
+
+    case 'ZodObject': {
+      const shape = def.shape?.() ?? {};
+      const entries = Object.entries(shape)
+        .map(([key, val]) => `  ${key}: ${generateZodDefinition(val, depth + 1)}`)
+        .join(',\n');
+      return `z.object({\n${entries}\n})`;
+    }
+
+    case 'ZodRecord': {
+      const keyDef = def.keyType ? generateZodDefinition(def.keyType, depth) : 'z.string()';
+      const valDef = generateZodDefinition(def.valueType ?? schema, depth);
+      return `z.record(${keyDef}, ${valDef})`;
+    }
+
+    case 'ZodEnum': {
+      const values = (def.values ?? []).map((v) => `'${v}'`).join(', ');
+      return `z.enum([${values}])`;
+    }
+
+    case 'ZodUnion':
+    case 'ZodDiscriminatedUnion': {
+      const options = (def.options ?? [])
+        .map((opt) => generateZodDefinition(opt, depth))
+        .join(', ');
+      return `z.union([${options}])`;
+    }
+
+    case 'ZodEffects':
+      return generateZodDefinition(def.schema ?? schema, depth);
+
+    case 'ZodLazy':
+      return generateZodDefinition(def.getter?.() ?? schema, depth);
+
+    case 'ZodUnknown':
+      return 'z.unknown()';
+
+    case 'ZodAny':
+      return 'z.any()';
+
+    default:
+      return 'z.any()';
   }
 
   return 'z.any()';

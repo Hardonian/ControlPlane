@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig } from '../core.js';
+import { SchemaDefinition, GeneratedSDK, SDKGeneratorConfig, normalizeDef } from '../core.js';
 
 export function generatePythonSDK(
   schemas: SchemaDefinition[],
@@ -97,23 +97,19 @@ function generatePydanticModelsFile(schemas: SchemaDefinition[]): string {
 
 function generatePydanticModelCode(schema: SchemaDefinition): string[] {
   const lines: string[] = [];
-  const zodDef = schema.schema._def as {
-    typeName?: string;
-    shape?: () => Record<string, z.ZodTypeAny>;
-    values?: string[];
-  };
+  const zodDef = normalizeDef(schema.schema);
 
   lines.push(`class ${schema.name}(BaseModel):`);
   lines.push(`    """${schema.category} schema: ${schema.name}"""`);
 
-  if (zodDef?.typeName === 'ZodObject') {
+  if (zodDef.typeName === 'ZodObject') {
     const shape = zodDef.shape?.() ?? {};
     const requiredFields: string[] = [];
 
     // First pass: collect required fields
     for (const [key, val] of Object.entries(shape)) {
-      const fieldDef = (val as z.ZodTypeAny)._def as { typeName?: string };
-      if (fieldDef?.typeName !== 'ZodOptional' && fieldDef?.typeName !== 'ZodDefault') {
+      const fieldDef = normalizeDef(val);
+      if (fieldDef.typeName !== 'ZodOptional' && fieldDef.typeName !== 'ZodDefault') {
         requiredFields.push(key);
       }
     }
@@ -133,13 +129,9 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
     // Generate fields
     for (const [key, val] of Object.entries(shape)) {
       const fieldType = zodToPythonType(val as z.ZodTypeAny);
-      const fieldDef = (val as z.ZodTypeAny)._def as {
-        typeName?: string;
-        defaultValue?: () => unknown;
-      };
-      const isOptional =
-        fieldDef?.typeName === 'ZodOptional' || fieldDef?.typeName === 'ZodDefault';
-      const hasDefault = fieldDef?.typeName === 'ZodDefault';
+      const fieldDef = normalizeDef(val);
+      const isOptional = fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
+      const hasDefault = fieldDef.typeName === 'ZodDefault';
 
       let fieldLine = `    ${key}: ${fieldType}`;
 
@@ -152,9 +144,9 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
 
       lines.push(fieldLine);
     }
-  } else if (zodDef?.typeName === 'ZodEnum') {
+  } else if (zodDef.typeName === 'ZodEnum') {
     // Handle enum as Literal type
-    const values = zodDef.values as string[];
+    const values = zodDef.values ?? [];
     lines.push(`    value: Literal[${values.map((v: string) => `'${v}'`).join(', ')}]`);
   } else {
     lines.push(`    value: Any`);
@@ -164,17 +156,9 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
 }
 
 function zodToPythonType(schema: z.ZodTypeAny): string {
-  if (!schema || !schema._def) return 'Any';
+  if (!schema) return 'Any';
 
-  const def = schema._def as {
-    typeName?: string;
-    checks?: Array<{ kind: string }>;
-    innerType?: z.ZodTypeAny;
-    type?: z.ZodTypeAny;
-    valueType?: z.ZodTypeAny;
-    values?: string[];
-    options?: z.ZodTypeAny[];
-  };
+  const def = normalizeDef(schema);
 
   switch (def.typeName) {
     case 'ZodString':
@@ -225,7 +209,7 @@ function zodToPythonType(schema: z.ZodTypeAny): string {
     }
 
     case 'ZodEnum': {
-      const values = def.values as string[];
+      const values = def.values ?? [];
       return `Literal[${values.map((v: string) => `'${v}'`).join(', ')}]`;
     }
 
@@ -405,8 +389,8 @@ function generatePythonSchemasFile(schemas: SchemaDefinition[]): string {
   lines.push('SCHEMA_REGISTRY: Dict[str, Type[BaseModel]] = {');
 
   for (const schema of schemas) {
-    const zodDef = schema.schema._def;
-    if (zodDef?.typeName === 'ZodObject') {
+    const zodDef = normalizeDef(schema.schema);
+    if (zodDef.typeName === 'ZodObject') {
       lines.push(`    "${schema.name}": models.${schema.name},`);
     }
   }

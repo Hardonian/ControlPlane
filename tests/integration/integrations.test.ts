@@ -5,10 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { validateRunnerManifest } from '@controlplane/contract-kit';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../..'
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const loadManifests = () => {
   const runnersRoot = path.join(repoRoot, 'runners');
@@ -31,12 +28,9 @@ describe('runner manifests', () => {
 
 describe('controlplane CLI', () => {
   it('lists runners via CLI', () => {
-    const cliPath = path.join(
-      repoRoot,
-      'packages/controlplane/dist/cli.js'
-    );
+    const cliPath = path.join(repoRoot, 'packages/controlplane/dist/cli.js');
     const output = execFileSync('node', [cliPath, 'list'], {
-      encoding: 'utf-8'
+      encoding: 'utf-8',
     });
     const parsed = JSON.parse(output);
     expect(Array.isArray(parsed)).toBe(true);
@@ -55,10 +49,7 @@ describe('controlplane SDK', () => {
 
 describe('workflows', () => {
   it('exposes verify-integrations workflow with workflow_call', () => {
-    const workflowPath = path.join(
-      repoRoot,
-      '.github/workflows/verify-integrations.yml'
-    );
+    const workflowPath = path.join(repoRoot, '.github/workflows/verify-integrations.yml');
     const raw = readFileSync(workflowPath, 'utf-8');
     expect(raw).toContain('workflow_call');
   });

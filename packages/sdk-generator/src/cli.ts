@@ -179,6 +179,19 @@ program
           }
         }
 
+        const resolvedOut = path.resolve(config.outputDir);
+        try {
+          if (resolvedOut.endsWith(path.join('packages', 'sdk-generator', 'sdks'))) {
+            const rootSdks = path.resolve(resolvedOut, '../../../sdks');
+            await fs.cp(resolvedOut, rootSdks, { recursive: true });
+          } else if (resolvedOut.endsWith(path.sep + 'sdks') && !resolvedOut.includes('packages')) {
+            const pkgSdks = path.resolve(resolvedOut, 'packages/sdk-generator/sdks');
+            await fs.cp(resolvedOut, pkgSdks, { recursive: true });
+          }
+        } catch {
+          // Non-fatal if mirroring target unavailable
+        }
+
         const duration = Date.now() - startTime;
         childLogger.info('SDK generation completed', {
           duration,

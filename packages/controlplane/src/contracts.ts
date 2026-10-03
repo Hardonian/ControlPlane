@@ -18,8 +18,7 @@ export type RunnerInput = {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-const isNonEmptyString = (v: unknown): v is string =>
-  typeof v === 'string' && v.length > 0;
+const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
 export type InputValidationResult = {
   valid: boolean;

@@ -137,12 +137,22 @@ async function testPackage({ name, dir, pkg }) {
   }
 }
 
-function testCLI({ name, pkg }) {
+function testCLI({
+  name,
+  pkg,
+  dir,
+}: {
+  name: string;
+  pkg: { bin?: Record<string, string> };
+  dir: string;
+}) {
   if (pkg.bin) {
     info(`Testing CLI binaries for: ${name}`);
     for (const [binName, binPath] of Object.entries(pkg.bin)) {
-      const fullPath = path.join(ROOT, 'node_modules', '.bin', binName);
-      if (fs.existsSync(fullPath)) {
+      const rootBin = path.join(ROOT, 'node_modules', '.bin', binName);
+      const rootBinCmd = path.join(ROOT, 'node_modules', '.bin', `${binName}.CMD`);
+      const pkgBin = path.join(dir, binPath);
+      if (fs.existsSync(rootBin) || fs.existsSync(rootBinCmd) || fs.existsSync(pkgBin)) {
         pass(`  ✓ CLI binary exists: ${binName}`);
       } else {
         log(`  ⚠ CLI binary not found: ${binName}`, 'yellow');

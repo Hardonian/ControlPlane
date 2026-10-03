@@ -72,7 +72,12 @@ if (existsSync(runnersDir)) {
       if (manifest.name && manifest.version && manifest.entrypoint) {
         runnerCount++;
       } else {
-        check(`runner:${entry}`, 'warn', 'Incomplete manifest', 'Add required fields to runner.manifest.json');
+        check(
+          `runner:${entry}`,
+          'warn',
+          'Incomplete manifest',
+          'Add required fields to runner.manifest.json'
+        );
       }
     } catch {
       // Not a runner directory
@@ -110,7 +115,12 @@ const fixturePath = path.join(repoRoot, 'tests/fixtures/golden-input.json');
 if (existsSync(fixturePath)) {
   check('golden-fixture', 'ok', 'Golden input fixture present');
 } else {
-  check('golden-fixture', 'warn', 'Missing golden fixture', 'Create tests/fixtures/golden-input.json');
+  check(
+    'golden-fixture',
+    'warn',
+    'Missing golden fixture',
+    'Create tests/fixtures/golden-input.json'
+  );
 }
 
 // 8. Environment variables
@@ -138,14 +148,20 @@ const failures = checks.filter((c) => c.status === 'fail');
 const warnings = checks.filter((c) => c.status === 'warn');
 
 if (jsonOutput) {
-  console.log(JSON.stringify({
-    status: failures.length > 0 ? 'unhealthy' : warnings.length > 0 ? 'degraded' : 'healthy',
-    node: nodeVersion,
-    checks,
-    failures: failures.length,
-    warnings: warnings.length,
-    total: checks.length,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        status: failures.length > 0 ? 'unhealthy' : warnings.length > 0 ? 'degraded' : 'healthy',
+        node: nodeVersion,
+        checks,
+        failures: failures.length,
+        warnings: warnings.length,
+        total: checks.length,
+      },
+      null,
+      2
+    )
+  );
 } else {
   console.log(`\nControlPlane Doctor\n${'='.repeat(50)}`);
   for (const c of checks) {
@@ -157,7 +173,9 @@ if (jsonOutput) {
     }
   }
   const status = failures.length > 0 ? 'UNHEALTHY' : warnings.length > 0 ? 'DEGRADED' : 'HEALTHY';
-  console.log(`\nStatus: ${status} (${checks.length} checks, ${failures.length} failures, ${warnings.length} warnings)\n`);
+  console.log(
+    `\nStatus: ${status} (${checks.length} checks, ${failures.length} failures, ${warnings.length} warnings)\n`
+  );
 }
 
 process.exit(failures.length > 0 ? 1 : 0);

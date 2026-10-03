@@ -7,7 +7,29 @@ const JOBFORGE_URL = process.env.JOBFORGE_URL || 'http://localhost:3002';
 const RUNNER_URL = process.env.RUNNER_URL || 'http://localhost:3003';
 
 test.describe('Performance Benchmarks', () => {
+  let servicesAvailable = false;
+
+  test.beforeAll(async () => {
+    try {
+      const checks = await Promise.all([
+        fetch(`${TRUTHCORE_URL}/health`, { signal: AbortSignal.timeout(1500) })
+          .then((r) => r.ok)
+          .catch(() => false),
+        fetch(`${JOBFORGE_URL}/health`, { signal: AbortSignal.timeout(1500) })
+          .then((r) => r.ok)
+          .catch(() => false),
+        fetch(`${RUNNER_URL}/health`, { signal: AbortSignal.timeout(1500) })
+          .then((r) => r.ok)
+          .catch(() => false),
+      ]);
+      servicesAvailable = checks.every(Boolean);
+    } catch {
+      servicesAvailable = false;
+    }
+  });
+
   test('job throughput benchmark', async () => {
+    test.skip(!servicesAvailable, 'Local mock services on ports 3001-3003 are not running');
     const config: BenchmarkConfig = {
       name: 'Job Throughput Test',
       description: 'Test job submission throughput',
@@ -53,6 +75,7 @@ test.describe('Performance Benchmarks', () => {
   });
 
   test('end-to-end latency benchmark', async () => {
+    test.skip(!servicesAvailable, 'Local mock services on ports 3001-3003 are not running');
     const config: BenchmarkConfig = {
       name: 'E2E Latency Test',
       description: 'Test end-to-end job execution latency',
@@ -97,6 +120,7 @@ test.describe('Performance Benchmarks', () => {
   });
 
   test('health check performance benchmark', async () => {
+    test.skip(!servicesAvailable, 'Local mock services on ports 3001-3003 are not running');
     const config: BenchmarkConfig = {
       name: 'Health Check Performance Test',
       description: 'Test health endpoint response times',

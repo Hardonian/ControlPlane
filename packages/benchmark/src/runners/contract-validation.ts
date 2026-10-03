@@ -358,7 +358,9 @@ export class ContractValidationRunner extends BenchmarkRunner {
     const truthAssertions = this.buildDataPool(poolSize, (index) =>
       this.generateTruthAssertion(index, ids[index], timestamps[index])
     );
-    const truthQueries = this.buildDataPool(poolSize, (index) => this.generateTruthQuery(index));
+    const truthQueries = this.buildDataPool(poolSize, (index) =>
+      this.generateTruthQuery(index, ids[index])
+    );
     const errorEnvelopes = this.buildDataPool(poolSize, (index) =>
       this.generateErrorEnvelope(index, ids[index], timestamps[index])
     );
@@ -448,9 +450,9 @@ export class ContractValidationRunner extends BenchmarkRunner {
     };
   }
 
-  private generateTruthQuery(index: number) {
+  private generateTruthQuery(index: number, id: string) {
     return {
-      id: `benchmark-query-${index}`,
+      id,
       pattern: {
         subject: `benchmark-${index % 100}`,
         predicate: 'benchmark.test',
