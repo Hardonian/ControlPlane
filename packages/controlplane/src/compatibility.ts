@@ -41,10 +41,16 @@ const CONTRACT_VERSION = '1.0.0';
 
 const checkCommandExists = (cmd: string): boolean => {
   try {
-    execSync(`which ${cmd}`, { stdio: 'pipe', encoding: 'utf-8' });
+    const checkCmd = process.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
+    execSync(checkCmd, { stdio: 'pipe', encoding: 'utf-8' });
     return true;
   } catch {
-    return false;
+    try {
+      execSync(`${cmd} --version`, { stdio: 'pipe', encoding: 'utf-8' });
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
 

@@ -24,7 +24,11 @@ program
   .description('Scaffold a new ControlPlane runner')
   .version(PACKAGE_VERSION)
   .argument('<name>', 'Name of the runner (e.g., my-runner)')
-  .option('-t, --template <type>', 'Template type: queue-worker, http-connector', 'queue-worker')
+  .option(
+    '-t, --template <type>',
+    'Template type: queue-worker, http-connector, webhook-secure',
+    'queue-worker'
+  )
   .option('-d, --directory <path>', 'Target directory', '.')
   .option('-i, --interactive', 'Interactive mode', false)
   .option('--skip-install', 'Skip dependency installation', false)
@@ -103,6 +107,7 @@ async function createRunner(name: string, options: RunnerOptions) {
         choices: [
           { name: 'Queue Worker Runner (processes jobs from queue)', value: 'queue-worker' },
           { name: 'HTTP Connector Runner (external API integration)', value: 'http-connector' },
+          { name: 'Webhook Secure Runner (hardened webhook receiver)', value: 'webhook-secure' },
         ],
         default: template,
       },
@@ -137,7 +142,9 @@ async function createRunner(name: string, options: RunnerOptions) {
   // Validate template
   const templateDir = join(TEMPLATES_DIR, template);
   if (!existsSync(templateDir)) {
-    throw new Error(`Template "${template}" not found. Available: queue-worker, http-connector`);
+    throw new Error(
+      `Template "${template}" not found. Available: queue-worker, http-connector, webhook-secure`
+    );
   }
 
   // Check if directory exists
@@ -168,6 +175,7 @@ async function createRunner(name: string, options: RunnerOptions) {
 
   // Generate additional files
   generateCapabilityMetadata(targetDir, runnerConfig);
+  generateRunnerManifest(targetDir, runnerConfig);
   generateContractTests(targetDir, runnerConfig);
   generateCIWorkflow(targetDir, runnerConfig);
   generateDocs(targetDir, runnerConfig);
@@ -299,6 +307,24 @@ function generateCapabilityMetadata(targetDir: string, config: RunnerConfig) {
   );
 }
 
+function generateRunnerManifest(targetDir: string, config: RunnerConfig) {
+  const manifest = {
+    name: config.name,
+    version: config.version,
+    description: config.description,
+    entrypoint: {
+      command: 'node',
+      args: ['dist/index.js'],
+    },
+    capabilities: config.capabilities,
+    requiredEnv: [],
+    outputs: ['report'],
+    docs: 'README.md',
+  };
+
+  writeFileSync(join(targetDir, 'runner.manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+}
+
 function generateContractTests(targetDir: string, config: RunnerConfig) {
   const testsDir = join(targetDir, 'test');
   mkdirSync(testsDir, { recursive: true });
@@ -315,14 +341,17 @@ describe('${config.name} Contract Tests', () => {
   describe('JobRequest Schema', () => {
     it('validates valid job request', () => {
       const valid = {
-        jobId: '550e8400-e29b-41d4-a716-446655440000',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         type: 'test-job',
-        payload: { test: true },
-        priority: 1,
-        maxRetries: 3,
-        timeout: 60000,
-        createdAt: new Date().toISOString(),
-        contractVersion: CONTRACT_VERSION_CURRENT,
+        priority: 50,
+        payload: {
+          type: 'test-job-payload',
+          data: { test: true },
+        },
+        metadata: {
+          source: 'runner-test',
+          createdAt: new Date().toISOString(),
+        },
       };
       
       const result = JobRequest.safeParse(valid);
@@ -336,10 +365,11 @@ describe('${config.name} Contract Tests', () => {
         id: '550e8400-e29b-41d4-a716-446655440000',
         name: '${config.name}',
         version: '${config.version}',
+        description: '${config.description}',
         supportedJobTypes: ['test-job'],
-        maxConcurrentJobs: 10,
-        features: ${JSON.stringify(config.capabilities)},
-        contractVersion: CONTRACT_VERSION_CURRENT,
+        maxConcurrency: 10,
+        inputSchema: { type: 'object' },
+        outputSchema: { type: 'object' },
       };
       
       const result = RunnerCapability.safeParse(capability);

@@ -150,31 +150,42 @@ app.post('/execute', async (req, res) => {
   try {
     const job = JobRequest.parse(req.body);
 
-    console.log(`[Job ${job.jobId}] Starting execution`, {
+    console.log(`[Job ${job.id}] Starting execution`, {
       requestId: (req as RequestWithId).requestId,
     });
 
+    const startTime = Date.now();
     // Add to active jobs
-    activeJobs.set(job.jobId, { startedAt: Date.now(), job });
+    activeJobs.set(job.id, { startedAt: startTime, job });
 
     // Execute job by calling external API
-    const result = await executeWithExternalAPI(job);
+    const resultData = await executeWithExternalAPI(job);
+    const durationMs = Date.now() - startTime;
 
     const response = JobResponse.parse({
-      jobId: job.jobId,
+      id: job.id,
       status: 'completed',
-      result,
-      executedAt: new Date().toISOString(),
-      runnerId: RUNNER_ID,
-      contractVersion: CONTRACT_VERSION_CURRENT,
+      request: job,
+      result: {
+        success: true,
+        data: resultData,
+        metadata: {
+          startedAt: new Date(startTime).toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs,
+          attempts: 1,
+          runnerId: RUNNER_ID,
+        },
+      },
+      updatedAt: new Date().toISOString(),
     });
 
-    console.log(`[Job ${job.jobId}] Completed successfully`, {
+    console.log(`[Job ${job.id}] Completed successfully`, {
       requestId: (req as RequestWithId).requestId,
     });
     res.json(response);
   } catch (error) {
-    console.error(`[Job ${req.body.jobId}] Execution failed:`, error, {
+    console.error(`Execution failed:`, error, {
       requestId: (req as RequestWithId).requestId,
     });
 
@@ -185,19 +196,17 @@ app.post('/execute', async (req, res) => {
     });
 
     res.status(500).json({
-      jobId: req.body.jobId,
-      status: 'failed',
       error: errorEnvelope,
-      executedAt: new Date().toISOString(),
-      runnerId: RUNNER_ID,
-      contractVersion: CONTRACT_VERSION_CURRENT,
+      requestId: (req as RequestWithId).requestId,
     });
   } finally {
-    activeJobs.delete(req.body.jobId);
+    if (req.body?.id) {
+      activeJobs.delete(req.body.id);
+    }
   }
 });
 
-async function executeWithExternalAPI(job) {
+async function executeWithExternalAPI(job: JobRequest) {
   const start = Date.now();
 
   try {
