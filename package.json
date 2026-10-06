@@ -8,7 +8,7 @@
     "install:all": "pnpm install",
     "build": "turbo run build",
     "build:contracts": "pnpm --filter @controlplane/contracts build",
-    "build:test-kit": "pnpm --filter @controlplane/contract-test-kit build",
+    "build:test-kit": "pnpm --filter @controlplane/contract-test-kit... build",
     "dev": "turbo run dev --parallel",
     "dev:stack": "docker-compose up -d && pnpm run wait:healthy",
     "dev:stack:logs": "docker-compose up",
@@ -196,7 +196,16 @@
       "postcss@<=8.5.17": ">=8.5.18",
       "fast-uri@>=3.0.0 <=3.1.0": ">=3.1.1",
       "fast-uri@>=3.0.0 <=3.1.1": ">=3.1.2",
-      "fast-uri@>=3.0.0 <3.1.3": ">=3.1.3"
+      "fast-uri@>=3.0.0 <3.1.3": ">=3.1.3",
+      "brace-expansion@>=4.0.0 <5.0.12": "5.0.12",
+      "undici@>=7.0.0 <7.29.1": "7.29.1",
+      "undici@>=6.0.0 <6.28.1": "6.28.1",
+      "fast-uri": "4.1.5",
+      "js-yaml@>=5.0.0 <5.4.1": "5.4.1",
+      "fast-copy@<4.1.0": "4.1.2"
+    },
+    "auditConfig": {
+      "ignoreCves": ["CVE-2026-93687"]
     }
   }
 }

@@ -41,6 +41,12 @@ overrides:
   fast-uri@>=3.0.0 <=3.1.0: '>=3.1.1'
   fast-uri@>=3.0.0 <=3.1.1: '>=3.1.2'
   fast-uri@>=3.0.0 <3.1.3: '>=3.1.3'
+  brace-expansion@>=4.0.0 <5.0.12: 5.0.12
+  undici@>=7.0.0 <7.29.1: 7.29.1
+  undici@>=6.0.0 <6.28.1: 6.28.1
+  fast-uri: 4.1.5
+  js-yaml@>=5.0.0 <5.4.1: 5.4.1
+  fast-copy@<4.1.0: 4.1.2
 
 importers:
 
@@ -50,8 +56,8 @@ importers:
         specifier: ^21.2.2
         version: 21.2.2(@types/node@26.5.1)(typescript@7.0.2)
       '@commitlint/config-conventional':
-        specifier: ^21.2.2
-        version: 21.2.2
+        specifier: ^21.2.3
+        version: 21.2.3
       '@controlplane/benchmark':
         specifier: workspace:*
         version: link:packages/benchmark
@@ -80,7 +86,7 @@ importers:
         specifier: ^9.1.7
         version: 9.1.7
       lint-staged:
-        specifier: ^17.6.0
+        specifier: ^17.5.1
         version: 17.6.0
       prettier:
         specifier: ^3.9.9
@@ -403,7 +409,7 @@ packages:
     resolution: {integrity: sha512-+Nvd1ImaOZBSoPbsUtEhv+1z99H12xzncCkz0a3RuehINE81FZSe2QTj3uvAPTcJX/SCzUQHQ0D1GrPMbrPitg==}
     dependencies:
       tunnel: 0.0.6
-      undici: 6.28.0
+      undici: 6.28.1
     dev: true
 
   /@actions/io@3.0.2:
@@ -1114,7 +1120,7 @@ packages:
       globals: 13.24.0
       ignore: 5.3.2
       import-fresh: 3.3.1
-      js-yaml: 5.4.0
+      js-yaml: 5.4.1
       minimatch: 10.2.6
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
@@ -1958,7 +1964,7 @@ packages:
       p-filter: 4.1.0
       semantic-release: 25.0.9(typescript@7.0.2)
       tinyglobby: 0.2.17
-      undici: 7.29.0
+      undici: 7.29.1
       url-join: 5.0.0
     transitivePeerDependencies:
       - kerberos
@@ -2575,7 +2581,7 @@ packages:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 4.1.3
+      fast-uri: 4.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
     dev: true
@@ -2667,8 +2673,8 @@ packages:
     resolution: {integrity: sha512-VHiNCbI1lKdl44tGrhNfU3lup0Tj/ZBMJB5/2ZbNXRCPuRCO7ed2mgcK4r17y+KB2EfuYuRaVlwNbAeaWGSpbw==}
     dev: true
 
-  /brace-expansion@5.0.9:
-    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
+  /brace-expansion@5.0.12:
+    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
     dependencies:
       balanced-match: 4.0.4
@@ -2958,7 +2964,7 @@ packages:
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
-      js-yaml: 5.4.0
+      js-yaml: 5.4.1
       parse-json: 5.2.0
       typescript: 7.0.2
     dev: true
@@ -3221,7 +3227,7 @@ packages:
       imurmurhash: 0.1.4
       is-glob: 4.0.3
       is-path-inside: 3.0.3
-      js-yaml: 5.4.0
+      js-yaml: 5.4.1
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
@@ -3321,12 +3327,8 @@ packages:
     engines: {node: '>=12.0.0'}
     dev: true
 
-  /fast-copy@3.1.0:
-    resolution: {integrity: sha512-IuCOCDFM1F/s4LtG7Bjr3yUUwPHybyhqN74xk2cMYoP51vVeErMy8+6HGFchi/+45lW8uzhs6lBeEqks2GWt6A==}
-    dev: false
-
-  /fast-copy@4.0.4:
-    resolution: {integrity: sha512-eVAiWVNPSEGIzDl5yPuLrx8fNMogScXvD9xp1Kzd41FjRIz2I3sSIcxsFeM5EzFfHAfobdvs8ZySffUopljvIA==}
+  /fast-copy@4.1.2:
+    resolution: {integrity: sha512-DUHggaYcouhy5I1LacDJ+JDSqGlumVJP2EAi5Nwt1pWPeLpSvIjkrY+x4fsoI1/+GlTyq+DM9zdgWCFSfqNODA==}
     dev: false
 
   /fast-deep-equal@3.1.3:
@@ -3371,8 +3373,8 @@ packages:
       fast-string-truncated-width: 3.0.3
     dev: false
 
-  /fast-uri@4.1.3:
-    resolution: {integrity: sha512-7+72G6vLt7jjNas8SmSATx2qeyRIjxeqO3i4IkmDTxlqYZRKANhOe1bnovcp4WZmvsYrp60WyqPyHqgRiX0yXw==}
+  /fast-uri@4.1.5:
+    resolution: {integrity: sha512-vZeoMRB4epNr7QfdHxel7te/RcX16CxyXI07JCCTFWZA2s4v1azGNESRj+2EoaHSaWFL/Z3GmKT2jF6A202jLg==}
     dev: true
 
   /fast-wrap-ansi@0.2.2:
@@ -3886,8 +3888,8 @@ packages:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
     dev: true
 
-  /js-yaml@5.4.0:
-    resolution: {integrity: sha512-jE7vUJIebKzYQI5xu4co5CRBDlDEYnHrdzsxs4O2giCz4v2SbVMYKpmt1D9L38OKQAeCWmrOTRiCV93u0UkaJA==}
+  /js-yaml@5.4.1:
+    resolution: {integrity: sha512-28R/k+NAjeuf7+CKlTxWZVExJGwVVLwY06DgEnOMz2gEpfNkDcD7QvyiVPT0xy0XXhU8vHsd4Ot42OOPdJG7dQ==}
     hasBin: true
     dependencies:
       argparse: 2.0.1
@@ -4227,7 +4229,7 @@ packages:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
     engines: {node: 18 || 20 || >=22}
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   /minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
@@ -4640,7 +4642,7 @@ packages:
     dependencies:
       colorette: 2.0.20
       dateformat: 4.6.3
-      fast-copy: 3.1.0
+      fast-copy: 4.1.2
       fast-safe-stringify: 2.1.1
       help-me: 5.0.0
       joycon: 3.1.1
@@ -4660,7 +4662,7 @@ packages:
     dependencies:
       colorette: 2.0.20
       dateformat: 4.6.3
-      fast-copy: 4.0.4
+      fast-copy: 4.1.2
       fast-safe-stringify: 2.1.1
       help-me: 5.0.0
       joycon: 3.1.1
@@ -5661,13 +5663,13 @@ packages:
   /undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
-  /undici@6.28.0:
-    resolution: {integrity: sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA==}
+  /undici@6.28.1:
+    resolution: {integrity: sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA==}
     engines: {node: '>=18.17'}
     dev: true
 
-  /undici@7.29.0:
-    resolution: {integrity: sha512-IDxfleLmmbSskfWSUATiN1nfn2rDuvnMOqb5CWR92iIfojA0Ud+ulOAAEQ57LPr9rWmsreUyf5lwyao+7GNNVw==}
+  /undici@7.29.1:
+    resolution: {integrity: sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q==}
     engines: {node: '>=20.18.1'}
     dev: true
 
