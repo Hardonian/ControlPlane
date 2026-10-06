@@ -176,7 +176,7 @@ jobs:
           fetch-depth: 0
 
       - name: Lint commits
-        uses: wagoid/commitlint-github-action@5a3f0e3e3c5ff2b47c86f0cf0ad1a9d90a4bb3e9 # v6.0.1
+        uses: wagoid/commitlint-github-action@7f0a61df502599e1f1f50880aaa7ec1e2c0592f2 # v6.0.1
 
   # Unit tests
   test:

@@ -40,7 +40,7 @@ jobs:
       - name: Check pinned actions
         run: |
           echo "🔒 Checking for pinned GitHub Actions..."
-          if grep -r "uses:.*@main\|uses:.*@master" .github/workflows/*.yml 2>/dev/null; then
+          if grep -rE '^[[:space:]]*(-[[:space:]]*)?uses:[[:space:]]+[^[:space:]]+@(main|master)([[:space:]]|$)' .github/workflows/*.yml 2>/dev/null; then
             echo "❌ Found unpinned actions (main/master)"
             exit 1
           fi
