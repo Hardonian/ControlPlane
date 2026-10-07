@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/inquirer": "^9.0.7",
+    "@types/inquirer": "^9.0.10",
     "@types/node": "^26.5.1",
     "eslint": "^8.55.0",
     "typescript": "^7.0.2",
