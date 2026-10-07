@@ -45,46 +45,55 @@ jobs:
       - name: Build test kit
         run: pnpm run build:test-kit
 
+      - name: Build packages
+        run: pnpm run build
+
       - name: Install Playwright
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Start stack
         run: |
-          # Create mock service placeholders for E2E testing
+          # This repository ships contracts and tooling only (no runtime
+          # services), so the E2E stack runs the committed reference mocks in
+          # tests/mocks/mock-server.cjs. They implement the minimal API surface
+          # the E2E specs exercise (job lifecycle, truth assert/query, health)
+          # and answer with contract-valid payloads.
           mkdir -p services/truthcore services/jobforge services/runner-example
-          
-          # Create minimal mock Dockerfiles for CI
+          for svc in truthcore jobforge runner-example; do
+            cp tests/mocks/mock-server.cjs "services/${svc}/server.cjs"
+          done
+
           cat > services/truthcore/Dockerfile << 'EOF'
           FROM node:20-alpine
           WORKDIR /app
-          RUN echo '{"name":"truthcore","version":"1.0.0","main":"server.js"}' > package.json
-          RUN echo 'const http = require("http"); const s = http.createServer((req,res)=>{if(req.url==="/health"){res.writeHead(200);res.end(JSON.stringify({status:"healthy"}));}else{res.writeHead(404);res.end();}}); s.listen(3000);' > server.js
-          CMD ["node", "server.js"]
+          RUN apk add --no-cache curl
+          COPY server.cjs .
+          ENV SERVICE_ROLE=truthcore
+          CMD ["node", "server.cjs"]
           EXPOSE 3000
           EOF
-          
+
           cat > services/jobforge/Dockerfile << 'EOF'
           FROM node:20-alpine
           WORKDIR /app
-          RUN echo '{"name":"jobforge","version":"1.0.0","main":"server.js"}' > package.json
-          RUN echo 'const http = require("http"); const s = http.createServer((req,res)=>{if(req.url==="/health"){res.writeHead(200);res.end(JSON.stringify({status:"healthy"}));}else{res.writeHead(404);res.end();}}); s.listen(3000);' > server.js
-          CMD ["node", "server.js"]
+          RUN apk add --no-cache curl
+          COPY server.cjs .
+          ENV SERVICE_ROLE=jobforge
+          CMD ["node", "server.cjs"]
           EXPOSE 3000
           EOF
-          
+
           cat > services/runner-example/Dockerfile << 'EOF'
           FROM node:20-alpine
           WORKDIR /app
-          RUN echo '{"name":"runner","version":"1.0.0","main":"server.js"}' > package.json
-          RUN echo 'const http = require("http"); const s = http.createServer((req,res)=>{if(req.url==="/health"){res.writeHead(200);res.end(JSON.stringify({status:"healthy"}));}else{res.writeHead(404);res.end();}}); s.listen(3000);' > server.js
-          CMD ["node", "server.js"]
+          RUN apk add --no-cache curl
+          COPY server.cjs .
+          ENV SERVICE_ROLE=runner
+          CMD ["node", "server.cjs"]
           EXPOSE 3000
           EOF
-          
-          # Add curl to images for health checks
-          sed -i 's/FROM node:20-alpine/FROM node:20-alpine\nRUN apk add --no-cache curl/' services/*/Dockerfile
-          
-          docker-compose up -d --build
+
+          docker compose up -d --build
           sleep 15
 
       - name: Wait for services
@@ -100,7 +109,7 @@ jobs:
             sleep 5
           done
           echo "Services failed to become healthy"
-          docker-compose logs
+          docker compose logs
           exit 1
 
       - name: Run smoke tests
@@ -115,7 +124,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
 
       - name: Upload test results
         if: failure()

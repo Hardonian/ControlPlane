@@ -119,6 +119,16 @@ jobs:
     name: CodeQL Analysis (SAST)
     runs-on: ubuntu-latest
     needs: security-audit
+    # Guarded on purpose: GitHub rejects SARIF uploads from advanced CodeQL
+    # configurations while Code Scanning *default setup* is enabled for the
+    # repository ("CodeQL analyses from advanced configurations cannot be
+    # processed when the default setup is enabled"). Default setup is enabled
+    # and keeps scanning this repo — do NOT disable it to make CI green.
+    #
+    # To run this advanced job instead, disable default setup in
+    # Settings → Code security and analysis → Code scanning, then set the
+    # repository variable ENABLE_ADVANCED_CODEQL=true.
+    if: vars.ENABLE_ADVANCED_CODEQL == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

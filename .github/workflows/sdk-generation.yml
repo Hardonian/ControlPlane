@@ -59,7 +59,7 @@ jobs:
       - name: Compile TypeScript SDK
         run: |
           cd sdks/typescript
-          pnpm install || npm install
+          npm install --no-package-lock
           npm run typecheck --if-present
 
       - name: Validate Python SDK structure
@@ -68,7 +68,7 @@ jobs:
           python -c "
           import ast
           import sys
-          for file in ['controlplane_sdk/__init__.py', 'controlplane_sdk/types.py', 'controlplane_sdk/client.py']:
+          for file in ['controlplane_sdk/__init__.py', 'controlplane_sdk/models.py', 'controlplane_sdk/client.py']:
               try:
                   with open(file, 'r') as f:
                       ast.parse(f.read())
@@ -128,10 +128,10 @@ jobs:
       - name: Run TypeScript SDK smoke test
         run: |
           cd sdks/typescript
-          npm install
+          npm install --no-package-lock
           npm run build --if-present
           node -e "
-          const sdk = require('./dist/index.js');
+          const sdk = require('./dist/index.cjs');
           console.log('SDK loaded successfully');
           console.log('Contract version:', sdk.ContractVersion);
           console.log('Client:', sdk.ControlPlaneClient ? 'available' : 'missing');

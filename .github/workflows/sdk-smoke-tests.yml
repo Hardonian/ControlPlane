@@ -37,7 +37,7 @@ jobs:
 
       - name: Install TypeScript SDK dependencies
         working-directory: sdks/typescript
-        run: npm install
+        run: npm install --no-package-lock
 
       - name: Build TypeScript SDK
         working-directory: sdks/typescript
@@ -51,7 +51,7 @@ jobs:
         working-directory: sdks/typescript
         run: |
           node -e "
-          const sdk = require('./dist/index.js');
+          const sdk = require('./dist/index.cjs');
           console.log('✓ SDK loaded successfully');
           console.log('✓ ContractVersion schema:', typeof sdk.ContractVersionSchema);
           console.log('✓ JobRequest schema:', typeof sdk.JobRequestSchema);
@@ -209,7 +209,11 @@ jobs:
       - name: Smoke test - types compile
         working-directory: sdks/go
         run: |
-          cat > /tmp/smoke_test.go << 'EOF'
+          # NOTE: the smoke program must NOT be named *_test.go — go build
+          # excludes *_test.go files ("no packages to build"). It also lives in
+          # its own subdirectory so the module keeps one package per directory.
+          mkdir -p smokecheck
+          cat > smokecheck/main.go << 'EOF'
           package main
           
           import (
@@ -233,6 +237,5 @@ jobs:
               fmt.Println("Client created successfully")
           }
           EOF
-          cp /tmp/smoke_test.go .
-          go build -o /tmp/smoke_test ./smoke_test.go
-          /tmp/smoke_test
+          go build -o /tmp/smoke_check ./smokecheck
+          /tmp/smoke_check
