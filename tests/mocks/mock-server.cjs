@@ -116,7 +116,10 @@ function validateJobRequest(body) {
     return 'metadata.source is required';
   }
   if (typeof body.metadata.createdAt !== 'string') return 'metadata.createdAt is required';
-  if (body.priority !== undefined && (typeof body.priority !== 'number' || body.priority < 0 || body.priority > 100)) {
+  if (
+    body.priority !== undefined &&
+    (typeof body.priority !== 'number' || body.priority < 0 || body.priority > 100)
+  ) {
     return 'priority must be a number between 0 and 100';
   }
   return null;
@@ -200,10 +203,14 @@ function validateAssertion(body) {
   if (!isPlainObject(body)) return 'request body must be a JSON object';
   if (typeof body.id !== 'string' || !UUID_RE.test(body.id)) return 'id must be a UUID';
   if (typeof body.subject !== 'string' || body.subject.length === 0) return 'subject is required';
-  if (typeof body.predicate !== 'string' || body.predicate.length === 0) return 'predicate is required';
+  if (typeof body.predicate !== 'string' || body.predicate.length === 0)
+    return 'predicate is required';
   if (typeof body.timestamp !== 'string') return 'timestamp is required';
   if (typeof body.source !== 'string' || body.source.length === 0) return 'source is required';
-  if (body.confidence !== undefined && (typeof body.confidence !== 'number' || body.confidence < 0 || body.confidence > 1)) {
+  if (
+    body.confidence !== undefined &&
+    (typeof body.confidence !== 'number' || body.confidence < 0 || body.confidence > 1)
+  ) {
     return 'confidence must be a number between 0 and 1';
   }
   return null;
