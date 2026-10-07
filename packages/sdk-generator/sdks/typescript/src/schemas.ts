@@ -32,12 +32,12 @@ export type ErrorCategory = z.infer<typeof ErrorCategorySchema>;
  * @category errors
  */
 export const RetryPolicySchema = z.object({
-  maxRetries: z.number().int().min(0).default(3),
-  backoffMs: z.number().min(0).default(1000),
-  maxBackoffMs: z.number().min(0).default(30000),
-  backoffMultiplier: z.number().default(2),
-  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
-  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
+  maxRetries: z.number().int().min(0).prefault(3),
+  backoffMs: z.number().min(0).prefault(1000),
+  maxBackoffMs: z.number().min(0).prefault(30000),
+  backoffMultiplier: z.number().prefault(2),
+  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).prefault(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
+  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).prefault(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
 });
 
 /**
@@ -77,12 +77,12 @@ export const ErrorEnvelopeSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -173,7 +173,7 @@ export type JobStatus = z.infer<typeof JobStatusSchema>;
  * Zod schema for JobPriority
  * @category types
  */
-export const JobPrioritySchema = z.number().int().min(0).max(100).default(50);
+export const JobPrioritySchema = z.number().int().min(0).max(100).prefault(50);
 
 /**
  * TypeScript type inferred from JobPrioritySchema
@@ -190,7 +190,7 @@ export const JobMetadataSchema = z.object({
   sessionId: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string()).prefault([]),
   createdAt: z.string().datetime(),
   scheduledAt: z.string().datetime().optional(),
   expiresAt: z.string().datetime().optional()
@@ -207,9 +207,9 @@ export type JobMetadata = z.infer<typeof JobMetadataSchema>;
  */
 export const JobPayloadSchema = z.object({
   type: z.string(),
-  version: z.string().default("1.0.0"),
+  version: z.string().prefault("1.0.0"),
   data: z.record(z.string(), z.unknown()),
-  options: z.record(z.string(), z.unknown()).default({})
+  options: z.record(z.string(), z.unknown()).prefault({})
 });
 
 /**
@@ -224,12 +224,12 @@ export type JobPayload = z.infer<typeof JobPayloadSchema>;
 export const JobRequestSchema = z.object({
   id: z.string().uuid(),
   type: z.string(),
-  priority: z.number().int().min(0).max(100).default(50),
+  priority: z.number().int().min(0).max(100).prefault(50),
   payload: z.object({
   type: z.string(),
-  version: z.string().default("1.0.0"),
+  version: z.string().prefault("1.0.0"),
   data: z.record(z.string(), z.unknown()),
-  options: z.record(z.string(), z.unknown()).default({})
+  options: z.record(z.string(), z.unknown()).prefault({})
 }),
   metadata: z.object({
   source: z.string(),
@@ -237,20 +237,20 @@ export const JobRequestSchema = z.object({
   sessionId: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string()).prefault([]),
   createdAt: z.string().datetime(),
   scheduledAt: z.string().datetime().optional(),
   expiresAt: z.string().datetime().optional()
 }),
   retryPolicy: z.object({
-  maxRetries: z.number().int().min(0).default(3),
-  backoffMs: z.number().min(0).default(1000),
-  maxBackoffMs: z.number().min(0).default(30000),
-  backoffMultiplier: z.number().default(2),
-  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
-  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
-}).default({"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]}),
-  timeoutMs: z.number().default(30000)
+  maxRetries: z.number().int().min(0).prefault(3),
+  backoffMs: z.number().min(0).prefault(1000),
+  maxBackoffMs: z.number().min(0).prefault(30000),
+  backoffMultiplier: z.number().prefault(2),
+  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).prefault(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
+  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).prefault(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
+}).prefault({"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]}),
+  timeoutMs: z.number().prefault(30000)
 });
 
 /**
@@ -277,12 +277,12 @@ export const JobResultSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -295,7 +295,7 @@ export const JobResultSchema = z.object({
   startedAt: z.string().datetime().optional(),
   completedAt: z.string().datetime(),
   durationMs: z.number().min(0),
-  attempts: z.number().int().default(1),
+  attempts: z.number().int().prefault(1),
   runnerId: z.string().optional(),
   runnerVersion: z.string().optional()
 })
@@ -316,12 +316,12 @@ export const JobResponseSchema = z.object({
   request: z.object({
   id: z.string().uuid(),
   type: z.string(),
-  priority: z.number().int().min(0).max(100).default(50),
+  priority: z.number().int().min(0).max(100).prefault(50),
   payload: z.object({
   type: z.string(),
-  version: z.string().default("1.0.0"),
+  version: z.string().prefault("1.0.0"),
   data: z.record(z.string(), z.unknown()),
-  options: z.record(z.string(), z.unknown()).default({})
+  options: z.record(z.string(), z.unknown()).prefault({})
 }),
   metadata: z.object({
   source: z.string(),
@@ -329,20 +329,20 @@ export const JobResponseSchema = z.object({
   sessionId: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string()).prefault([]),
   createdAt: z.string().datetime(),
   scheduledAt: z.string().datetime().optional(),
   expiresAt: z.string().datetime().optional()
 }),
   retryPolicy: z.object({
-  maxRetries: z.number().int().min(0).default(3),
-  backoffMs: z.number().min(0).default(1000),
-  maxBackoffMs: z.number().min(0).default(30000),
-  backoffMultiplier: z.number().default(2),
-  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
-  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).default(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
-}).default({"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]}),
-  timeoutMs: z.number().default(30000)
+  maxRetries: z.number().int().min(0).prefault(3),
+  backoffMs: z.number().min(0).prefault(1000),
+  maxBackoffMs: z.number().min(0).prefault(30000),
+  backoffMultiplier: z.number().prefault(2),
+  retryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).prefault(["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"]),
+  nonRetryableCategories: z.array(z.enum(['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR'])).prefault(["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
+}).prefault({"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]}),
+  timeoutMs: z.number().prefault(30000)
 }),
   result: z.object({
   success: z.boolean(),
@@ -359,12 +359,12 @@ export const JobResponseSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -377,7 +377,7 @@ export const JobResponseSchema = z.object({
   startedAt: z.string().datetime().optional(),
   completedAt: z.string().datetime(),
   durationMs: z.number().min(0),
-  attempts: z.number().int().default(1),
+  attempts: z.number().int().prefault(1),
   runnerId: z.string().optional(),
   runnerVersion: z.string().optional()
 })
@@ -394,12 +394,12 @@ export const JobResponseSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -428,13 +428,13 @@ export const RunnerCapabilitySchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 });
 
 /**
@@ -464,20 +464,20 @@ export const RunnerMetadataSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).prefault("healthy"),
+  tags: z.array(z.string()).prefault([])
 });
 
 /**
@@ -506,16 +506,16 @@ export const RunnerRegistrationRequestSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   healthCheckEndpoint: z.string().url(),
-  tags: z.array(z.string()).default([])
+  tags: z.array(z.string()).prefault([])
 });
 
 /**
@@ -530,7 +530,7 @@ export type RunnerRegistrationRequest = z.infer<typeof RunnerRegistrationRequest
 export const RunnerRegistrationResponseSchema = z.object({
   runnerId: z.string().uuid(),
   registeredAt: z.string().datetime(),
-  heartbeatIntervalMs: z.number().default(30000)
+  heartbeatIntervalMs: z.number().prefault(30000)
 });
 
 /**
@@ -546,13 +546,13 @@ export const RunnerHeartbeatSchema = z.object({
   runnerId: z.string().uuid(),
   timestamp: z.string().datetime(),
   status: z.enum(['healthy', 'degraded', 'unhealthy']),
-  activeJobs: z.number().int().min(0).default(0),
-  queuedJobs: z.number().int().min(0).default(0),
+  activeJobs: z.number().int().min(0).prefault(0),
+  queuedJobs: z.number().int().min(0).prefault(0),
   metrics: z.object({
   cpuUsage: z.number().min(0).max(100).optional(),
   memoryUsage: z.number().min(0).max(100).optional(),
   jobThroughput: z.number().min(0).optional()
-}).default({})
+}).prefault({})
 });
 
 /**
@@ -584,17 +584,17 @@ export const ModuleManifestSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
-  dependencies: z.array(z.string()).default([]),
+  dependencies: z.array(z.string()).prefault([]),
   configSchema: z.record(z.string(), z.unknown()).optional(),
-  defaultConfig: z.record(z.string(), z.unknown()).default({})
+  defaultConfig: z.record(z.string(), z.unknown()).prefault({})
 });
 
 /**
@@ -611,11 +611,11 @@ export const RunnerExecutionRequestSchema = z.object({
   moduleId: z.string(),
   capabilityId: z.string(),
   payload: z.record(z.string(), z.unknown()),
-  timeoutMs: z.number().default(30000),
+  timeoutMs: z.number().prefault(30000),
   metadata: z.object({
   correlationId: z.string().uuid().optional(),
   userId: z.string().optional()
-}).default({})
+}).prefault({})
 });
 
 /**
@@ -643,12 +643,12 @@ export const RunnerExecutionResponseSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -675,11 +675,11 @@ export const TruthAssertionSchema = z.object({
   subject: z.string(),
   predicate: z.string(),
   object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.string(), z.unknown())]),
-  confidence: z.number().min(0).max(1).default(1),
+  confidence: z.number().min(0).max(1).prefault(1),
   timestamp: z.string().datetime(),
   source: z.string(),
   expiresAt: z.string().datetime().optional(),
-  metadata: z.record(z.string(), z.unknown()).default({})
+  metadata: z.record(z.string(), z.unknown()).prefault({})
 });
 
 /**
@@ -699,13 +699,13 @@ export const TruthQuerySchema = z.object({
   object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.string(), z.unknown())]).optional()
 }),
   filters: z.object({
-  minConfidence: z.number().min(0).max(1).default(0),
+  minConfidence: z.number().min(0).max(1).prefault(0),
   sources: z.array(z.string()).optional(),
   before: z.string().datetime().optional(),
   after: z.string().datetime().optional()
-}).default({}),
-  limit: z.number().int().default(100),
-  offset: z.number().int().min(0).default(0)
+}).prefault({}),
+  limit: z.number().int().prefault(100),
+  offset: z.number().int().min(0).prefault(0)
 });
 
 /**
@@ -724,14 +724,14 @@ export const TruthQueryResultSchema = z.object({
   subject: z.string(),
   predicate: z.string(),
   object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.string(), z.unknown())]),
-  confidence: z.number().min(0).max(1).default(1),
+  confidence: z.number().min(0).max(1).prefault(1),
   timestamp: z.string().datetime(),
   source: z.string(),
   expiresAt: z.string().datetime().optional(),
-  metadata: z.record(z.string(), z.unknown()).default({})
+  metadata: z.record(z.string(), z.unknown()).prefault({})
 })),
   totalCount: z.number().int().min(0),
-  hasMore: z.boolean().default(false),
+  hasMore: z.boolean().prefault(false),
   queryTimeMs: z.number().min(0)
 });
 
@@ -752,8 +752,8 @@ export const TruthSubscriptionSchema = z.object({
   object: z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.string(), z.unknown())]).optional()
 }),
   filters: z.object({
-  minConfidence: z.number().min(0).max(1).default(0)
-}).default({}),
+  minConfidence: z.number().min(0).max(1).prefault(0)
+}).prefault({}),
   webhookUrl: z.string().url().optional(),
   createdAt: z.string().datetime()
 });
@@ -803,12 +803,12 @@ export const TruthCoreResponseSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -873,7 +873,7 @@ export const HealthCheckSchema = z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy', 'unknown']),
   responseTimeMs: z.number().min(0),
   message: z.string().optional()
-})).default([])
+})).prefault([])
 });
 
 /**
@@ -889,9 +889,9 @@ export const ServiceMetadataSchema = z.object({
   name: z.string(),
   version: z.string(),
   contractVersion: z.string(),
-  environment: z.enum(['development', 'staging', 'production']).default("development"),
+  environment: z.enum(['development', 'staging', 'production']).prefault("development"),
   startTime: z.string().datetime(),
-  features: z.array(z.string()).default([])
+  features: z.array(z.string()).prefault([])
 });
 
 /**
@@ -904,11 +904,11 @@ export type ServiceMetadata = z.infer<typeof ServiceMetadataSchema>;
  * @category types
  */
 export const PaginatedRequestSchema = z.object({
-  limit: z.number().int().max(1000).default(100),
-  offset: z.number().int().min(0).default(0),
+  limit: z.number().int().max(1000).prefault(100),
+  offset: z.number().int().min(0).prefault(0),
   cursor: z.string().optional(),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default("asc")
+  sortOrder: z.enum(['asc', 'desc']).prefault("asc")
 });
 
 /**
@@ -942,8 +942,8 @@ export const ApiRequestSchema = z.object({
   id: z.string().uuid(),
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
   path: z.string(),
-  headers: z.record(z.string(), z.string()).default({}),
-  query: z.record(z.string(), z.unknown()).default({}),
+  headers: z.record(z.string(), z.string()).prefault({}),
+  query: z.record(z.string(), z.unknown()).prefault({}),
   body: z.unknown(),
   metadata: z.object({
   correlationId: z.string().uuid().optional(),
@@ -964,7 +964,7 @@ export type ApiRequest = z.infer<typeof ApiRequestSchema>;
 export const ApiResponseSchema = z.object({
   requestId: z.string().uuid(),
   statusCode: z.number().int().min(100).max(599),
-  headers: z.record(z.string(), z.string()).default({}),
+  headers: z.record(z.string(), z.string()).prefault({}),
   body: z.unknown(),
   error: z.object({
   id: z.string().uuid(),
@@ -978,12 +978,12 @@ export const ApiResponseSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
   value: z.unknown().optional()
-})).default([]),
+})).prefault([]),
   service: z.string(),
   operation: z.string().optional(),
   correlationId: z.string().uuid().optional(),
   causationId: z.string().uuid().optional(),
-  retryable: z.boolean().default(false),
+  retryable: z.boolean().prefault(false),
   retryAfter: z.number().min(0).optional(),
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -1042,9 +1042,9 @@ export const CapabilityRegistrySchema = z.object({
   preRelease: z.string().optional()
 }).optional()
 }),
-  features: z.array(z.string()).default([]),
-  breakingChanges: z.array(z.string()).default([]),
-  deprecatedFeatures: z.array(z.string()).default([])
+  features: z.array(z.string()).prefault([]),
+  breakingChanges: z.array(z.string()).prefault([]),
+  deprecatedFeatures: z.array(z.string()).prefault([])
 }),
   runners: z.array(z.object({
   metadata: z.object({
@@ -1065,28 +1065,28 @@ export const CapabilityRegistrySchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).prefault("healthy"),
+  tags: z.array(z.string()).prefault([])
 }),
   category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
   connectors: z.array(z.string()),
   health: z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']),
   lastHeartbeat: z.string().datetime().optional(),
-  activeJobs: z.number().int().min(0).default(0),
-  queuedJobs: z.number().int().min(0).default(0)
+  activeJobs: z.number().int().min(0).prefault(0),
+  queuedJobs: z.number().int().min(0).prefault(0)
 }),
   capabilities: z.array(z.object({
   id: z.string(),
@@ -1096,13 +1096,13 @@ export const CapabilityRegistrySchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 }))
 })),
   connectors: z.array(z.object({
@@ -1113,14 +1113,14 @@ export const CapabilityRegistrySchema = z.object({
   version: z.string(),
   description: z.string(),
   configSchema: z.record(z.string(), z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  required: z.boolean().prefault(false),
+  healthCheckable: z.boolean().prefault(true)
 }),
   status: z.enum(['connected', 'disconnected', 'error', 'unknown']),
   lastConnectedAt: z.string().datetime().optional(),
   lastErrorAt: z.string().datetime().optional(),
   errorMessage: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).default({})
+  metadata: z.record(z.string(), z.unknown()).prefault({})
 })),
   summary: z.object({
   totalRunners: z.number().int().min(0),
@@ -1160,28 +1160,28 @@ export const RegisteredRunnerSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).prefault("healthy"),
+  tags: z.array(z.string()).prefault([])
 }),
   category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
   connectors: z.array(z.string()),
   health: z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']),
   lastHeartbeat: z.string().datetime().optional(),
-  activeJobs: z.number().int().min(0).default(0),
-  queuedJobs: z.number().int().min(0).default(0)
+  activeJobs: z.number().int().min(0).prefault(0),
+  queuedJobs: z.number().int().min(0).prefault(0)
 }),
   capabilities: z.array(z.object({
   id: z.string(),
@@ -1191,13 +1191,13 @@ export const RegisteredRunnerSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 }))
 });
 
@@ -1217,8 +1217,8 @@ export const ConnectorConfigSchema = z.object({
   version: z.string(),
   description: z.string(),
   configSchema: z.record(z.string(), z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  required: z.boolean().prefault(false),
+  healthCheckable: z.boolean().prefault(true)
 });
 
 /**
@@ -1249,14 +1249,14 @@ export const ConnectorInstanceSchema = z.object({
   version: z.string(),
   description: z.string(),
   configSchema: z.record(z.string(), z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  required: z.boolean().prefault(false),
+  healthCheckable: z.boolean().prefault(true)
 }),
   status: z.enum(['connected', 'disconnected', 'error', 'unknown']),
   lastConnectedAt: z.string().datetime().optional(),
   lastErrorAt: z.string().datetime().optional(),
   errorMessage: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).default({})
+  metadata: z.record(z.string(), z.unknown()).prefault({})
 });
 
 /**
@@ -1282,9 +1282,9 @@ export type RunnerCategory = z.infer<typeof RunnerCategorySchema>;
 export const RegistryQuerySchema = z.object({
   category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']).optional(),
   connectorType: z.enum(['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']).optional(),
-  healthStatus: z.enum(['healthy', 'degraded', 'unhealthy', 'offline', 'any']).default("any"),
-  includeCapabilities: z.boolean().default(true),
-  includeConnectors: z.boolean().default(true)
+  healthStatus: z.enum(['healthy', 'degraded', 'unhealthy', 'offline', 'any']).prefault("any"),
+  includeCapabilities: z.boolean().prefault(true),
+  includeConnectors: z.boolean().prefault(true)
 });
 
 /**
@@ -1370,20 +1370,20 @@ export const MarketplaceIndexSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).prefault("healthy"),
+  tags: z.array(z.string()).prefault([])
 }),
   category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
   description: z.string(),
@@ -1396,16 +1396,16 @@ export const MarketplaceIndexSchema = z.object({
 }),
   repository: z.object({
   url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
+  type: z.enum(['git', 'svn', 'mercurial']).prefault("git"),
+  branch: z.string().prefault("main")
 }).optional(),
   documentation: z.object({
   readme: z.string().url().optional(),
   changelog: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+  examples: z.array(z.string().url()).prefault([])
+}).prefault({}),
   license: z.string(),
-  keywords: z.array(z.string()).default([]),
+  keywords: z.array(z.string()).prefault([]),
   capabilities: z.array(z.object({
   id: z.string(),
   name: z.string(),
@@ -1414,13 +1414,13 @@ export const MarketplaceIndexSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   compatibility: z.object({
   minContractVersion: z.object({
@@ -1454,8 +1454,8 @@ export const MarketplaceIndexSchema = z.object({
   patch: z.number().int().min(0),
   preRelease: z.string().optional()
 }).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
+})).prefault([]),
+  incompatibleWith: z.array(z.string()).prefault([]),
   testedWith: z.array(z.object({
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -1465,7 +1465,7 @@ export const MarketplaceIndexSchema = z.object({
 }),
   testedAt: z.string().datetime(),
   result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
+})).prefault([])
 }),
   trustSignals: z.object({
   overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
@@ -1480,39 +1480,39 @@ export const MarketplaceIndexSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 }),
   deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
+  isDeprecated: z.boolean().prefault(false),
   deprecationDate: z.string().datetime().optional(),
   replacementId: z.string().optional(),
   migrationGuide: z.string().url().optional(),
   reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+}).prefault({"isDeprecated":false}),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).prefault("active"),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   versionHistory: z.array(z.object({
   version: z.string(),
   publishedAt: z.string().datetime(),
   changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
+  breakingChanges: z.boolean().prefault(false)
+})).prefault([]),
   installation: z.object({
   npm: z.string().optional(),
   docker: z.string().optional(),
   binary: z.string().optional(),
   source: z.string().optional()
-}).default({})
+}).prefault({})
 })),
   connectors: z.array(z.object({
   id: z.string(),
@@ -1523,8 +1523,8 @@ export const MarketplaceIndexSchema = z.object({
   version: z.string(),
   description: z.string(),
   configSchema: z.record(z.string(), z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  required: z.boolean().prefault(false),
+  healthCheckable: z.boolean().prefault(true)
 }),
   description: z.string(),
   longDescription: z.string().optional(),
@@ -1536,16 +1536,16 @@ export const MarketplaceIndexSchema = z.object({
 }),
   repository: z.object({
   url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
+  type: z.enum(['git', 'svn', 'mercurial']).prefault("git"),
+  branch: z.string().prefault("main")
 }).optional(),
   documentation: z.object({
   readme: z.string().url().optional(),
   configuration: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+  examples: z.array(z.string().url()).prefault([])
+}).prefault({}),
   license: z.string(),
-  keywords: z.array(z.string()).default([]),
+  keywords: z.array(z.string()).prefault([]),
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   compatibility: z.object({
@@ -1580,8 +1580,8 @@ export const MarketplaceIndexSchema = z.object({
   patch: z.number().int().min(0),
   preRelease: z.string().optional()
 }).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
+})).prefault([]),
+  incompatibleWith: z.array(z.string()).prefault([]),
   testedWith: z.array(z.object({
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -1591,7 +1591,7 @@ export const MarketplaceIndexSchema = z.object({
 }),
   testedAt: z.string().datetime(),
   result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
+})).prefault([])
 }),
   trustSignals: z.object({
   overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
@@ -1606,37 +1606,37 @@ export const MarketplaceIndexSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 }),
   deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
+  isDeprecated: z.boolean().prefault(false),
   deprecationDate: z.string().datetime().optional(),
   replacementId: z.string().optional(),
   migrationGuide: z.string().url().optional(),
   reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+}).prefault({"isDeprecated":false}),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).prefault("active"),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   versionHistory: z.array(z.object({
   version: z.string(),
   publishedAt: z.string().datetime(),
   changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
+  breakingChanges: z.boolean().prefault(false)
+})).prefault([]),
   installation: z.object({
   npm: z.string().optional(),
   docker: z.string().optional()
-}).default({})
+}).prefault({})
 })),
   filters: z.object({
   categories: z.array(z.string()),
@@ -1675,20 +1675,20 @@ export const MarketplaceRunnerSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).prefault("healthy"),
+  tags: z.array(z.string()).prefault([])
 }),
   category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
   description: z.string(),
@@ -1701,16 +1701,16 @@ export const MarketplaceRunnerSchema = z.object({
 }),
   repository: z.object({
   url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
+  type: z.enum(['git', 'svn', 'mercurial']).prefault("git"),
+  branch: z.string().prefault("main")
 }).optional(),
   documentation: z.object({
   readme: z.string().url().optional(),
   changelog: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+  examples: z.array(z.string().url()).prefault([])
+}).prefault({}),
   license: z.string(),
-  keywords: z.array(z.string()).default([]),
+  keywords: z.array(z.string()).prefault([]),
   capabilities: z.array(z.object({
   id: z.string(),
   name: z.string(),
@@ -1719,13 +1719,13 @@ export const MarketplaceRunnerSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   compatibility: z.object({
   minContractVersion: z.object({
@@ -1759,8 +1759,8 @@ export const MarketplaceRunnerSchema = z.object({
   patch: z.number().int().min(0),
   preRelease: z.string().optional()
 }).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
+})).prefault([]),
+  incompatibleWith: z.array(z.string()).prefault([]),
   testedWith: z.array(z.object({
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -1770,7 +1770,7 @@ export const MarketplaceRunnerSchema = z.object({
 }),
   testedAt: z.string().datetime(),
   result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
+})).prefault([])
 }),
   trustSignals: z.object({
   overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
@@ -1785,39 +1785,39 @@ export const MarketplaceRunnerSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 }),
   deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
+  isDeprecated: z.boolean().prefault(false),
   deprecationDate: z.string().datetime().optional(),
   replacementId: z.string().optional(),
   migrationGuide: z.string().url().optional(),
   reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+}).prefault({"isDeprecated":false}),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).prefault("active"),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   versionHistory: z.array(z.object({
   version: z.string(),
   publishedAt: z.string().datetime(),
   changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
+  breakingChanges: z.boolean().prefault(false)
+})).prefault([]),
   installation: z.object({
   npm: z.string().optional(),
   docker: z.string().optional(),
   binary: z.string().optional(),
   source: z.string().optional()
-}).default({})
+}).prefault({})
 });
 
 /**
@@ -1838,8 +1838,8 @@ export const MarketplaceConnectorSchema = z.object({
   version: z.string(),
   description: z.string(),
   configSchema: z.record(z.string(), z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  required: z.boolean().prefault(false),
+  healthCheckable: z.boolean().prefault(true)
 }),
   description: z.string(),
   longDescription: z.string().optional(),
@@ -1851,16 +1851,16 @@ export const MarketplaceConnectorSchema = z.object({
 }),
   repository: z.object({
   url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
+  type: z.enum(['git', 'svn', 'mercurial']).prefault("git"),
+  branch: z.string().prefault("main")
 }).optional(),
   documentation: z.object({
   readme: z.string().url().optional(),
   configuration: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+  examples: z.array(z.string().url()).prefault([])
+}).prefault({}),
   license: z.string(),
-  keywords: z.array(z.string()).default([]),
+  keywords: z.array(z.string()).prefault([]),
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   compatibility: z.object({
@@ -1895,8 +1895,8 @@ export const MarketplaceConnectorSchema = z.object({
   patch: z.number().int().min(0),
   preRelease: z.string().optional()
 }).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
+})).prefault([]),
+  incompatibleWith: z.array(z.string()).prefault([]),
   testedWith: z.array(z.object({
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -1906,7 +1906,7 @@ export const MarketplaceConnectorSchema = z.object({
 }),
   testedAt: z.string().datetime(),
   result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
+})).prefault([])
 }),
   trustSignals: z.object({
   overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
@@ -1921,37 +1921,37 @@ export const MarketplaceConnectorSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 }),
   deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
+  isDeprecated: z.boolean().prefault(false),
   deprecationDate: z.string().datetime().optional(),
   replacementId: z.string().optional(),
   migrationGuide: z.string().url().optional(),
   reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+}).prefault({"isDeprecated":false}),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).prefault("active"),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   versionHistory: z.array(z.object({
   version: z.string(),
   publishedAt: z.string().datetime(),
   changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
+  breakingChanges: z.boolean().prefault(false)
+})).prefault([]),
   installation: z.object({
   npm: z.string().optional(),
   docker: z.string().optional()
-}).default({})
+}).prefault({})
 });
 
 /**
@@ -1964,11 +1964,11 @@ export type MarketplaceConnector = z.infer<typeof MarketplaceConnectorSchema>;
  * @category types
  */
 export const MarketplaceQuerySchema = z.object({
-  type: z.enum(['runner', 'connector', 'all']).default("all"),
+  type: z.enum(['runner', 'connector', 'all']).prefault("all"),
   category: z.string().optional(),
   connectorType: z.string().optional(),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).default("active"),
-  trustLevel: z.enum(['verified', 'community', 'all']).default("all"),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).prefault("active"),
+  trustLevel: z.enum(['verified', 'community', 'all']).prefault("all"),
   search: z.string().optional(),
   compatibilityVersion: z.object({
   major: z.number().int().min(0),
@@ -1977,11 +1977,11 @@ export const MarketplaceQuerySchema = z.object({
   preRelease: z.string().optional()
 }).optional(),
   author: z.string().optional(),
-  keywords: z.array(z.string()).default([]),
-  sortBy: z.enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads']).default("relevance"),
-  sortOrder: z.enum(['asc', 'desc']).default("desc"),
-  limit: z.number().min(0).max(100).default(20),
-  offset: z.number().min(0).default(0)
+  keywords: z.array(z.string()).prefault([]),
+  sortBy: z.enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads']).prefault("relevance"),
+  sortOrder: z.enum(['asc', 'desc']).prefault("desc"),
+  limit: z.number().min(0).max(100).prefault(20),
+  offset: z.number().min(0).prefault(0)
 });
 
 /**
@@ -1995,11 +1995,11 @@ export type MarketplaceQuery = z.infer<typeof MarketplaceQuerySchema>;
  */
 export const MarketplaceQueryResultSchema = z.object({
   query: z.object({
-  type: z.enum(['runner', 'connector', 'all']).default("all"),
+  type: z.enum(['runner', 'connector', 'all']).prefault("all"),
   category: z.string().optional(),
   connectorType: z.string().optional(),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).default("active"),
-  trustLevel: z.enum(['verified', 'community', 'all']).default("all"),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'all']).prefault("active"),
+  trustLevel: z.enum(['verified', 'community', 'all']).prefault("all"),
   search: z.string().optional(),
   compatibilityVersion: z.object({
   major: z.number().int().min(0),
@@ -2008,11 +2008,11 @@ export const MarketplaceQueryResultSchema = z.object({
   preRelease: z.string().optional()
 }).optional(),
   author: z.string().optional(),
-  keywords: z.array(z.string()).default([]),
-  sortBy: z.enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads']).default("relevance"),
-  sortOrder: z.enum(['asc', 'desc']).default("desc"),
-  limit: z.number().min(0).max(100).default(20),
-  offset: z.number().min(0).default(0)
+  keywords: z.array(z.string()).prefault([]),
+  sortBy: z.enum(['relevance', 'name', 'published', 'updated', 'rating', 'downloads']).prefault("relevance"),
+  sortOrder: z.enum(['asc', 'desc']).prefault("desc"),
+  limit: z.number().min(0).max(100).prefault(20),
+  offset: z.number().min(0).prefault(0)
 }),
   total: z.number().min(0),
   hasMore: z.boolean(),
@@ -2036,20 +2036,20 @@ export const MarketplaceQueryResultSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   supportedContracts: z.array(z.string()),
   healthCheckEndpoint: z.string().url(),
   registeredAt: z.string().datetime(),
   lastHeartbeatAt: z.string().datetime(),
-  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).default("healthy"),
-  tags: z.array(z.string()).default([])
+  status: z.enum(['healthy', 'degraded', 'unhealthy', 'offline']).prefault("healthy"),
+  tags: z.array(z.string()).prefault([])
 }),
   category: z.enum(['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']),
   description: z.string(),
@@ -2062,16 +2062,16 @@ export const MarketplaceQueryResultSchema = z.object({
 }),
   repository: z.object({
   url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
+  type: z.enum(['git', 'svn', 'mercurial']).prefault("git"),
+  branch: z.string().prefault("main")
 }).optional(),
   documentation: z.object({
   readme: z.string().url().optional(),
   changelog: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+  examples: z.array(z.string().url()).prefault([])
+}).prefault({}),
   license: z.string(),
-  keywords: z.array(z.string()).default([]),
+  keywords: z.array(z.string()).prefault([]),
   capabilities: z.array(z.object({
   id: z.string(),
   name: z.string(),
@@ -2080,13 +2080,13 @@ export const MarketplaceQueryResultSchema = z.object({
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   supportedJobTypes: z.array(z.string()),
-  maxConcurrency: z.number().int().default(1),
-  timeoutMs: z.number().default(30000),
+  maxConcurrency: z.number().int().prefault(1),
+  timeoutMs: z.number().prefault(30000),
   resourceRequirements: z.object({
   cpu: z.string().optional(),
   memory: z.string().optional(),
-  gpu: z.boolean().default(false)
-}).default({})
+  gpu: z.boolean().prefault(false)
+}).prefault({})
 })),
   compatibility: z.object({
   minContractVersion: z.object({
@@ -2120,8 +2120,8 @@ export const MarketplaceQueryResultSchema = z.object({
   patch: z.number().int().min(0),
   preRelease: z.string().optional()
 }).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
+})).prefault([]),
+  incompatibleWith: z.array(z.string()).prefault([]),
   testedWith: z.array(z.object({
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -2131,7 +2131,7 @@ export const MarketplaceQueryResultSchema = z.object({
 }),
   testedAt: z.string().datetime(),
   result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
+})).prefault([])
 }),
   trustSignals: z.object({
   overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
@@ -2146,39 +2146,39 @@ export const MarketplaceQueryResultSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 }),
   deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
+  isDeprecated: z.boolean().prefault(false),
   deprecationDate: z.string().datetime().optional(),
   replacementId: z.string().optional(),
   migrationGuide: z.string().url().optional(),
   reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+}).prefault({"isDeprecated":false}),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).prefault("active"),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   versionHistory: z.array(z.object({
   version: z.string(),
   publishedAt: z.string().datetime(),
   changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
+  breakingChanges: z.boolean().prefault(false)
+})).prefault([]),
   installation: z.object({
   npm: z.string().optional(),
   docker: z.string().optional(),
   binary: z.string().optional(),
   source: z.string().optional()
-}).default({})
+}).prefault({})
 }), z.object({
   id: z.string(),
   config: z.object({
@@ -2188,8 +2188,8 @@ export const MarketplaceQueryResultSchema = z.object({
   version: z.string(),
   description: z.string(),
   configSchema: z.record(z.string(), z.unknown()),
-  required: z.boolean().default(false),
-  healthCheckable: z.boolean().default(true)
+  required: z.boolean().prefault(false),
+  healthCheckable: z.boolean().prefault(true)
 }),
   description: z.string(),
   longDescription: z.string().optional(),
@@ -2201,16 +2201,16 @@ export const MarketplaceQueryResultSchema = z.object({
 }),
   repository: z.object({
   url: z.string().url(),
-  type: z.enum(['git', 'svn', 'mercurial']).default("git"),
-  branch: z.string().default("main")
+  type: z.enum(['git', 'svn', 'mercurial']).prefault("git"),
+  branch: z.string().prefault("main")
 }).optional(),
   documentation: z.object({
   readme: z.string().url().optional(),
   configuration: z.string().url().optional(),
-  examples: z.array(z.string().url()).default([])
-}).default({}),
+  examples: z.array(z.string().url()).prefault([])
+}).prefault({}),
   license: z.string(),
-  keywords: z.array(z.string()).default([]),
+  keywords: z.array(z.string()).prefault([]),
   inputSchema: z.record(z.string(), z.unknown()),
   outputSchema: z.record(z.string(), z.unknown()),
   compatibility: z.object({
@@ -2245,8 +2245,8 @@ export const MarketplaceQueryResultSchema = z.object({
   patch: z.number().int().min(0),
   preRelease: z.string().optional()
 }).optional()
-})).default([]),
-  incompatibleWith: z.array(z.string()).default([]),
+})).prefault([]),
+  incompatibleWith: z.array(z.string()).prefault([]),
   testedWith: z.array(z.object({
   contractVersion: z.object({
   major: z.number().int().min(0),
@@ -2256,7 +2256,7 @@ export const MarketplaceQueryResultSchema = z.object({
 }),
   testedAt: z.string().datetime(),
   result: z.enum(['compatible', 'incompatible', 'unknown'])
-})).default([])
+})).prefault([])
 }),
   trustSignals: z.object({
   overallTrust: z.enum(['verified', 'pending', 'failed', 'unverified']),
@@ -2271,43 +2271,43 @@ export const MarketplaceQueryResultSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 }),
   deprecation: z.object({
-  isDeprecated: z.boolean().default(false),
+  isDeprecated: z.boolean().prefault(false),
   deprecationDate: z.string().datetime().optional(),
   replacementId: z.string().optional(),
   migrationGuide: z.string().url().optional(),
   reason: z.string().optional()
-}).default({"isDeprecated":false}),
-  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).default("active"),
+}).prefault({"isDeprecated":false}),
+  status: z.enum(['active', 'deprecated', 'pending_review', 'rejected', 'delisted']).prefault("active"),
   publishedAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   versionHistory: z.array(z.object({
   version: z.string(),
   publishedAt: z.string().datetime(),
   changelog: z.string().optional(),
-  breakingChanges: z.boolean().default(false)
-})).default([]),
+  breakingChanges: z.boolean().prefault(false)
+})).prefault([]),
   installation: z.object({
   npm: z.string().optional(),
   docker: z.string().optional()
-}).default({})
+}).prefault({})
 })])),
   facets: z.object({
-  categories: z.record(z.string(), z.number()).default({}),
-  trustLevels: z.record(z.string(), z.number()).default({}),
-  connectorTypes: z.record(z.string(), z.number()).default({}),
-  status: z.record(z.string(), z.number()).default({})
+  categories: z.record(z.string(), z.number()).prefault({}),
+  trustLevels: z.record(z.string(), z.number()).prefault({}),
+  connectorTypes: z.record(z.string(), z.number()).prefault({}),
+  status: z.record(z.string(), z.number()).prefault({})
 })
 });
 
@@ -2333,16 +2333,16 @@ export const MarketplaceTrustSignalsSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   description: z.string(),
   cve: z.string().optional()
-})).default([]),
+})).prefault([]),
   scanDurationMs: z.number().min(0).optional()
-}).default({}),
+}).prefault({}),
   codeQualityScore: z.number().min(0).max(100).optional(),
-  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).default("unknown"),
-  downloadCount: z.number().min(0).default(0),
+  maintainerReputation: z.enum(['official', 'verified', 'community', 'unknown']).prefault("unknown"),
+  downloadCount: z.number().min(0).prefault(0),
   rating: z.object({
   average: z.number().min(0).max(5).optional(),
-  count: z.number().min(0).default(0)
-}).default({})
+  count: z.number().min(0).prefault(0)
+}).prefault({})
 });
 
 /**

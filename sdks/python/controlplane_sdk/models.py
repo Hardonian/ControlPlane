@@ -22,8 +22,8 @@ class RetryPolicy(BaseModel):
     backoffMs: float = Field(default=1000)
     maxBackoffMs: float = Field(default=30000)
     backoffMultiplier: float = Field(default=2)
-    retryableCategories: List[Literal['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']] = Field(default=["TIMEOUT","NETWORK_ERROR","SERVICE_UNAVAILABLE","RUNTIME_ERROR"])
-    nonRetryableCategories: List[Literal['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']] = Field(default=["VALIDATION_ERROR","SCHEMA_MISMATCH","AUTHENTICATION_ERROR","AUTHORIZATION_ERROR","RESOURCE_NOT_FOUND"])
+    retryableCategories: List[Literal['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']] = Field(default=["TIMEOUT", "NETWORK_ERROR", "SERVICE_UNAVAILABLE", "RUNTIME_ERROR"])
+    nonRetryableCategories: List[Literal['VALIDATION_ERROR', 'SCHEMA_MISMATCH', 'RUNTIME_ERROR', 'TIMEOUT', 'NETWORK_ERROR', 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'RESOURCE_NOT_FOUND', 'RESOURCE_CONFLICT', 'RATE_LIMITED', 'SERVICE_UNAVAILABLE', 'RUNNER_ERROR', 'TRUTHCORE_ERROR', 'INTERNAL_ERROR']] = Field(default=["VALIDATION_ERROR", "SCHEMA_MISMATCH", "AUTHENTICATION_ERROR", "AUTHORIZATION_ERROR", "RESOURCE_NOT_FOUND"])
 
 class ErrorDetail(BaseModel):
     """errors schema: ErrorDetail"""
@@ -53,7 +53,7 @@ class ErrorEnvelope(BaseModel):
     operation: Optional[str] = None
     correlationId: Optional[str] = None
     causationId: Optional[str] = None
-    retryable: bool = Field(default=false)
+    retryable: bool = Field(default=False)
     retryAfter: Optional[float] = None
     contractVersion: Dict[str, Any]
 
@@ -132,7 +132,7 @@ class JobRequest(BaseModel):
     priority: int = Field(default=50)
     payload: Dict[str, Any]
     metadata: Dict[str, Any]
-    retryPolicy: Dict[str, Any] = Field(default={"maxRetries":3,"backoffMs":1000,"maxBackoffMs":30000,"backoffMultiplier":2,"retryableCategories":[],"nonRetryableCategories":[]})
+    retryPolicy: Dict[str, Any] = Field(default={"maxRetries": 3, "backoffMs": 1000, "maxBackoffMs": 30000, "backoffMultiplier": 2, "retryableCategories": [], "nonRetryableCategories": []})
     timeoutMs: float = Field(default=30000)
 
 class JobResult(BaseModel):
@@ -310,7 +310,7 @@ class TruthQueryResult(BaseModel):
     queryId: str
     assertions: List[Dict[str, Any]]
     totalCount: int
-    hasMore: bool = Field(default=false)
+    hasMore: bool = Field(default=False)
     queryTimeMs: float
 
 class TruthSubscription(BaseModel):
@@ -472,8 +472,8 @@ class ConnectorConfig(BaseModel):
     version: str
     description: str
     configSchema: Dict[str, Any]
-    required: bool = Field(default=false)
-    healthCheckable: bool = Field(default=true)
+    required: bool = Field(default=False)
+    healthCheckable: bool = Field(default=True)
 
 class ConnectorType(BaseModel):
     """types schema: ConnectorType"""
@@ -501,8 +501,8 @@ class RegistryQuery(BaseModel):
     category: Optional[Literal['ops', 'finops', 'support', 'growth', 'analytics', 'security', 'infrastructure', 'custom']] = None
     connectorType: Optional[Literal['database', 'queue', 'storage', 'api', 'webhook', 'stream', 'cache', 'messaging']] = None
     healthStatus: Literal['healthy', 'degraded', 'unhealthy', 'offline', 'any'] = Field(default="any")
-    includeCapabilities: bool = Field(default=true)
-    includeConnectors: bool = Field(default=true)
+    includeCapabilities: bool = Field(default=True)
+    includeConnectors: bool = Field(default=True)
 
 class RegistryDiff(BaseModel):
     """types schema: RegistryDiff"""
@@ -551,7 +551,7 @@ class MarketplaceRunner(BaseModel):
     capabilities: List[Dict[str, Any]]
     compatibility: Dict[str, Any]
     trustSignals: Dict[str, Any]
-    deprecation: Dict[str, Any] = Field(default={"isDeprecated":false})
+    deprecation: Dict[str, Any] = Field(default={"isDeprecated": False})
     status: Literal['active', 'deprecated', 'pending_review', 'rejected', 'delisted'] = Field(default="active")
     publishedAt: datetime
     updatedAt: datetime
@@ -577,7 +577,7 @@ class MarketplaceConnector(BaseModel):
     outputSchema: Dict[str, Any]
     compatibility: Dict[str, Any]
     trustSignals: Dict[str, Any]
-    deprecation: Dict[str, Any] = Field(default={"isDeprecated":false})
+    deprecation: Dict[str, Any] = Field(default={"isDeprecated": False})
     status: Literal['active', 'deprecated', 'pending_review', 'rejected', 'delisted'] = Field(default="active")
     publishedAt: datetime
     updatedAt: datetime

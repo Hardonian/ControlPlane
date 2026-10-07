@@ -22,6 +22,8 @@ export function generateTypeScriptSDK(
   const validationContent = generateValidationFile(schemas);
   files.set('src/validation.ts', validationContent);
 
+  files.set('tsconfig.json', generateTsconfigFile());
+
   const readmeContent = generateReadme('TypeScript', config);
   files.set('README.md', readmeContent);
 
@@ -190,7 +192,12 @@ function generateZodDefinition(schema: z.ZodTypeAny, depth = 0): string {
     case 'ZodDefault': {
       const inner = generateZodDefinition(def.innerType ?? schema, depth);
       const defaultValue = JSON.stringify(def.defaultValue?.());
-      return `${inner}.default(${defaultValue})`;
+      // Zod v4: .default() is typed against the schema's OUTPUT type and does
+      // not parse the value, so nested defaults are left unfilled (e.g.
+      // z.object({...defaults}).default({}) is a type error and a behavior
+      // trap). .prefault() parses the fallback through the schema, restoring
+      // v3 semantics and satisfying the input-typed parameter.
+      return `${inner}.prefault(${defaultValue})`;
     }
 
     case 'ZodArray':
@@ -247,8 +254,11 @@ function generateTypesFile(schemas: SchemaDefinition[]): string {
   lines.push('// Auto-generated TypeScript types from ControlPlane contracts');
   lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
   lines.push('');
-  lines.push("import { z } from 'zod';");
-  lines.push("import * as schemas from './schemas.js';");
+  lines.push('// Each type is declared alongside its Zod schema in schemas.ts and');
+  lines.push('// re-exported here so "./types.js" stays a stable import path.');
+  lines.push('// Re-exporting the SAME declarations (instead of re-declaring them)');
+  lines.push('// avoids duplicate-export ambiguity (TS2308) when index.ts re-exports');
+  lines.push('// both ./schemas.js and ./types.js.');
   lines.push('');
 
   const groupedSchemas = schemas.reduce(
@@ -268,15 +278,31 @@ function generateTypesFile(schemas: SchemaDefinition[]): string {
     lines.push('');
 
     for (const schema of categorySchemas) {
-      lines.push(`/**`);
-      lines.push(` * @category ${schema.category}`);
-      lines.push(` */`);
-      lines.push(`export type ${schema.name} = z.infer<typeof schemas.${schema.name}Schema>;`);
-      lines.push('');
+      lines.push(`export type { ${schema.name} } from './schemas.js';`);
     }
+    lines.push('');
   }
 
   return lines.join('\n');
+}
+
+function generateTsconfigFile(): string {
+  const tsconfig = {
+    compilerOptions: {
+      target: 'ES2022',
+      module: 'ESNext',
+      moduleResolution: 'bundler',
+      lib: ['ES2022', 'DOM'],
+      strict: true,
+      declaration: true,
+      esModuleInterop: true,
+      skipLibCheck: true,
+      forceConsistentCasingInFileNames: true,
+      noEmit: true,
+    },
+    include: ['src'],
+  };
+  return JSON.stringify(tsconfig, null, 2) + '\n';
 }
 
 function generateClientFile(config: SDKGeneratorConfig): string {

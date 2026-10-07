@@ -3,10 +3,7 @@
 
 package controlplane
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 // ValidationError represents a validation error
 type ValidationError struct {

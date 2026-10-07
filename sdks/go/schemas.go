@@ -268,7 +268,6 @@ var SchemaRegistry = map[string]SchemaValidator{
 func validateRetryPolicy(m RetryPolicy) error {
 	var errs ValidationErrors
 
-
 	if !errs.IsValid() {
 		return errs
 	}
@@ -293,7 +292,7 @@ func validateErrorDetail(m ErrorDetail) error {
 func validateErrorEnvelope(m ErrorEnvelope) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Category == "" {
@@ -342,7 +341,6 @@ func validateContractVersion(m ContractVersion) error {
 func validateContractRange(m ContractRange) error {
 	var errs ValidationErrors
 
-
 	if !errs.IsValid() {
 		return errs
 	}
@@ -381,7 +379,7 @@ func validateJobPayload(m JobPayload) error {
 func validateJobRequest(m JobRequest) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Type == "" {
@@ -398,7 +396,6 @@ func validateJobRequest(m JobRequest) error {
 func validateJobResult(m JobResult) error {
 	var errs ValidationErrors
 
-
 	if !errs.IsValid() {
 		return errs
 	}
@@ -409,7 +406,7 @@ func validateJobResult(m JobResult) error {
 func validateJobResponse(m JobResponse) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Status == "" {
@@ -426,7 +423,7 @@ func validateJobResponse(m JobResponse) error {
 func validateRunnerCapability(m RunnerCapability) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Name == "" {
@@ -449,7 +446,7 @@ func validateRunnerCapability(m RunnerCapability) error {
 func validateRunnerMetadata(m RunnerMetadata) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Name == "" {
@@ -492,7 +489,7 @@ func validateRunnerRegistrationRequest(m RunnerRegistrationRequest) error {
 func validateRunnerRegistrationResponse(m RunnerRegistrationResponse) error {
 	var errs ValidationErrors
 
-	if m.RunnerId == "" {
+	if m.RunnerID == "" {
 		errs.Add("runnerId", "is required")
 	}
 
@@ -506,7 +503,7 @@ func validateRunnerRegistrationResponse(m RunnerRegistrationResponse) error {
 func validateRunnerHeartbeat(m RunnerHeartbeat) error {
 	var errs ValidationErrors
 
-	if m.RunnerId == "" {
+	if m.RunnerID == "" {
 		errs.Add("runnerId", "is required")
 	}
 	if m.Status == "" {
@@ -523,7 +520,7 @@ func validateRunnerHeartbeat(m RunnerHeartbeat) error {
 func validateModuleManifest(m ModuleManifest) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Name == "" {
@@ -549,13 +546,13 @@ func validateModuleManifest(m ModuleManifest) error {
 func validateRunnerExecutionRequest(m RunnerExecutionRequest) error {
 	var errs ValidationErrors
 
-	if m.JobId == "" {
+	if m.JobID == "" {
 		errs.Add("jobId", "is required")
 	}
-	if m.ModuleId == "" {
+	if m.ModuleID == "" {
 		errs.Add("moduleId", "is required")
 	}
-	if m.CapabilityId == "" {
+	if m.CapabilityID == "" {
 		errs.Add("capabilityId", "is required")
 	}
 
@@ -569,13 +566,13 @@ func validateRunnerExecutionRequest(m RunnerExecutionRequest) error {
 func validateRunnerExecutionResponse(m RunnerExecutionResponse) error {
 	var errs ValidationErrors
 
-	if m.JobId == "" {
+	if m.JobID == "" {
 		errs.Add("jobId", "is required")
 	}
 	if m.ExecutionTimeMs == 0 {
 		errs.Add("executionTimeMs", "is required")
 	}
-	if m.RunnerId == "" {
+	if m.RunnerID == "" {
 		errs.Add("runnerId", "is required")
 	}
 
@@ -589,7 +586,7 @@ func validateRunnerExecutionResponse(m RunnerExecutionResponse) error {
 func validateTruthAssertion(m TruthAssertion) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Subject == "" {
@@ -612,7 +609,7 @@ func validateTruthAssertion(m TruthAssertion) error {
 func validateTruthQuery(m TruthQuery) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 
@@ -626,7 +623,7 @@ func validateTruthQuery(m TruthQuery) error {
 func validateTruthQueryResult(m TruthQueryResult) error {
 	var errs ValidationErrors
 
-	if m.QueryId == "" {
+	if m.QueryID == "" {
 		errs.Add("queryId", "is required")
 	}
 	if m.TotalCount == 0 {
@@ -646,7 +643,7 @@ func validateTruthQueryResult(m TruthQueryResult) error {
 func validateTruthSubscription(m TruthSubscription) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 
@@ -660,7 +657,7 @@ func validateTruthSubscription(m TruthSubscription) error {
 func validateTruthCoreRequest(m TruthCoreRequest) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Type == "" {
@@ -677,7 +674,7 @@ func validateTruthCoreRequest(m TruthCoreRequest) error {
 func validateTruthCoreResponse(m TruthCoreResponse) error {
 	var errs ValidationErrors
 
-	if m.RequestId == "" {
+	if m.RequestID == "" {
 		errs.Add("requestId", "is required")
 	}
 
@@ -734,7 +731,6 @@ func validateServiceMetadata(m ServiceMetadata) error {
 func validatePaginatedRequest(m PaginatedRequest) error {
 	var errs ValidationErrors
 
-
 	if !errs.IsValid() {
 		return errs
 	}
@@ -765,7 +761,7 @@ func validatePaginatedResponse(m PaginatedResponse) error {
 func validateApiRequest(m ApiRequest) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Method == "" {
@@ -785,7 +781,7 @@ func validateApiRequest(m ApiRequest) error {
 func validateApiResponse(m ApiResponse) error {
 	var errs ValidationErrors
 
-	if m.RequestId == "" {
+	if m.RequestID == "" {
 		errs.Add("requestId", "is required")
 	}
 	if m.StatusCode == 0 {
@@ -830,7 +826,7 @@ func validateRegisteredRunner(m RegisteredRunner) error {
 func validateConnectorConfig(m ConnectorConfig) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Name == "" {
@@ -869,7 +865,6 @@ func validateConnectorInstance(m ConnectorInstance) error {
 // validateRegistryQuery validates a RegistryQuery instance
 func validateRegistryQuery(m RegistryQuery) error {
 	var errs ValidationErrors
-
 
 	if !errs.IsValid() {
 		return errs
@@ -912,7 +907,7 @@ func validateMarketplaceIndex(m MarketplaceIndex) error {
 func validateMarketplaceRunner(m MarketplaceRunner) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Category == "" {
@@ -935,7 +930,7 @@ func validateMarketplaceRunner(m MarketplaceRunner) error {
 func validateMarketplaceConnector(m MarketplaceConnector) error {
 	var errs ValidationErrors
 
-	if m.Id == "" {
+	if m.ID == "" {
 		errs.Add("id", "is required")
 	}
 	if m.Description == "" {
@@ -954,7 +949,6 @@ func validateMarketplaceConnector(m MarketplaceConnector) error {
 // validateMarketplaceQuery validates a MarketplaceQuery instance
 func validateMarketplaceQuery(m MarketplaceQuery) error {
 	var errs ValidationErrors
-
 
 	if !errs.IsValid() {
 		return errs

@@ -136,7 +136,7 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
       let fieldLine = `    ${key}: ${fieldType}`;
 
       if (hasDefault) {
-        const defaultValue = JSON.stringify(fieldDef.defaultValue?.());
+        const defaultValue = toPythonLiteral(fieldDef.defaultValue?.());
         fieldLine += ` = Field(default=${defaultValue})`;
       } else if (isOptional) {
         fieldLine += ' = None';
@@ -153,6 +153,28 @@ function generatePydanticModelCode(schema: SchemaDefinition): string[] {
   }
 
   return lines;
+}
+
+/**
+ * Renders a JS default value as a Python literal.
+ * JSON.stringify is not valid Python: booleans/None must be capitalized and
+ * dict/list literals may contain nested Python literals.
+ */
+function toPythonLiteral(value: unknown): string {
+  if (value === null || value === undefined) return 'None';
+  if (typeof value === 'boolean') return value ? 'True' : 'False';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => toPythonLiteral(item)).join(', ')}]`;
+  }
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).map(
+      ([key, val]) => `${JSON.stringify(key)}: ${toPythonLiteral(val)}`
+    );
+    return `{${entries.join(', ')}}`;
+  }
+  return 'None';
 }
 
 function zodToPythonType(schema: z.ZodTypeAny): string {

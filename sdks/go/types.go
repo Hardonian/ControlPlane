@@ -4,7 +4,6 @@
 package controlplane
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -17,10 +16,10 @@ type ErrorSeverity struct {
 
 // ErrorSeverity valid values
 const (
-	ErrorSeverityFATAL = "fatal"
-	ErrorSeverityERROR = "error"
+	ErrorSeverityFATAL   = "fatal"
+	ErrorSeverityERROR   = "error"
 	ErrorSeverityWARNING = "warning"
-	ErrorSeverityINFO = "info"
+	ErrorSeverityINFO    = "info"
 )
 
 // ErrorCategory represents a errors schema
@@ -30,29 +29,29 @@ type ErrorCategory struct {
 
 // ErrorCategory valid values
 const (
-	ErrorCategoryVALIDATION_ERROR = "VALIDATION_ERROR"
-	ErrorCategorySCHEMA_MISMATCH = "SCHEMA_MISMATCH"
-	ErrorCategoryRUNTIME_ERROR = "RUNTIME_ERROR"
-	ErrorCategoryTIMEOUT = "TIMEOUT"
-	ErrorCategoryNETWORK_ERROR = "NETWORK_ERROR"
+	ErrorCategoryVALIDATION_ERROR     = "VALIDATION_ERROR"
+	ErrorCategorySCHEMA_MISMATCH      = "SCHEMA_MISMATCH"
+	ErrorCategoryRUNTIME_ERROR        = "RUNTIME_ERROR"
+	ErrorCategoryTIMEOUT              = "TIMEOUT"
+	ErrorCategoryNETWORK_ERROR        = "NETWORK_ERROR"
 	ErrorCategoryAUTHENTICATION_ERROR = "AUTHENTICATION_ERROR"
-	ErrorCategoryAUTHORIZATION_ERROR = "AUTHORIZATION_ERROR"
-	ErrorCategoryRESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND"
-	ErrorCategoryRESOURCE_CONFLICT = "RESOURCE_CONFLICT"
-	ErrorCategoryRATE_LIMITED = "RATE_LIMITED"
-	ErrorCategorySERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
-	ErrorCategoryRUNNER_ERROR = "RUNNER_ERROR"
-	ErrorCategoryTRUTHCORE_ERROR = "TRUTHCORE_ERROR"
-	ErrorCategoryINTERNAL_ERROR = "INTERNAL_ERROR"
+	ErrorCategoryAUTHORIZATION_ERROR  = "AUTHORIZATION_ERROR"
+	ErrorCategoryRESOURCE_NOT_FOUND   = "RESOURCE_NOT_FOUND"
+	ErrorCategoryRESOURCE_CONFLICT    = "RESOURCE_CONFLICT"
+	ErrorCategoryRATE_LIMITED         = "RATE_LIMITED"
+	ErrorCategorySERVICE_UNAVAILABLE  = "SERVICE_UNAVAILABLE"
+	ErrorCategoryRUNNER_ERROR         = "RUNNER_ERROR"
+	ErrorCategoryTRUTHCORE_ERROR      = "TRUTHCORE_ERROR"
+	ErrorCategoryINTERNAL_ERROR       = "INTERNAL_ERROR"
 )
 
 // RetryPolicy represents a errors schema
 type RetryPolicy struct {
-	MaxRetries int `json:"maxRetries,omitempty"`
-	BackoffMs float64 `json:"backoffMs,omitempty"`
-	MaxBackoffMs float64 `json:"maxBackoffMs,omitempty"`
-	BackoffMultiplier float64 `json:"backoffMultiplier,omitempty"`
-	RetryableCategories []string `json:"retryableCategories,omitempty"`
+	MaxRetries             int      `json:"maxRetries,omitempty"`
+	BackoffMs              float64  `json:"backoffMs,omitempty"`
+	MaxBackoffMs           float64  `json:"maxBackoffMs,omitempty"`
+	BackoffMultiplier      float64  `json:"backoffMultiplier,omitempty"`
+	RetryableCategories    []string `json:"retryableCategories,omitempty"`
 	NonRetryableCategories []string `json:"nonRetryableCategories,omitempty"`
 }
 
@@ -63,10 +62,10 @@ func (m RetryPolicy) Validate() error {
 
 // ErrorDetail represents a errors schema
 type ErrorDetail struct {
-	Path []string `json:"path,omitempty"`
-	Message string `json:"message"`
-	Code string `json:"code,omitempty"`
-	Value interface{} `json:"value,omitempty"`
+	Path    []string    `json:"path,omitempty"`
+	Message string      `json:"message"`
+	Code    string      `json:"code,omitempty"`
+	Value   interface{} `json:"value,omitempty"`
 }
 
 // Validate checks if the ErrorDetail is valid
@@ -76,20 +75,20 @@ func (m ErrorDetail) Validate() error {
 
 // ErrorEnvelope represents a errors schema
 type ErrorEnvelope struct {
-	Id string `json:"id"`
-	Timestamp time.Time `json:"timestamp"`
-	Category string `json:"category"`
-	Severity string `json:"severity"`
-	Code string `json:"code"`
-	Message string `json:"message"`
-	Details []map[string]interface{} `json:"details,omitempty"`
-	Service string `json:"service"`
-	Operation string `json:"operation,omitempty"`
-	CorrelationId string `json:"correlationId,omitempty"`
-	CausationId string `json:"causationId,omitempty"`
-	Retryable bool `json:"retryable,omitempty"`
-	RetryAfter float64 `json:"retryAfter,omitempty"`
-	ContractVersion map[string]interface{} `json:"contractVersion"`
+	ID              string                   `json:"id"`
+	Timestamp       time.Time                `json:"timestamp"`
+	Category        string                   `json:"category"`
+	Severity        string                   `json:"severity"`
+	Code            string                   `json:"code"`
+	Message         string                   `json:"message"`
+	Details         []map[string]interface{} `json:"details,omitempty"`
+	Service         string                   `json:"service"`
+	Operation       string                   `json:"operation,omitempty"`
+	CorrelationID   string                   `json:"correlationId,omitempty"`
+	CausationID     string                   `json:"causationId,omitempty"`
+	Retryable       bool                     `json:"retryable,omitempty"`
+	RetryAfter      float64                  `json:"retryAfter,omitempty"`
+	ContractVersion map[string]interface{}   `json:"contractVersion"`
 }
 
 // Validate checks if the ErrorEnvelope is valid
@@ -101,9 +100,9 @@ func (m ErrorEnvelope) Validate() error {
 
 // ContractVersion represents a versioning schema
 type ContractVersion struct {
-	Major int `json:"major"`
-	Minor int `json:"minor"`
-	Patch int `json:"patch"`
+	Major      int    `json:"major"`
+	Minor      int    `json:"minor"`
+	Patch      int    `json:"patch"`
 	PreRelease string `json:"preRelease,omitempty"`
 }
 
@@ -114,8 +113,8 @@ func (m ContractVersion) Validate() error {
 
 // ContractRange represents a versioning schema
 type ContractRange struct {
-	Min map[string]interface{} `json:"min"`
-	Max map[string]interface{} `json:"max,omitempty"`
+	Min   map[string]interface{} `json:"min"`
+	Max   map[string]interface{} `json:"max,omitempty"`
 	Exact map[string]interface{} `json:"exact,omitempty"`
 }
 
@@ -131,11 +130,6 @@ type JobId struct {
 	Value interface{} `json:"value"`
 }
 
-// Validate checks if the JobId is valid
-func (m JobId) Validate() error {
-	return validateJobId(m)
-}
-
 // JobStatus represents a types schema
 type JobStatus struct {
 	Value string `json:"value"`
@@ -143,13 +137,13 @@ type JobStatus struct {
 
 // JobStatus valid values
 const (
-	JobStatusPENDING = "pending"
-	JobStatusQUEUED = "queued"
-	JobStatusRUNNING = "running"
+	JobStatusPENDING   = "pending"
+	JobStatusQUEUED    = "queued"
+	JobStatusRUNNING   = "running"
 	JobStatusCOMPLETED = "completed"
-	JobStatusFAILED = "failed"
+	JobStatusFAILED    = "failed"
 	JobStatusCANCELLED = "cancelled"
-	JobStatusRETRYING = "retrying"
+	JobStatusRETRYING  = "retrying"
 )
 
 // JobPriority represents a types schema
@@ -157,22 +151,17 @@ type JobPriority struct {
 	Value interface{} `json:"value"`
 }
 
-// Validate checks if the JobPriority is valid
-func (m JobPriority) Validate() error {
-	return validateJobPriority(m)
-}
-
 // JobMetadata represents a types schema
 type JobMetadata struct {
-	Source string `json:"source"`
-	UserId string `json:"userId,omitempty"`
-	SessionId string `json:"sessionId,omitempty"`
-	CorrelationId string `json:"correlationId,omitempty"`
-	CausationId string `json:"causationId,omitempty"`
-	Tags []string `json:"tags,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
-	ScheduledAt time.Time `json:"scheduledAt,omitempty"`
-	ExpiresAt time.Time `json:"expiresAt,omitempty"`
+	Source        string    `json:"source"`
+	UserID        string    `json:"userId,omitempty"`
+	SessionID     string    `json:"sessionId,omitempty"`
+	CorrelationID string    `json:"correlationId,omitempty"`
+	CausationID   string    `json:"causationId,omitempty"`
+	Tags          []string  `json:"tags,omitempty"`
+	CreatedAt     time.Time `json:"createdAt"`
+	ScheduledAt   time.Time `json:"scheduledAt,omitempty"`
+	ExpiresAt     time.Time `json:"expiresAt,omitempty"`
 }
 
 // Validate checks if the JobMetadata is valid
@@ -182,9 +171,9 @@ func (m JobMetadata) Validate() error {
 
 // JobPayload represents a types schema
 type JobPayload struct {
-	Type string `json:"type"`
-	Version string `json:"version,omitempty"`
-	Data map[string]interface{} `json:"data"`
+	Type    string                 `json:"type"`
+	Version string                 `json:"version,omitempty"`
+	Data    map[string]interface{} `json:"data"`
 	Options map[string]interface{} `json:"options,omitempty"`
 }
 
@@ -195,13 +184,13 @@ func (m JobPayload) Validate() error {
 
 // JobRequest represents a types schema
 type JobRequest struct {
-	Id string `json:"id"`
-	Type string `json:"type"`
-	Priority int `json:"priority,omitempty"`
-	Payload map[string]interface{} `json:"payload"`
-	Metadata map[string]interface{} `json:"metadata"`
+	ID          string                 `json:"id"`
+	Type        string                 `json:"type"`
+	Priority    int                    `json:"priority,omitempty"`
+	Payload     map[string]interface{} `json:"payload"`
+	Metadata    map[string]interface{} `json:"metadata"`
 	RetryPolicy map[string]interface{} `json:"retryPolicy,omitempty"`
-	TimeoutMs float64 `json:"timeoutMs,omitempty"`
+	TimeoutMs   float64                `json:"timeoutMs,omitempty"`
 }
 
 // Validate checks if the JobRequest is valid
@@ -211,9 +200,9 @@ func (m JobRequest) Validate() error {
 
 // JobResult represents a types schema
 type JobResult struct {
-	Success bool `json:"success"`
-	Data interface{} `json:"data,omitempty"`
-	Error map[string]interface{} `json:"error,omitempty"`
+	Success  bool                   `json:"success"`
+	Data     interface{}            `json:"data,omitempty"`
+	Error    map[string]interface{} `json:"error,omitempty"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -224,12 +213,12 @@ func (m JobResult) Validate() error {
 
 // JobResponse represents a types schema
 type JobResponse struct {
-	Id string `json:"id"`
-	Status string `json:"status"`
-	Request map[string]interface{} `json:"request"`
-	Result map[string]interface{} `json:"result,omitempty"`
-	Error map[string]interface{} `json:"error,omitempty"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        string                 `json:"id"`
+	Status    string                 `json:"status"`
+	Request   map[string]interface{} `json:"request"`
+	Result    map[string]interface{} `json:"result,omitempty"`
+	Error     map[string]interface{} `json:"error,omitempty"`
+	UpdatedAt time.Time              `json:"updatedAt"`
 }
 
 // Validate checks if the JobResponse is valid
@@ -239,15 +228,15 @@ func (m JobResponse) Validate() error {
 
 // RunnerCapability represents a types schema
 type RunnerCapability struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Version string `json:"version"`
-	Description string `json:"description"`
-	InputSchema map[string]interface{} `json:"inputSchema"`
-	OutputSchema map[string]interface{} `json:"outputSchema"`
-	SupportedJobTypes []string `json:"supportedJobTypes"`
-	MaxConcurrency int `json:"maxConcurrency,omitempty"`
-	TimeoutMs float64 `json:"timeoutMs,omitempty"`
+	ID                   string                 `json:"id"`
+	Name                 string                 `json:"name"`
+	Version              string                 `json:"version"`
+	Description          string                 `json:"description"`
+	InputSchema          map[string]interface{} `json:"inputSchema"`
+	OutputSchema         map[string]interface{} `json:"outputSchema"`
+	SupportedJobTypes    []string               `json:"supportedJobTypes"`
+	MaxConcurrency       int                    `json:"maxConcurrency,omitempty"`
+	TimeoutMs            float64                `json:"timeoutMs,omitempty"`
 	ResourceRequirements map[string]interface{} `json:"resourceRequirements,omitempty"`
 }
 
@@ -258,17 +247,17 @@ func (m RunnerCapability) Validate() error {
 
 // RunnerMetadata represents a types schema
 type RunnerMetadata struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Version string `json:"version"`
-	ContractVersion map[string]interface{} `json:"contractVersion"`
-	Capabilities []map[string]interface{} `json:"capabilities"`
-	SupportedContracts []string `json:"supportedContracts"`
-	HealthCheckEndpoint string `json:"healthCheckEndpoint"`
-	RegisteredAt time.Time `json:"registeredAt"`
-	LastHeartbeatAt time.Time `json:"lastHeartbeatAt"`
-	Status string `json:"status,omitempty"`
-	Tags []string `json:"tags,omitempty"`
+	ID                  string                   `json:"id"`
+	Name                string                   `json:"name"`
+	Version             string                   `json:"version"`
+	ContractVersion     map[string]interface{}   `json:"contractVersion"`
+	Capabilities        []map[string]interface{} `json:"capabilities"`
+	SupportedContracts  []string                 `json:"supportedContracts"`
+	HealthCheckEndpoint string                   `json:"healthCheckEndpoint"`
+	RegisteredAt        time.Time                `json:"registeredAt"`
+	LastHeartbeatAt     time.Time                `json:"lastHeartbeatAt"`
+	Status              string                   `json:"status,omitempty"`
+	Tags                []string                 `json:"tags,omitempty"`
 }
 
 // Validate checks if the RunnerMetadata is valid
@@ -278,12 +267,12 @@ func (m RunnerMetadata) Validate() error {
 
 // RunnerRegistrationRequest represents a types schema
 type RunnerRegistrationRequest struct {
-	Name string `json:"name"`
-	Version string `json:"version"`
-	ContractVersion map[string]interface{} `json:"contractVersion"`
-	Capabilities []map[string]interface{} `json:"capabilities"`
-	HealthCheckEndpoint string `json:"healthCheckEndpoint"`
-	Tags []string `json:"tags,omitempty"`
+	Name                string                   `json:"name"`
+	Version             string                   `json:"version"`
+	ContractVersion     map[string]interface{}   `json:"contractVersion"`
+	Capabilities        []map[string]interface{} `json:"capabilities"`
+	HealthCheckEndpoint string                   `json:"healthCheckEndpoint"`
+	Tags                []string                 `json:"tags,omitempty"`
 }
 
 // Validate checks if the RunnerRegistrationRequest is valid
@@ -293,9 +282,9 @@ func (m RunnerRegistrationRequest) Validate() error {
 
 // RunnerRegistrationResponse represents a types schema
 type RunnerRegistrationResponse struct {
-	RunnerId string `json:"runnerId"`
-	RegisteredAt time.Time `json:"registeredAt"`
-	HeartbeatIntervalMs float64 `json:"heartbeatIntervalMs,omitempty"`
+	RunnerID            string    `json:"runnerId"`
+	RegisteredAt        time.Time `json:"registeredAt"`
+	HeartbeatIntervalMs float64   `json:"heartbeatIntervalMs,omitempty"`
 }
 
 // Validate checks if the RunnerRegistrationResponse is valid
@@ -305,12 +294,12 @@ func (m RunnerRegistrationResponse) Validate() error {
 
 // RunnerHeartbeat represents a types schema
 type RunnerHeartbeat struct {
-	RunnerId string `json:"runnerId"`
-	Timestamp time.Time `json:"timestamp"`
-	Status string `json:"status"`
-	ActiveJobs int `json:"activeJobs,omitempty"`
-	QueuedJobs int `json:"queuedJobs,omitempty"`
-	Metrics map[string]interface{} `json:"metrics,omitempty"`
+	RunnerID   string                 `json:"runnerId"`
+	Timestamp  time.Time              `json:"timestamp"`
+	Status     string                 `json:"status"`
+	ActiveJobs int                    `json:"activeJobs,omitempty"`
+	QueuedJobs int                    `json:"queuedJobs,omitempty"`
+	Metrics    map[string]interface{} `json:"metrics,omitempty"`
 }
 
 // Validate checks if the RunnerHeartbeat is valid
@@ -320,16 +309,16 @@ func (m RunnerHeartbeat) Validate() error {
 
 // ModuleManifest represents a types schema
 type ModuleManifest struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Version string `json:"version"`
-	Description string `json:"description"`
-	EntryPoint string `json:"entryPoint"`
-	ContractVersion map[string]interface{} `json:"contractVersion"`
-	Capabilities []map[string]interface{} `json:"capabilities"`
-	Dependencies []string `json:"dependencies,omitempty"`
-	ConfigSchema map[string]interface{} `json:"configSchema,omitempty"`
-	DefaultConfig map[string]interface{} `json:"defaultConfig,omitempty"`
+	ID              string                   `json:"id"`
+	Name            string                   `json:"name"`
+	Version         string                   `json:"version"`
+	Description     string                   `json:"description"`
+	EntryPoint      string                   `json:"entryPoint"`
+	ContractVersion map[string]interface{}   `json:"contractVersion"`
+	Capabilities    []map[string]interface{} `json:"capabilities"`
+	Dependencies    []string                 `json:"dependencies,omitempty"`
+	ConfigSchema    map[string]interface{}   `json:"configSchema,omitempty"`
+	DefaultConfig   map[string]interface{}   `json:"defaultConfig,omitempty"`
 }
 
 // Validate checks if the ModuleManifest is valid
@@ -339,12 +328,12 @@ func (m ModuleManifest) Validate() error {
 
 // RunnerExecutionRequest represents a types schema
 type RunnerExecutionRequest struct {
-	JobId string `json:"jobId"`
-	ModuleId string `json:"moduleId"`
-	CapabilityId string `json:"capabilityId"`
-	Payload map[string]interface{} `json:"payload"`
-	TimeoutMs float64 `json:"timeoutMs,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	JobID        string                 `json:"jobId"`
+	ModuleID     string                 `json:"moduleId"`
+	CapabilityID string                 `json:"capabilityId"`
+	Payload      map[string]interface{} `json:"payload"`
+	TimeoutMs    float64                `json:"timeoutMs,omitempty"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // Validate checks if the RunnerExecutionRequest is valid
@@ -354,12 +343,12 @@ func (m RunnerExecutionRequest) Validate() error {
 
 // RunnerExecutionResponse represents a types schema
 type RunnerExecutionResponse struct {
-	JobId string `json:"jobId"`
-	Success bool `json:"success"`
-	Data interface{} `json:"data,omitempty"`
-	Error map[string]interface{} `json:"error,omitempty"`
-	ExecutionTimeMs float64 `json:"executionTimeMs"`
-	RunnerId string `json:"runnerId"`
+	JobID           string                 `json:"jobId"`
+	Success         bool                   `json:"success"`
+	Data            interface{}            `json:"data,omitempty"`
+	Error           map[string]interface{} `json:"error,omitempty"`
+	ExecutionTimeMs float64                `json:"executionTimeMs"`
+	RunnerID        string                 `json:"runnerId"`
 }
 
 // Validate checks if the RunnerExecutionResponse is valid
@@ -369,15 +358,15 @@ func (m RunnerExecutionResponse) Validate() error {
 
 // TruthAssertion represents a types schema
 type TruthAssertion struct {
-	Id string `json:"id"`
-	Subject string `json:"subject"`
-	Predicate string `json:"predicate"`
-	Object interface{} `json:"object"`
-	Confidence float64 `json:"confidence,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
-	Source string `json:"source"`
-	ExpiresAt time.Time `json:"expiresAt,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	ID         string                 `json:"id"`
+	Subject    string                 `json:"subject"`
+	Predicate  string                 `json:"predicate"`
+	Object     interface{}            `json:"object"`
+	Confidence float64                `json:"confidence,omitempty"`
+	Timestamp  time.Time              `json:"timestamp"`
+	Source     string                 `json:"source"`
+	ExpiresAt  time.Time              `json:"expiresAt,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // Validate checks if the TruthAssertion is valid
@@ -387,11 +376,11 @@ func (m TruthAssertion) Validate() error {
 
 // TruthQuery represents a types schema
 type TruthQuery struct {
-	Id string `json:"id"`
+	ID      string                 `json:"id"`
 	Pattern map[string]interface{} `json:"pattern"`
 	Filters map[string]interface{} `json:"filters,omitempty"`
-	Limit int `json:"limit,omitempty"`
-	Offset int `json:"offset,omitempty"`
+	Limit   int                    `json:"limit,omitempty"`
+	Offset  int                    `json:"offset,omitempty"`
 }
 
 // Validate checks if the TruthQuery is valid
@@ -401,11 +390,11 @@ func (m TruthQuery) Validate() error {
 
 // TruthQueryResult represents a types schema
 type TruthQueryResult struct {
-	QueryId string `json:"queryId"`
-	Assertions []map[string]interface{} `json:"assertions"`
-	TotalCount int `json:"totalCount"`
-	HasMore bool `json:"hasMore,omitempty"`
-	QueryTimeMs float64 `json:"queryTimeMs"`
+	QueryID     string                   `json:"queryId"`
+	Assertions  []map[string]interface{} `json:"assertions"`
+	TotalCount  int                      `json:"totalCount"`
+	HasMore     bool                     `json:"hasMore,omitempty"`
+	QueryTimeMs float64                  `json:"queryTimeMs"`
 }
 
 // Validate checks if the TruthQueryResult is valid
@@ -415,11 +404,11 @@ func (m TruthQueryResult) Validate() error {
 
 // TruthSubscription represents a types schema
 type TruthSubscription struct {
-	Id string `json:"id"`
-	Pattern map[string]interface{} `json:"pattern"`
-	Filters map[string]interface{} `json:"filters,omitempty"`
-	WebhookUrl string `json:"webhookUrl,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID         string                 `json:"id"`
+	Pattern    map[string]interface{} `json:"pattern"`
+	Filters    map[string]interface{} `json:"filters,omitempty"`
+	WebhookURL string                 `json:"webhookUrl,omitempty"`
+	CreatedAt  time.Time              `json:"createdAt"`
 }
 
 // Validate checks if the TruthSubscription is valid
@@ -429,9 +418,9 @@ func (m TruthSubscription) Validate() error {
 
 // TruthCoreRequest represents a types schema
 type TruthCoreRequest struct {
-	Id string `json:"id"`
-	Type string `json:"type"`
-	Payload map[string]interface{} `json:"payload"`
+	ID       string                 `json:"id"`
+	Type     string                 `json:"type"`
+	Payload  map[string]interface{} `json:"payload"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -442,11 +431,11 @@ func (m TruthCoreRequest) Validate() error {
 
 // TruthCoreResponse represents a types schema
 type TruthCoreResponse struct {
-	RequestId string `json:"requestId"`
-	Success bool `json:"success"`
-	Data interface{} `json:"data,omitempty"`
-	Error map[string]interface{} `json:"error,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
+	RequestID string                 `json:"requestId"`
+	Success   bool                   `json:"success"`
+	Data      interface{}            `json:"data,omitempty"`
+	Error     map[string]interface{} `json:"error,omitempty"`
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 // Validate checks if the TruthCoreResponse is valid
@@ -461,19 +450,14 @@ type ConsistencyLevel struct {
 
 // ConsistencyLevel valid values
 const (
-	ConsistencyLevelSTRICT = "strict"
-	ConsistencyLevelEVENTUAL = "eventual"
+	ConsistencyLevelSTRICT      = "strict"
+	ConsistencyLevelEVENTUAL    = "eventual"
 	ConsistencyLevelBEST_EFFORT = "best_effort"
 )
 
 // TruthValue represents a types schema
 type TruthValue struct {
 	Value interface{} `json:"value"`
-}
-
-// Validate checks if the TruthValue is valid
-func (m TruthValue) Validate() error {
-	return validateTruthValue(m)
 }
 
 // HealthStatus represents a types schema
@@ -483,20 +467,20 @@ type HealthStatus struct {
 
 // HealthStatus valid values
 const (
-	HealthStatusHEALTHY = "healthy"
-	HealthStatusDEGRADED = "degraded"
+	HealthStatusHEALTHY   = "healthy"
+	HealthStatusDEGRADED  = "degraded"
 	HealthStatusUNHEALTHY = "unhealthy"
-	HealthStatusUNKNOWN = "unknown"
+	HealthStatusUNKNOWN   = "unknown"
 )
 
 // HealthCheck represents a types schema
 type HealthCheck struct {
-	Service string `json:"service"`
-	Status string `json:"status"`
-	Timestamp time.Time `json:"timestamp"`
-	Version string `json:"version"`
-	Uptime float64 `json:"uptime"`
-	Checks []map[string]interface{} `json:"checks,omitempty"`
+	Service   string                   `json:"service"`
+	Status    string                   `json:"status"`
+	Timestamp time.Time                `json:"timestamp"`
+	Version   string                   `json:"version"`
+	Uptime    float64                  `json:"uptime"`
+	Checks    []map[string]interface{} `json:"checks,omitempty"`
 }
 
 // Validate checks if the HealthCheck is valid
@@ -506,12 +490,12 @@ func (m HealthCheck) Validate() error {
 
 // ServiceMetadata represents a types schema
 type ServiceMetadata struct {
-	Name string `json:"name"`
-	Version string `json:"version"`
-	ContractVersion string `json:"contractVersion"`
-	Environment string `json:"environment,omitempty"`
-	StartTime time.Time `json:"startTime"`
-	Features []string `json:"features,omitempty"`
+	Name            string    `json:"name"`
+	Version         string    `json:"version"`
+	ContractVersion string    `json:"contractVersion"`
+	Environment     string    `json:"environment,omitempty"`
+	StartTime       time.Time `json:"startTime"`
+	Features        []string  `json:"features,omitempty"`
 }
 
 // Validate checks if the ServiceMetadata is valid
@@ -521,10 +505,10 @@ func (m ServiceMetadata) Validate() error {
 
 // PaginatedRequest represents a types schema
 type PaginatedRequest struct {
-	Limit int `json:"limit,omitempty"`
-	Offset int `json:"offset,omitempty"`
-	Cursor string `json:"cursor,omitempty"`
-	SortBy string `json:"sortBy,omitempty"`
+	Limit     int    `json:"limit,omitempty"`
+	Offset    int    `json:"offset,omitempty"`
+	Cursor    string `json:"cursor,omitempty"`
+	SortBy    string `json:"sortBy,omitempty"`
 	SortOrder string `json:"sortOrder,omitempty"`
 }
 
@@ -535,12 +519,12 @@ func (m PaginatedRequest) Validate() error {
 
 // PaginatedResponse represents a types schema
 type PaginatedResponse struct {
-	Items []interface{} `json:"items"`
-	Total int `json:"total"`
-	Limit int `json:"limit"`
-	Offset int `json:"offset"`
-	HasMore bool `json:"hasMore"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []interface{} `json:"items"`
+	Total      int           `json:"total"`
+	Limit      int           `json:"limit"`
+	Offset     int           `json:"offset"`
+	HasMore    bool          `json:"hasMore"`
+	NextCursor string        `json:"nextCursor,omitempty"`
 }
 
 // Validate checks if the PaginatedResponse is valid
@@ -550,12 +534,12 @@ func (m PaginatedResponse) Validate() error {
 
 // ApiRequest represents a types schema
 type ApiRequest struct {
-	Id string `json:"id"`
-	Method string `json:"method"`
-	Path string `json:"path"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Query map[string]interface{} `json:"query,omitempty"`
-	Body interface{} `json:"body"`
+	ID       string                 `json:"id"`
+	Method   string                 `json:"method"`
+	Path     string                 `json:"path"`
+	Headers  map[string]string      `json:"headers,omitempty"`
+	Query    map[string]interface{} `json:"query,omitempty"`
+	Body     interface{}            `json:"body"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -566,12 +550,12 @@ func (m ApiRequest) Validate() error {
 
 // ApiResponse represents a types schema
 type ApiResponse struct {
-	RequestId string `json:"requestId"`
-	StatusCode int `json:"statusCode"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Body interface{} `json:"body"`
-	Error map[string]interface{} `json:"error,omitempty"`
-	Metadata map[string]interface{} `json:"metadata"`
+	RequestID  string                 `json:"requestId"`
+	StatusCode int                    `json:"statusCode"`
+	Headers    map[string]string      `json:"headers,omitempty"`
+	Body       interface{}            `json:"body"`
+	Error      map[string]interface{} `json:"error,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata"`
 }
 
 // Validate checks if the ApiResponse is valid
@@ -581,13 +565,13 @@ func (m ApiResponse) Validate() error {
 
 // CapabilityRegistry represents a types schema
 type CapabilityRegistry struct {
-	Version string `json:"version"`
-	GeneratedAt time.Time `json:"generatedAt"`
-	System map[string]interface{} `json:"system"`
-	Truthcore map[string]interface{} `json:"truthcore"`
-	Runners []map[string]interface{} `json:"runners"`
-	Connectors []map[string]interface{} `json:"connectors"`
-	Summary map[string]interface{} `json:"summary"`
+	Version     string                   `json:"version"`
+	GeneratedAt time.Time                `json:"generatedAt"`
+	System      map[string]interface{}   `json:"system"`
+	Truthcore   map[string]interface{}   `json:"truthcore"`
+	Runners     []map[string]interface{} `json:"runners"`
+	Connectors  []map[string]interface{} `json:"connectors"`
+	Summary     map[string]interface{}   `json:"summary"`
 }
 
 // Validate checks if the CapabilityRegistry is valid
@@ -597,10 +581,10 @@ func (m CapabilityRegistry) Validate() error {
 
 // RegisteredRunner represents a types schema
 type RegisteredRunner struct {
-	Metadata map[string]interface{} `json:"metadata"`
-	Category string `json:"category"`
-	Connectors []string `json:"connectors"`
-	Health map[string]interface{} `json:"health"`
+	Metadata     map[string]interface{}   `json:"metadata"`
+	Category     string                   `json:"category"`
+	Connectors   []string                 `json:"connectors"`
+	Health       map[string]interface{}   `json:"health"`
 	Capabilities []map[string]interface{} `json:"capabilities"`
 }
 
@@ -611,14 +595,14 @@ func (m RegisteredRunner) Validate() error {
 
 // ConnectorConfig represents a types schema
 type ConnectorConfig struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Version string `json:"version"`
-	Description string `json:"description"`
-	ConfigSchema map[string]interface{} `json:"configSchema"`
-	Required bool `json:"required,omitempty"`
-	HealthCheckable bool `json:"healthCheckable,omitempty"`
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	Type            string                 `json:"type"`
+	Version         string                 `json:"version"`
+	Description     string                 `json:"description"`
+	ConfigSchema    map[string]interface{} `json:"configSchema"`
+	Required        bool                   `json:"required,omitempty"`
+	HealthCheckable bool                   `json:"healthCheckable,omitempty"`
 }
 
 // Validate checks if the ConnectorConfig is valid
@@ -633,24 +617,24 @@ type ConnectorType struct {
 
 // ConnectorType valid values
 const (
-	ConnectorTypeDATABASE = "database"
-	ConnectorTypeQUEUE = "queue"
-	ConnectorTypeSTORAGE = "storage"
-	ConnectorTypeAPI = "api"
-	ConnectorTypeWEBHOOK = "webhook"
-	ConnectorTypeSTREAM = "stream"
-	ConnectorTypeCACHE = "cache"
+	ConnectorTypeDATABASE  = "database"
+	ConnectorTypeQUEUE     = "queue"
+	ConnectorTypeSTORAGE   = "storage"
+	ConnectorTypeAPI       = "api"
+	ConnectorTypeWEBHOOK   = "webhook"
+	ConnectorTypeSTREAM    = "stream"
+	ConnectorTypeCACHE     = "cache"
 	ConnectorTypeMESSAGING = "messaging"
 )
 
 // ConnectorInstance represents a types schema
 type ConnectorInstance struct {
-	Config map[string]interface{} `json:"config"`
-	Status string `json:"status"`
-	LastConnectedAt time.Time `json:"lastConnectedAt,omitempty"`
-	LastErrorAt time.Time `json:"lastErrorAt,omitempty"`
-	ErrorMessage string `json:"errorMessage,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	Config          map[string]interface{} `json:"config"`
+	Status          string                 `json:"status"`
+	LastConnectedAt time.Time              `json:"lastConnectedAt,omitempty"`
+	LastErrorAt     time.Time              `json:"lastErrorAt,omitempty"`
+	ErrorMessage    string                 `json:"errorMessage,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // Validate checks if the ConnectorInstance is valid
@@ -665,23 +649,23 @@ type RunnerCategory struct {
 
 // RunnerCategory valid values
 const (
-	RunnerCategoryOPS = "ops"
-	RunnerCategoryFINOPS = "finops"
-	RunnerCategorySUPPORT = "support"
-	RunnerCategoryGROWTH = "growth"
-	RunnerCategoryANALYTICS = "analytics"
-	RunnerCategorySECURITY = "security"
+	RunnerCategoryOPS            = "ops"
+	RunnerCategoryFINOPS         = "finops"
+	RunnerCategorySUPPORT        = "support"
+	RunnerCategoryGROWTH         = "growth"
+	RunnerCategoryANALYTICS      = "analytics"
+	RunnerCategorySECURITY       = "security"
 	RunnerCategoryINFRASTRUCTURE = "infrastructure"
-	RunnerCategoryCUSTOM = "custom"
+	RunnerCategoryCUSTOM         = "custom"
 )
 
 // RegistryQuery represents a types schema
 type RegistryQuery struct {
-	Category string `json:"category,omitempty"`
-	ConnectorType string `json:"connectorType,omitempty"`
-	HealthStatus string `json:"healthStatus,omitempty"`
-	IncludeCapabilities bool `json:"includeCapabilities,omitempty"`
-	IncludeConnectors bool `json:"includeConnectors,omitempty"`
+	Category            string `json:"category,omitempty"`
+	ConnectorType       string `json:"connectorType,omitempty"`
+	HealthStatus        string `json:"healthStatus,omitempty"`
+	IncludeCapabilities bool   `json:"includeCapabilities,omitempty"`
+	IncludeConnectors   bool   `json:"includeConnectors,omitempty"`
 }
 
 // Validate checks if the RegistryQuery is valid
@@ -691,12 +675,12 @@ func (m RegistryQuery) Validate() error {
 
 // RegistryDiff represents a types schema
 type RegistryDiff struct {
-	Added []map[string]interface{} `json:"added"`
-	Removed []map[string]interface{} `json:"removed"`
-	Modified []map[string]interface{} `json:"modified"`
-	Timestamp time.Time `json:"timestamp"`
-	PreviousChecksum string `json:"previousChecksum"`
-	CurrentChecksum string `json:"currentChecksum"`
+	Added            []map[string]interface{} `json:"added"`
+	Removed          []map[string]interface{} `json:"removed"`
+	Modified         []map[string]interface{} `json:"modified"`
+	Timestamp        time.Time                `json:"timestamp"`
+	PreviousChecksum string                   `json:"previousChecksum"`
+	CurrentChecksum  string                   `json:"currentChecksum"`
 }
 
 // Validate checks if the RegistryDiff is valid
@@ -706,14 +690,14 @@ func (m RegistryDiff) Validate() error {
 
 // MarketplaceIndex represents a types schema
 type MarketplaceIndex struct {
-	Version string `json:"version"`
-	GeneratedAt time.Time `json:"generatedAt"`
-	Schema map[string]interface{} `json:"schema"`
-	System map[string]interface{} `json:"system"`
-	Stats map[string]interface{} `json:"stats"`
-	Runners []map[string]interface{} `json:"runners"`
-	Connectors []map[string]interface{} `json:"connectors"`
-	Filters map[string]interface{} `json:"filters"`
+	Version     string                   `json:"version"`
+	GeneratedAt time.Time                `json:"generatedAt"`
+	Schema      map[string]interface{}   `json:"schema"`
+	System      map[string]interface{}   `json:"system"`
+	Stats       map[string]interface{}   `json:"stats"`
+	Runners     []map[string]interface{} `json:"runners"`
+	Connectors  []map[string]interface{} `json:"connectors"`
+	Filters     map[string]interface{}   `json:"filters"`
 }
 
 // Validate checks if the MarketplaceIndex is valid
@@ -723,25 +707,25 @@ func (m MarketplaceIndex) Validate() error {
 
 // MarketplaceRunner represents a types schema
 type MarketplaceRunner struct {
-	Id string `json:"id"`
-	Metadata map[string]interface{} `json:"metadata"`
-	Category string `json:"category"`
-	Description string `json:"description"`
-	LongDescription string `json:"longDescription,omitempty"`
-	Author map[string]interface{} `json:"author"`
-	Repository map[string]interface{} `json:"repository,omitempty"`
-	Documentation map[string]interface{} `json:"documentation,omitempty"`
-	License string `json:"license"`
-	Keywords []string `json:"keywords,omitempty"`
-	Capabilities []map[string]interface{} `json:"capabilities"`
-	Compatibility map[string]interface{} `json:"compatibility"`
-	TrustSignals map[string]interface{} `json:"trustSignals"`
-	Deprecation map[string]interface{} `json:"deprecation,omitempty"`
-	Status string `json:"status,omitempty"`
-	PublishedAt time.Time `json:"publishedAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	VersionHistory []map[string]interface{} `json:"versionHistory,omitempty"`
-	Installation map[string]interface{} `json:"installation,omitempty"`
+	ID              string                   `json:"id"`
+	Metadata        map[string]interface{}   `json:"metadata"`
+	Category        string                   `json:"category"`
+	Description     string                   `json:"description"`
+	LongDescription string                   `json:"longDescription,omitempty"`
+	Author          map[string]interface{}   `json:"author"`
+	Repository      map[string]interface{}   `json:"repository,omitempty"`
+	Documentation   map[string]interface{}   `json:"documentation,omitempty"`
+	License         string                   `json:"license"`
+	Keywords        []string                 `json:"keywords,omitempty"`
+	Capabilities    []map[string]interface{} `json:"capabilities"`
+	Compatibility   map[string]interface{}   `json:"compatibility"`
+	TrustSignals    map[string]interface{}   `json:"trustSignals"`
+	Deprecation     map[string]interface{}   `json:"deprecation,omitempty"`
+	Status          string                   `json:"status,omitempty"`
+	PublishedAt     time.Time                `json:"publishedAt"`
+	UpdatedAt       time.Time                `json:"updatedAt"`
+	VersionHistory  []map[string]interface{} `json:"versionHistory,omitempty"`
+	Installation    map[string]interface{}   `json:"installation,omitempty"`
 }
 
 // Validate checks if the MarketplaceRunner is valid
@@ -751,25 +735,25 @@ func (m MarketplaceRunner) Validate() error {
 
 // MarketplaceConnector represents a types schema
 type MarketplaceConnector struct {
-	Id string `json:"id"`
-	Config map[string]interface{} `json:"config"`
-	Description string `json:"description"`
-	LongDescription string `json:"longDescription,omitempty"`
-	Author map[string]interface{} `json:"author"`
-	Repository map[string]interface{} `json:"repository,omitempty"`
-	Documentation map[string]interface{} `json:"documentation,omitempty"`
-	License string `json:"license"`
-	Keywords []string `json:"keywords,omitempty"`
-	InputSchema map[string]interface{} `json:"inputSchema"`
-	OutputSchema map[string]interface{} `json:"outputSchema"`
-	Compatibility map[string]interface{} `json:"compatibility"`
-	TrustSignals map[string]interface{} `json:"trustSignals"`
-	Deprecation map[string]interface{} `json:"deprecation,omitempty"`
-	Status string `json:"status,omitempty"`
-	PublishedAt time.Time `json:"publishedAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	VersionHistory []map[string]interface{} `json:"versionHistory,omitempty"`
-	Installation map[string]interface{} `json:"installation,omitempty"`
+	ID              string                   `json:"id"`
+	Config          map[string]interface{}   `json:"config"`
+	Description     string                   `json:"description"`
+	LongDescription string                   `json:"longDescription,omitempty"`
+	Author          map[string]interface{}   `json:"author"`
+	Repository      map[string]interface{}   `json:"repository,omitempty"`
+	Documentation   map[string]interface{}   `json:"documentation,omitempty"`
+	License         string                   `json:"license"`
+	Keywords        []string                 `json:"keywords,omitempty"`
+	InputSchema     map[string]interface{}   `json:"inputSchema"`
+	OutputSchema    map[string]interface{}   `json:"outputSchema"`
+	Compatibility   map[string]interface{}   `json:"compatibility"`
+	TrustSignals    map[string]interface{}   `json:"trustSignals"`
+	Deprecation     map[string]interface{}   `json:"deprecation,omitempty"`
+	Status          string                   `json:"status,omitempty"`
+	PublishedAt     time.Time                `json:"publishedAt"`
+	UpdatedAt       time.Time                `json:"updatedAt"`
+	VersionHistory  []map[string]interface{} `json:"versionHistory,omitempty"`
+	Installation    map[string]interface{}   `json:"installation,omitempty"`
 }
 
 // Validate checks if the MarketplaceConnector is valid
@@ -779,19 +763,19 @@ func (m MarketplaceConnector) Validate() error {
 
 // MarketplaceQuery represents a types schema
 type MarketplaceQuery struct {
-	Type string `json:"type,omitempty"`
-	Category string `json:"category,omitempty"`
-	ConnectorType string `json:"connectorType,omitempty"`
-	Status string `json:"status,omitempty"`
-	TrustLevel string `json:"trustLevel,omitempty"`
-	Search string `json:"search,omitempty"`
+	Type                 string                 `json:"type,omitempty"`
+	Category             string                 `json:"category,omitempty"`
+	ConnectorType        string                 `json:"connectorType,omitempty"`
+	Status               string                 `json:"status,omitempty"`
+	TrustLevel           string                 `json:"trustLevel,omitempty"`
+	Search               string                 `json:"search,omitempty"`
 	CompatibilityVersion map[string]interface{} `json:"compatibilityVersion,omitempty"`
-	Author string `json:"author,omitempty"`
-	Keywords []string `json:"keywords,omitempty"`
-	SortBy string `json:"sortBy,omitempty"`
-	SortOrder string `json:"sortOrder,omitempty"`
-	Limit float64 `json:"limit,omitempty"`
-	Offset float64 `json:"offset,omitempty"`
+	Author               string                 `json:"author,omitempty"`
+	Keywords             []string               `json:"keywords,omitempty"`
+	SortBy               string                 `json:"sortBy,omitempty"`
+	SortOrder            string                 `json:"sortOrder,omitempty"`
+	Limit                float64                `json:"limit,omitempty"`
+	Offset               float64                `json:"offset,omitempty"`
 }
 
 // Validate checks if the MarketplaceQuery is valid
@@ -801,11 +785,11 @@ func (m MarketplaceQuery) Validate() error {
 
 // MarketplaceQueryResult represents a types schema
 type MarketplaceQueryResult struct {
-	Query map[string]interface{} `json:"query"`
-	Total float64 `json:"total"`
-	HasMore bool `json:"hasMore"`
-	Items []interface{} `json:"items"`
-	Facets map[string]interface{} `json:"facets"`
+	Query   map[string]interface{} `json:"query"`
+	Total   float64                `json:"total"`
+	HasMore bool                   `json:"hasMore"`
+	Items   []interface{}          `json:"items"`
+	Facets  map[string]interface{} `json:"facets"`
 }
 
 // Validate checks if the MarketplaceQueryResult is valid
@@ -815,18 +799,18 @@ func (m MarketplaceQueryResult) Validate() error {
 
 // MarketplaceTrustSignals represents a types schema
 type MarketplaceTrustSignals struct {
-	OverallTrust string `json:"overallTrust"`
-	ContractTestStatus string `json:"contractTestStatus"`
-	LastContractTestAt time.Time `json:"lastContractTestAt,omitempty"`
-	LastVerifiedVersion string `json:"lastVerifiedVersion,omitempty"`
-	VerificationMethod string `json:"verificationMethod"`
-	SecurityScanStatus string `json:"securityScanStatus"`
-	LastSecurityScanAt time.Time `json:"lastSecurityScanAt,omitempty"`
-	SecurityScanDetails map[string]interface{} `json:"securityScanDetails,omitempty"`
-	CodeQualityScore float64 `json:"codeQualityScore,omitempty"`
-	MaintainerReputation string `json:"maintainerReputation,omitempty"`
-	DownloadCount float64 `json:"downloadCount,omitempty"`
-	Rating map[string]interface{} `json:"rating,omitempty"`
+	OverallTrust         string                 `json:"overallTrust"`
+	ContractTestStatus   string                 `json:"contractTestStatus"`
+	LastContractTestAt   time.Time              `json:"lastContractTestAt,omitempty"`
+	LastVerifiedVersion  string                 `json:"lastVerifiedVersion,omitempty"`
+	VerificationMethod   string                 `json:"verificationMethod"`
+	SecurityScanStatus   string                 `json:"securityScanStatus"`
+	LastSecurityScanAt   time.Time              `json:"lastSecurityScanAt,omitempty"`
+	SecurityScanDetails  map[string]interface{} `json:"securityScanDetails,omitempty"`
+	CodeQualityScore     float64                `json:"codeQualityScore,omitempty"`
+	MaintainerReputation string                 `json:"maintainerReputation,omitempty"`
+	DownloadCount        float64                `json:"downloadCount,omitempty"`
+	Rating               map[string]interface{} `json:"rating,omitempty"`
 }
 
 // Validate checks if the MarketplaceTrustSignals is valid
@@ -841,9 +825,9 @@ type TrustStatus struct {
 
 // TrustStatus valid values
 const (
-	TrustStatusVERIFIED = "verified"
-	TrustStatusPENDING = "pending"
-	TrustStatusFAILED = "failed"
+	TrustStatusVERIFIED   = "verified"
+	TrustStatusPENDING    = "pending"
+	TrustStatusFAILED     = "failed"
 	TrustStatusUNVERIFIED = "unverified"
 )
 
@@ -854,9 +838,9 @@ type SecurityScanStatus struct {
 
 // SecurityScanStatus valid values
 const (
-	SecurityScanStatusPASSED = "passed"
-	SecurityScanStatusFAILED = "failed"
-	SecurityScanStatusPENDING = "pending"
+	SecurityScanStatusPASSED      = "passed"
+	SecurityScanStatusFAILED      = "failed"
+	SecurityScanStatusPENDING     = "pending"
 	SecurityScanStatusNOT_SCANNED = "not_scanned"
 )
 
@@ -867,10 +851,10 @@ type ContractTestStatus struct {
 
 // ContractTestStatus valid values
 const (
-	ContractTestStatusPASSING = "passing"
-	ContractTestStatusFAILING = "failing"
+	ContractTestStatusPASSING    = "passing"
+	ContractTestStatusFAILING    = "failing"
 	ContractTestStatusNOT_TESTED = "not_tested"
-	ContractTestStatusSTALE = "stale"
+	ContractTestStatusSTALE      = "stale"
 )
 
 // VerificationMethod represents a types schema
@@ -880,8 +864,8 @@ type VerificationMethod struct {
 
 // VerificationMethod valid values
 const (
-	VerificationMethodAUTOMATED_CI = "automated_ci"
-	VerificationMethodMANUAL_REVIEW = "manual_review"
+	VerificationMethodAUTOMATED_CI       = "automated_ci"
+	VerificationMethodMANUAL_REVIEW      = "manual_review"
 	VerificationMethodCOMMUNITY_VERIFIED = "community_verified"
 	VerificationMethodOFFICIAL_PUBLISHER = "official_publisher"
 )

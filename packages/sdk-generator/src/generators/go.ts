@@ -40,17 +40,7 @@ export function generateGoSDK(
 }
 
 function generateGoTypesFile(schemas: SchemaDefinition[]): string {
-  const lines: string[] = [];
-  lines.push('// Auto-generated Go types from ControlPlane contracts');
-  lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
-  lines.push('');
-  lines.push('package controlplane');
-  lines.push('');
-  lines.push('import (');
-  lines.push('\t"encoding/json"');
-  lines.push('\t"time"');
-  lines.push(')');
-  lines.push('');
+  const body: string[] = [];
 
   const groupedSchemas = schemas.reduce(
     (acc, schema) => {
@@ -65,14 +55,32 @@ function generateGoTypesFile(schemas: SchemaDefinition[]): string {
     string,
     SchemaDefinition[],
   ][]) {
-    lines.push(`// ${category.toUpperCase()} types`);
-    lines.push('');
+    body.push(`// ${category.toUpperCase()} types`);
+    body.push('');
 
     for (const schema of categorySchemas) {
-      lines.push(...generateGoStructCode(schema));
-      lines.push('');
+      body.push(...generateGoStructCode(schema));
+      body.push('');
     }
   }
+
+  const bodyText = body.join('\n');
+  const imports: string[] = [];
+  if (bodyText.includes('time.Time')) imports.push('"time"');
+
+  const lines: string[] = [];
+  lines.push('// Auto-generated Go types from ControlPlane contracts');
+  lines.push('// DO NOT EDIT MANUALLY - regenerate from source');
+  lines.push('');
+  lines.push('package controlplane');
+  lines.push('');
+  if (imports.length > 0) {
+    lines.push('import (');
+    for (const imp of imports) lines.push(`\t${imp}`);
+    lines.push(')');
+    lines.push('');
+  }
+  lines.push(bodyText);
 
   return lines.join('\n');
 }
@@ -88,14 +96,32 @@ function generateGoStructCode(schema: SchemaDefinition): string[] {
   if (zodDef.typeName === 'ZodObject') {
     const shape = zodDef.shape?.() ?? {};
 
-    for (const [key, val] of Object.entries(shape)) {
+    const fields = Object.entries(shape).map(([key, val]) => {
       const fieldDef = normalizeDef(val);
       const goType = zodToGoType(val as z.ZodTypeAny);
       const isOptional = fieldDef.typeName === 'ZodOptional' || fieldDef.typeName === 'ZodDefault';
       const jsonTag = isOptional ? `json:"${key},omitempty"` : `json:"${key}"`;
+      return { name: toGoFieldName(key), goType, jsonTag };
+    });
 
-      lines.push(`\t${capitalizeFirst(key)} ${goType} \`${jsonTag}\``);
+    // Align name/type/tag columns exactly like gofmt so `go fmt` is a no-op.
+    const maxName = Math.max(...fields.map((f) => f.name.length));
+    const maxType = Math.max(...fields.map((f) => f.goType.length));
+    for (const field of fields) {
+      lines.push(
+        `\t${field.name.padEnd(maxName)} ${field.goType.padEnd(maxType)} \`${field.jsonTag}\``
+      );
     }
+    lines.push('}');
+
+    // Validate() delegates to the generated per-schema validator. Only object
+    // schemas get generated validators (see generateGoSchemasFile), so only
+    // they get a Validate method.
+    lines.push('');
+    lines.push(`// Validate checks if the ${schema.name} is valid`);
+    lines.push(`func (m ${schema.name}) Validate() error {`);
+    lines.push('\treturn validate' + schema.name + '(m)');
+    lines.push('}');
   } else if (zodDef.typeName === 'ZodEnum') {
     const values = zodDef.values ?? [];
     lines.push(`\tValue string \`json:"value"\``);
@@ -103,24 +129,20 @@ function generateGoStructCode(schema: SchemaDefinition): string[] {
     lines.push('');
     lines.push(`// ${schema.name} valid values`);
     lines.push('const (');
-    for (const value of values) {
-      const constName = toGoConstName(schema.name, value);
-      lines.push(`\t${constName} = "${value}"`);
+    const constEntries = values.map((value) => ({
+      name: toGoConstName(schema.name, value),
+      value,
+    }));
+    const maxLen = Math.max(...constEntries.map((c) => c.name.length));
+    for (const entry of constEntries) {
+      lines.push(`\t${entry.name.padEnd(maxLen)} = "${entry.value}"`);
     }
     lines.push(')');
     return lines;
   } else {
     lines.push(`\tValue interface{} \`json:"value"\``);
+    lines.push('}');
   }
-
-  lines.push('}');
-
-  // Add Validate method for structs
-  lines.push('');
-  lines.push(`// Validate checks if the ${schema.name} is valid`);
-  lines.push(`func (m ${schema.name}) Validate() error {`);
-  lines.push('\treturn validate' + schema.name + '(m)');
-  lines.push('}');
 
   return lines;
 }
@@ -184,8 +206,27 @@ function zodToGoType(schema: z.ZodTypeAny): string {
   }
 }
 
-function capitalizeFirst(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+const GO_INITIALISMS = new Set([
+  'API', 'ASCII', 'CPU', 'CSS', 'DNS', 'EOF', 'GUID', 'HTML', 'HTTP', 'HTTPS',
+  'ID', 'IP', 'JSON', 'QPS', 'RAM', 'RPC', 'SLA', 'SMTP', 'SQL', 'SSH', 'TCP',
+  'TLS', 'TTL', 'UDP', 'UI', 'UID', 'UUID', 'URI', 'URL', 'UTF8', 'VM', 'XML',
+  'XMPP', 'XSRF', 'XSS',
+]);
+
+/**
+ * Converts a contract field name to an idiomatic Go field name, uppercasing
+ * common initialisms (id -> ID, userId -> UserID, baseUrl -> BaseURL).
+ */
+function toGoFieldName(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(' ')
+    .map((part) =>
+      GO_INITIALISMS.has(part.toUpperCase())
+        ? part.toUpperCase()
+        : part.charAt(0).toUpperCase() + part.slice(1)
+    )
+    .join('');
 }
 
 function toGoConstName(typeName: string, value: string): string {
@@ -307,10 +348,7 @@ function generateGoValidationFile(): string {
 
 package controlplane
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 // ValidationError represents a validation error
 type ValidationError struct {
@@ -397,26 +435,31 @@ function generateGoValidationFunction(
   lines.push('\tvar errs ValidationErrors');
   lines.push('');
 
+  let emittedChecks = false;
   for (const [key, val] of Object.entries(shape)) {
     const fieldDef = normalizeDef(val);
     const isRequired = fieldDef.typeName !== 'ZodOptional' && fieldDef.typeName !== 'ZodDefault';
-    const capitalizedKey = capitalizeFirst(key);
+    const fieldName = toGoFieldName(key);
 
     if (isRequired) {
       const goType = zodToGoType(val);
       if (goType === 'string') {
-        lines.push(`\tif m.${capitalizedKey} == "" {`);
+        lines.push(`\tif m.${fieldName} == "" {`);
         lines.push(`\t\terrs.Add("${key}", "is required")`);
         lines.push(`\t}`);
+        emittedChecks = true;
       } else if (goType === 'int' || goType === 'float64') {
-        lines.push(`\tif m.${capitalizedKey} == 0 {`);
+        lines.push(`\tif m.${fieldName} == 0 {`);
         lines.push(`\t\terrs.Add("${key}", "is required")`);
         lines.push(`\t}`);
+        emittedChecks = true;
       }
     }
   }
 
-  lines.push('');
+  if (emittedChecks) {
+    lines.push('');
+  }
   lines.push('\tif !errs.IsValid() {');
   lines.push('\t\treturn errs');
   lines.push('\t}');
@@ -430,10 +473,6 @@ function generateGoMod(config: SDKGeneratorConfig): string {
   return `module github.com/${config.organization}/sdk-go
 
 go 1.21
-
-require (
-	github.com/google/uuid v1.6.0
-)
 `;
 }
 
