@@ -100,7 +100,7 @@
     "@controlplane/contracts": "workspace:*",
     "@controlplane/controlplane": "workspace:*",
     "@commitlint/cli": "^21.2.3",
-    "@commitlint/config-conventional": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.4",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
